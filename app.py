@@ -4,7 +4,7 @@ import plotly.express as px
 import locale
 
 # ==================================================
-# CONFIGURAÇÃO REGIONAL
+# CONFIGURAÇÃO REGIONAL BRASIL
 # ==================================================
 
 try:
@@ -31,7 +31,7 @@ COR_BRANCO = "#FFFFFF"
 FUNDO = "#F5F5F5"
 
 # ==================================================
-# CSS
+# CSS PERSONALIZADO
 # ==================================================
 
 st.markdown(f"""
@@ -46,14 +46,11 @@ st.markdown(f"""
     border: 1px solid #E5E7EB;
     padding: 15px;
     border-radius: 12px;
+    box-shadow: 0px 2px 5px rgba(0,0,0,0.05);
 }}
 
-.status-card {{
-    padding: 20px;
-    border-radius: 15px;
-    color: white;
-    text-align: center;
-    min-height: 300px;
+h1, h2, h3 {{
+    color: {COR_CINZA};
 }}
 
 </style>
@@ -66,11 +63,10 @@ st.markdown(f"""
 st.title("📊 Painel de Produtividade")
 
 # ==================================================
-# LEITURA DOS ARQUIVOS
+# LEITURA PLANILHAS
 # ==================================================
 
 df = pd.read_excel("produtividade.xlsx")
-
 usuarios = pd.read_excel("usuarios.xlsx")
 
 # ==================================================
@@ -78,12 +74,7 @@ usuarios = pd.read_excel("usuarios.xlsx")
 # ==================================================
 
 df.columns = df.columns.str.strip()
-
-usuarios.columns = (
-    usuarios.columns
-    .str.strip()
-    .str.lower()
-)
+usuarios.columns = usuarios.columns.str.strip().str.lower()
 
 # ==================================================
 # PADRONIZAR DADOS
@@ -140,9 +131,7 @@ df["Data Formatada"] = (
 
 st.sidebar.title("🔐 Login")
 
-usuario_input = st.sidebar.text_input(
-    "Usuário"
-)
+usuario_input = st.sidebar.text_input("Usuário")
 
 senha_input = st.sidebar.text_input(
     "Senha",
@@ -166,8 +155,10 @@ senha_digitada = (
 )
 
 # ==================================================
-# LOGIN GESTÃO
+# MODO GESTÃO
 # ==================================================
+
+modo_gestao = False
 
 if (
     usuario_digitado == "gestao"
@@ -183,8 +174,6 @@ if (
 
 else:
 
-    modo_gestao = False
-
     login = usuarios[
         (usuarios["usuario"] == usuario_digitado)
         &
@@ -192,11 +181,7 @@ else:
     ]
 
     if login.empty:
-
-        st.error(
-            "Usuário ou senha inválidos."
-        )
-
+        st.error("Usuário ou senha inválidos.")
         st.stop()
 
     tecnico = login.iloc[0]["tecnico"]
@@ -206,7 +191,7 @@ else:
     )
 
 # ==================================================
-# MODO GESTÃO
+# SELEÇÃO TÉCNICO GESTÃO
 # ==================================================
 
 if modo_gestao:
@@ -217,7 +202,7 @@ if modo_gestao:
     )
 
 # ==================================================
-# DADOS TÉCNICO
+# FILTRAR DADOS
 # ==================================================
 
 dados_tecnico = df[
@@ -225,16 +210,8 @@ dados_tecnico = df[
 ]
 
 if dados_tecnico.empty:
-
-    st.error(
-        "Nenhum dado encontrado."
-    )
-
+    st.error("Nenhum dado encontrado.")
     st.stop()
-
-# ==================================================
-# NÍVEL TÉCNICO
-# ==================================================
 
 nivel_tecnico = (
     dados_tecnico["Nível"]
@@ -242,45 +219,23 @@ nivel_tecnico = (
 )
 
 # ==================================================
-# ÚLTIMO DIA COM MOVIMENTAÇÃO
-# ==================================================
-
-ultima_data = df["Data"].max()
-
-df_ultimo_dia = df[
-    df["Data"] == ultima_data
-]
-
-# ==================================================
-# CLASSIFICAÇÃO DIÁRIA
-# ==================================================
-
-def definir_status(percentual):
-
-    if percentual < 70:
-        return "CRÍTICO"
-
-    elif percentual < 90:
-        return "ATENÇÃO"
-
-    elif percentual < 100:
-        return "BOM"
-
-    else:
-        return "EXCELENTE"
-
-# ==================================================
-# QUARTIL DIÁRIO GESTÃO
+# QUARTIL DIÁRIO
 # ==================================================
 
 if modo_gestao:
 
     st.divider()
 
-    st.header("📌 Status Diário da Operação")
+    st.header("📊 Status Diário da Operação")
 
-    resumo_dia = (
-        df_ultimo_dia.groupby("Técnico")
+    ultima_data = df["Data"].max()
+
+    dados_dia = df[
+        df["Data"] == ultima_data
+    ]
+
+    status_dia = (
+        dados_dia.groupby("Técnico")
         .agg({
             "Realizado": "sum",
             "Esperado": "sum"
@@ -288,20 +243,37 @@ if modo_gestao:
         .reset_index()
     )
 
-    resumo_dia["Percentual"] = (
-        resumo_dia["Realizado"]
+    status_dia["Percentual"] = (
+        status_dia["Realizado"]
         /
-        resumo_dia["Esperado"]
+        status_dia["Esperado"]
     ) * 100
 
-    resumo_dia["Status"] = (
-        resumo_dia["Percentual"]
-        .apply(definir_status)
+    def definir_status(percentual):
+
+        if percentual < 70:
+            return "CRÍTICO"
+
+        elif percentual < 90:
+            return "ATENÇÃO"
+
+        elif percentual < 100:
+            return "BOM"
+
+        else:
+            return "EXCELENTE"
+
+    status_dia["Status"] = status_dia[
+        "Percentual"
+    ].apply(definir_status)
+
+    st.subheader(
+        f"📅 Diário - {ultima_data.strftime('%d/%m/%Y')}"
     )
 
     col1, col2, col3, col4 = st.columns(4)
 
-    status_cores = {
+    cores = {
         "CRÍTICO": "#DC2626",
         "ATENÇÃO": "#F97316",
         "BOM": "#2563EB",
@@ -315,51 +287,62 @@ if modo_gestao:
         "EXCELENTE": col4
     }
 
-    for status in status_cores.keys():
+    for status in [
+        "CRÍTICO",
+        "ATENÇÃO",
+        "BOM",
+        "EXCELENTE"
+    ]:
 
-        tecnicos_status = resumo_dia[
-            resumo_dia["Status"] == status
+        tecnicos = status_dia[
+            status_dia["Status"] == status
         ]["Técnico"].tolist()
 
         nomes = "<br>".join(
-            [x.title() for x in tecnicos_status]
+            [t.title() for t in tecnicos]
         )
 
         with colunas[status]:
 
-            st.markdown(f"""
-            <div class="status-card"
-            style="background-color:{status_cores[status]}">
-
-            <h2>{status}</h2>
-
-            <p>{nomes}</p>
-
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <div style="
+                    background-color:{cores[status]};
+                    padding:20px;
+                    border-radius:15px;
+                    min-height:400px;
+                    color:white;
+                    text-align:center;
+                ">
+                    <h1>{status}</h1>
+                    <p>{nomes}</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
 # ==================================================
-# QUARTIL MENSAL GESTÃO
+# QUARTIL MENSAL
 # ==================================================
 
 if modo_gestao:
 
     st.divider()
 
-    st.header("📅 Status Mensal da Operação")
+    st.header("📊 Status Mensal da Operação")
 
     mes_atual = df["Data"].dt.month.max()
 
     ano_atual = df["Data"].dt.year.max()
 
-    df_mes = df[
+    dados_mes_quartil = df[
         (df["Data"].dt.month == mes_atual)
         &
         (df["Data"].dt.year == ano_atual)
     ]
 
-    resumo_mes = (
-        df_mes.groupby("Técnico")
+    status_mes = (
+        dados_mes_quartil.groupby("Técnico")
         .agg({
             "Realizado": "sum",
             "Esperado": "sum"
@@ -367,25 +350,21 @@ if modo_gestao:
         .reset_index()
     )
 
-    resumo_mes["Percentual"] = (
-        resumo_mes["Realizado"]
+    status_mes["Percentual"] = (
+        status_mes["Realizado"]
         /
-        resumo_mes["Esperado"]
+        status_mes["Esperado"]
     ) * 100
 
-    resumo_mes["Status"] = (
-        resumo_mes["Percentual"]
-        .apply(definir_status)
+    status_mes["Status"] = status_mes[
+        "Percentual"
+    ].apply(definir_status)
+
+    st.subheader(
+        f"📅 Mensal - {mes_atual:02d}/{ano_atual}"
     )
 
     col1, col2, col3, col4 = st.columns(4)
-
-    status_cores = {
-        "CRÍTICO": "#DC2626",
-        "ATENÇÃO": "#F97316",
-        "BOM": "#2563EB",
-        "EXCELENTE": "#16A34A"
-    }
 
     colunas = {
         "CRÍTICO": col1,
@@ -394,28 +373,39 @@ if modo_gestao:
         "EXCELENTE": col4
     }
 
-    for status in status_cores.keys():
+    for status in [
+        "CRÍTICO",
+        "ATENÇÃO",
+        "BOM",
+        "EXCELENTE"
+    ]:
 
-        tecnicos_status = resumo_mes[
-            resumo_mes["Status"] == status
+        tecnicos = status_mes[
+            status_mes["Status"] == status
         ]["Técnico"].tolist()
 
         nomes = "<br>".join(
-            [x.title() for x in tecnicos_status]
+            [t.title() for t in tecnicos]
         )
 
         with colunas[status]:
 
-            st.markdown(f"""
-            <div class="status-card"
-            style="background-color:{status_cores[status]}">
-
-            <h2>{status}</h2>
-
-            <p>{nomes}</p>
-
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <div style="
+                    background-color:{cores[status]};
+                    padding:20px;
+                    border-radius:15px;
+                    min-height:400px;
+                    color:white;
+                    text-align:center;
+                ">
+                    <h1>{status}</h1>
+                    <p>{nomes}</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
 # ==================================================
 # RESULTADOS INDIVIDUAIS
@@ -423,35 +413,31 @@ if modo_gestao:
 
 st.divider()
 
-st.header(
+st.subheader(
     f"📌 Resultados Individuais - {tecnico.title()}"
 )
 
 col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
-
     st.metric(
         "Realizado Total",
         int(dados_tecnico["Realizado"].sum())
     )
 
 with col2:
-
     st.metric(
         "SSC Total",
         int(dados_tecnico["SSC"].sum())
     )
 
 with col3:
-
     st.metric(
         "RO Total",
         int(dados_tecnico["RO"].sum())
     )
 
 with col4:
-
     st.metric(
         "Votação Média",
         f"{round(dados_tecnico['Votação'].mean(),2)}%"
@@ -466,11 +452,8 @@ with col5:
     )
 
     if classificacao_mode.empty:
-
         classificacao = "Sem classificação"
-
     else:
-
         classificacao = classificacao_mode.iloc[0]
 
     st.metric(
@@ -479,16 +462,16 @@ with col5:
     )
 
 # ==================================================
-# REALIZADO X ESPERADO
+# GRÁFICO REALIZADO X ESPERADO
 # ==================================================
 
 st.divider()
 
 st.subheader(
-    "📈 Realizado x Esperado"
+    "📈 Realizado x Esperado por Dia"
 )
 
-comparativo = (
+comparativo_dia = (
     dados_tecnico.groupby(
         ["Data", "Data Formatada"]
     )
@@ -499,47 +482,89 @@ comparativo = (
     .reset_index()
 )
 
-comparativo = comparativo.sort_values(
+comparativo_dia = comparativo_dia.sort_values(
     by="Data"
 )
 
-comparativo_long = comparativo.melt(
+comparativo_long = comparativo_dia.melt(
     id_vars=["Data", "Data Formatada"],
     value_vars=["Realizado", "Esperado"],
     var_name="Indicador",
     value_name="Quantidade"
 )
 
-grafico = px.bar(
+grafico_comparativo = px.bar(
     comparativo_long,
     x="Data Formatada",
     y="Quantidade",
     color="Indicador",
     barmode="group",
     text="Quantidade",
+    title="Comparativo Diário",
     color_discrete_map={
         "Realizado": COR_LARANJA,
         "Esperado": COR_CINZA
     }
 )
 
-grafico.update_traces(
+grafico_comparativo.update_traces(
     textposition="outside"
 )
 
-grafico.update_layout(
+grafico_comparativo.update_layout(
     plot_bgcolor=COR_BRANCO,
     paper_bgcolor=COR_BRANCO,
     font_color=COR_CINZA,
-    xaxis_title="Data",
-    yaxis_title="Quantidade",
     xaxis=dict(type="category")
 )
 
 st.plotly_chart(
-    grafico,
+    grafico_comparativo,
     use_container_width=True
 )
+
+# ==================================================
+# RESULTADO MENSAL
+# ==================================================
+
+st.divider()
+
+st.subheader("📅 Resultado Mensal")
+
+mes_atual = df["Data"].dt.month.max()
+ano_atual = df["Data"].dt.year.max()
+
+dados_mes = dados_tecnico[
+    (dados_tecnico["Data"].dt.month == mes_atual)
+    &
+    (dados_tecnico["Data"].dt.year == ano_atual)
+]
+
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric(
+        "Realizado Mensal",
+        int(dados_mes["Realizado"].sum())
+    )
+
+with col2:
+    st.metric(
+        "SSC Mensal",
+        int(dados_mes["SSC"].sum())
+    )
+
+with col3:
+    st.metric(
+        "RO Mensal",
+        int(dados_mes["RO"].sum())
+    )
+
+with col4:
+    st.metric(
+        "Votação Mensal",
+        f"{round(dados_mes['Votação'].mean(),2)}%"
+    )
 
 # ==================================================
 # RANKING DIÁRIO
@@ -547,18 +572,20 @@ st.plotly_chart(
 
 st.divider()
 
-st.header(
+st.subheader(
     f"🏆 Ranking Diário - {nivel_tecnico}"
 )
 
-df_ranking_dia = df[
+ultima_data = df["Data"].max()
+
+df_dia = df[
     (df["Data"] == ultima_data)
     &
     (df["Nível"] == nivel_tecnico)
 ]
 
 ranking_dia = (
-    df_ranking_dia.groupby("Técnico")
+    df_dia.groupby("Técnico")
     ["Realizado"]
     .sum()
     .reset_index()
@@ -569,28 +596,21 @@ ranking_dia = ranking_dia.sort_values(
     ascending=False
 )
 
-grafico_rank_dia = px.bar(
+grafico_ranking_dia = px.bar(
     ranking_dia,
     x="Técnico",
     y="Realizado",
     text="Realizado",
+    title=f"Ranking Diário - {nivel_tecnico}",
     color_discrete_sequence=[COR_LARANJA]
 )
 
-grafico_rank_dia.update_traces(
+grafico_ranking_dia.update_traces(
     textposition="outside"
 )
 
-grafico_rank_dia.update_layout(
-    plot_bgcolor=COR_BRANCO,
-    paper_bgcolor=COR_BRANCO,
-    font_color=COR_CINZA,
-    xaxis_title="Técnico",
-    yaxis_title="Realizado"
-)
-
 st.plotly_chart(
-    grafico_rank_dia,
+    grafico_ranking_dia,
     use_container_width=True
 )
 
@@ -600,15 +620,11 @@ st.plotly_chart(
 
 st.divider()
 
-st.header(
+st.subheader(
     f"🏆 Ranking Mensal - {nivel_tecnico}"
 )
 
-mes_atual = df["Data"].dt.month.max()
-
-ano_atual = df["Data"].dt.year.max()
-
-df_ranking_mes = df[
+df_mes = df[
     (df["Data"].dt.month == mes_atual)
     &
     (df["Data"].dt.year == ano_atual)
@@ -617,7 +633,7 @@ df_ranking_mes = df[
 ]
 
 ranking_mes = (
-    df_ranking_mes.groupby("Técnico")
+    df_mes.groupby("Técnico")
     ["Realizado"]
     .sum()
     .reset_index()
@@ -628,27 +644,20 @@ ranking_mes = ranking_mes.sort_values(
     ascending=False
 )
 
-grafico_rank_mes = px.bar(
+grafico_ranking_mes = px.bar(
     ranking_mes,
     x="Técnico",
     y="Realizado",
     text="Realizado",
+    title=f"Ranking Mensal - {nivel_tecnico}",
     color_discrete_sequence=[COR_CINZA]
 )
 
-grafico_rank_mes.update_traces(
+grafico_ranking_mes.update_traces(
     textposition="outside"
 )
 
-grafico_rank_mes.update_layout(
-    plot_bgcolor=COR_BRANCO,
-    paper_bgcolor=COR_BRANCO,
-    font_color=COR_CINZA,
-    xaxis_title="Técnico",
-    yaxis_title="Realizado"
-)
-
 st.plotly_chart(
-    grafico_rank_mes,
+    grafico_ranking_mes,
     use_container_width=True
 )
