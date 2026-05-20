@@ -219,6 +219,24 @@ nivel_tecnico = (
 )
 
 # ==================================================
+# FUNÇÃO STATUS
+# ==================================================
+
+def definir_status(percentual):
+
+    if percentual < 70:
+        return "CRÍTICO"
+
+    elif percentual < 90:
+        return "ATENÇÃO"
+
+    elif percentual < 100:
+        return "BOM"
+
+    else:
+        return "EXCELENTE"
+
+# ==================================================
 # QUARTIL DIÁRIO
 # ==================================================
 
@@ -248,20 +266,6 @@ if modo_gestao:
         /
         status_dia["Esperado"]
     ) * 100
-
-    def definir_status(percentual):
-
-        if percentual < 70:
-            return "CRÍTICO"
-
-        elif percentual < 90:
-            return "ATENÇÃO"
-
-        elif percentual < 100:
-            return "BOM"
-
-        else:
-            return "EXCELENTE"
 
     status_dia["Status"] = status_dia[
         "Percentual"
@@ -462,157 +466,94 @@ with col5:
     )
 
 # ==================================================
-# GRÁFICO REALIZADO X ESPERADO
-# ==================================================
-
-st.divider()
-
-st.subheader(
-    "📈 Realizado x Esperado por Dia"
-)
-
-comparativo_dia = (
-    dados_tecnico.groupby(
-        ["Data", "Data Formatada"]
-    )
-    .agg({
-        "Realizado": "sum",
-        "Esperado": "sum"
-    })
-    .reset_index()
-)
-
-comparativo_dia = comparativo_dia.sort_values(
-    by="Data"
-)
-
-comparativo_long = comparativo_dia.melt(
-    id_vars=["Data", "Data Formatada"],
-    value_vars=["Realizado", "Esperado"],
-    var_name="Indicador",
-    value_name="Quantidade"
-)
-
-grafico_comparativo = px.bar(
-    comparativo_long,
-    x="Data Formatada",
-    y="Quantidade",
-    color="Indicador",
-    barmode="group",
-    text="Quantidade",
-    title="Comparativo Diário",
-    color_discrete_map={
-        "Realizado": COR_LARANJA,
-        "Esperado": COR_CINZA
-    }
-)
-
-grafico_comparativo.update_traces(
-    textposition="outside"
-)
-
-grafico_comparativo.update_layout(
-    plot_bgcolor=COR_BRANCO,
-    paper_bgcolor=COR_BRANCO,
-    font_color=COR_CINZA,
-    xaxis=dict(type="category")
-)
-
-st.plotly_chart(
-    grafico_comparativo,
-    use_container_width=True
-)
-
-# ==================================================
-# RESULTADO MENSAL
-# ==================================================
-
-st.divider()
-
-st.subheader("📅 Resultado Mensal")
-
-mes_atual = df["Data"].dt.month.max()
-ano_atual = df["Data"].dt.year.max()
-
-dados_mes = dados_tecnico[
-    (dados_tecnico["Data"].dt.month == mes_atual)
-    &
-    (dados_tecnico["Data"].dt.year == ano_atual)
-]
-
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    st.metric(
-        "Realizado Mensal",
-        int(dados_mes["Realizado"].sum())
-    )
-
-with col2:
-    st.metric(
-        "SSC Mensal",
-        int(dados_mes["SSC"].sum())
-    )
-
-with col3:
-    st.metric(
-        "RO Mensal",
-        int(dados_mes["RO"].sum())
-    )
-
-with col4:
-    st.metric(
-        "Votação Mensal",
-        f"{round(dados_mes['Votação'].mean(),2)}%"
-    )
-
-# ==================================================
 # RANKING DIÁRIO
 # ==================================================
 
 st.divider()
 
-st.subheader(
-    f"🏆 Ranking Diário - {nivel_tecnico}"
-)
+if modo_gestao:
 
-ultima_data = df["Data"].max()
+    st.subheader("🏆 Ranking Diário Geral por Nível")
 
-df_dia = df[
-    (df["Data"] == ultima_data)
-    &
-    (df["Nível"] == nivel_tecnico)
-]
+    ultima_data = df["Data"].max()
 
-ranking_dia = (
-    df_dia.groupby("Técnico")
-    ["Realizado"]
-    .sum()
-    .reset_index()
-)
+    niveis = sorted(df["Nível"].unique())
 
-ranking_dia = ranking_dia.sort_values(
-    by="Realizado",
-    ascending=False
-)
+    for nivel in niveis:
 
-grafico_ranking_dia = px.bar(
-    ranking_dia,
-    x="Técnico",
-    y="Realizado",
-    text="Realizado",
-    title=f"Ranking Diário - {nivel_tecnico}",
-    color_discrete_sequence=[COR_LARANJA]
-)
+        st.markdown(f"## 🔹 {nivel}")
 
-grafico_ranking_dia.update_traces(
-    textposition="outside"
-)
+        df_dia = df[
+            (df["Data"] == ultima_data)
+            &
+            (df["Nível"] == nivel)
+        ]
 
-st.plotly_chart(
-    grafico_ranking_dia,
-    use_container_width=True
-)
+        ranking_dia = (
+            df_dia.groupby("Técnico")
+            ["Realizado"]
+            .sum()
+            .reset_index()
+        )
+
+        ranking_dia = ranking_dia.sort_values(
+            by="Realizado",
+            ascending=False
+        )
+
+        grafico_ranking_dia = px.bar(
+            ranking_dia,
+            x="Técnico",
+            y="Realizado",
+            text="Realizado",
+            title=f"Ranking Diário - {nivel}",
+            color_discrete_sequence=[COR_LARANJA]
+        )
+
+        st.plotly_chart(
+            grafico_ranking_dia,
+            use_container_width=True
+        )
+
+else:
+
+    st.subheader(
+        f"🏆 Ranking Diário - {nivel_tecnico}"
+    )
+
+    ultima_data = df["Data"].max()
+
+    df_dia = df[
+        (df["Data"] == ultima_data)
+        &
+        (df["Nível"] == nivel_tecnico)
+    ]
+
+    ranking_dia = (
+        df_dia.groupby("Técnico")
+        ["Realizado"]
+        .sum()
+        .reset_index()
+    )
+
+    ranking_dia = ranking_dia.sort_values(
+        by="Realizado",
+        ascending=False
+    )
+
+    grafico_ranking_dia = px.bar(
+        ranking_dia,
+        x="Técnico",
+        y="Realizado",
+        text="Realizado",
+        title=f"Ranking Diário - {nivel_tecnico}",
+        color_discrete_sequence=[COR_LARANJA]
+    )
+
+    st.plotly_chart(
+        grafico_ranking_dia,
+        use_container_width=True
+    )
 
 # ==================================================
 # RANKING MENSAL
@@ -620,44 +561,92 @@ st.plotly_chart(
 
 st.divider()
 
-st.subheader(
-    f"🏆 Ranking Mensal - {nivel_tecnico}"
-)
+if modo_gestao:
 
-df_mes = df[
-    (df["Data"].dt.month == mes_atual)
-    &
-    (df["Data"].dt.year == ano_atual)
-    &
-    (df["Nível"] == nivel_tecnico)
-]
+    st.subheader("🏆 Ranking Mensal Geral por Nível")
 
-ranking_mes = (
-    df_mes.groupby("Técnico")
-    ["Realizado"]
-    .sum()
-    .reset_index()
-)
+    mes_atual = df["Data"].dt.month.max()
+    ano_atual = df["Data"].dt.year.max()
 
-ranking_mes = ranking_mes.sort_values(
-    by="Realizado",
-    ascending=False
-)
+    niveis = sorted(df["Nível"].unique())
 
-grafico_ranking_mes = px.bar(
-    ranking_mes,
-    x="Técnico",
-    y="Realizado",
-    text="Realizado",
-    title=f"Ranking Mensal - {nivel_tecnico}",
-    color_discrete_sequence=[COR_CINZA]
-)
+    for nivel in niveis:
 
-grafico_ranking_mes.update_traces(
-    textposition="outside"
-)
+        st.markdown(f"## 🔹 {nivel}")
 
-st.plotly_chart(
-    grafico_ranking_mes,
-    use_container_width=True
-)
+        df_mes = df[
+            (df["Data"].dt.month == mes_atual)
+            &
+            (df["Data"].dt.year == ano_atual)
+            &
+            (df["Nível"] == nivel)
+        ]
+
+        ranking_mes = (
+            df_mes.groupby("Técnico")
+            ["Realizado"]
+            .sum()
+            .reset_index()
+        )
+
+        ranking_mes = ranking_mes.sort_values(
+            by="Realizado",
+            ascending=False
+        )
+
+        grafico_ranking_mes = px.bar(
+            ranking_mes,
+            x="Técnico",
+            y="Realizado",
+            text="Realizado",
+            title=f"Ranking Mensal - {nivel}",
+            color_discrete_sequence=[COR_CINZA]
+        )
+
+        st.plotly_chart(
+            grafico_ranking_mes,
+            use_container_width=True
+        )
+
+else:
+
+    st.subheader(
+        f"🏆 Ranking Mensal - {nivel_tecnico}"
+    )
+
+    mes_atual = df["Data"].dt.month.max()
+    ano_atual = df["Data"].dt.year.max()
+
+    df_mes = df[
+        (df["Data"].dt.month == mes_atual)
+        &
+        (df["Data"].dt.year == ano_atual)
+        &
+        (df["Nível"] == nivel_tecnico)
+    ]
+
+    ranking_mes = (
+        df_mes.groupby("Técnico")
+        ["Realizado"]
+        .sum()
+        .reset_index()
+    )
+
+    ranking_mes = ranking_mes.sort_values(
+        by="Realizado",
+        ascending=False
+    )
+
+    grafico_ranking_mes = px.bar(
+        ranking_mes,
+        x="Técnico",
+        y="Realizado",
+        text="Realizado",
+        title=f"Ranking Mensal - {nivel_tecnico}",
+        color_discrete_sequence=[COR_CINZA]
+    )
+
+    st.plotly_chart(
+        grafico_ranking_mes,
+        use_container_width=True
+    )
