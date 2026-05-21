@@ -282,12 +282,7 @@ if modo_gestao:
                     text-align:center;
                     min-height:120px;
                 ">
-                    <h2 style="
-                        margin-bottom:10px;
-                    ">
-                        {status}
-                    </h2>
-
+                    <h2>{status}</h2>
                     <p style="
                         font-size:18px;
                         font-weight:bold;
@@ -321,7 +316,8 @@ if modo_gestao:
         )
         .agg({
             "Realizado": "sum",
-            "Esperado": "sum"
+            "Esperado": "sum",
+            "Satisfação": "mean"
         })
         .reset_index()
     )
@@ -393,7 +389,8 @@ if modo_gestao:
                     <div class="card-tecnico"
                     style="background-color:{cores[status]}CC;">
                         {row['Técnico'].title()}<br>
-                        {row['Nível']}
+                        {row['Nível']}<br>
+                        😊 {round(row['Satisfação'],2)}%
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -424,7 +421,8 @@ if modo_gestao:
         )
         .agg({
             "Realizado": "sum",
-            "Esperado": "sum"
+            "Esperado": "sum",
+            "Satisfação": "mean"
         })
         .reset_index()
     )
@@ -496,7 +494,8 @@ if modo_gestao:
                     <div class="card-tecnico"
                     style="background-color:{cores[status]}CC;">
                         {row['Técnico'].title()}<br>
-                        {row['Nível']}
+                        {row['Nível']}<br>
+                        😊 {round(row['Satisfação'],2)}%
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -512,7 +511,7 @@ st.subheader(
     f"📌 Resultados Individuais - {tecnico.title()}"
 )
 
-col1, col2, col3, col4, col5 = st.columns(5)
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 with col1:
     st.metric(
@@ -539,6 +538,12 @@ with col4:
     )
 
 with col5:
+    st.metric(
+        "Satisfação",
+        f"{round(dados_tecnico['Satisfação'].mean(),2)}%"
+    )
+
+with col6:
 
     classificacao_mode = (
         dados_tecnico["Classificação"]
@@ -582,8 +587,10 @@ if modo_gestao:
 
         ranking_dia = (
             df_dia.groupby("Técnico")
-            ["Realizado"]
-            .sum()
+            .agg({
+                "Realizado": "sum",
+                "Satisfação": "mean"
+            })
             .reset_index()
         )
 
@@ -597,6 +604,7 @@ if modo_gestao:
             x="Técnico",
             y="Realizado",
             text="Realizado",
+            hover_data=["Satisfação"],
             title=f"Ranking Diário - {nivel}",
             color_discrete_sequence=[COR_LARANJA]
         )
@@ -622,8 +630,10 @@ else:
 
     ranking_dia = (
         df_dia.groupby("Técnico")
-        ["Realizado"]
-        .sum()
+        .agg({
+            "Realizado": "sum",
+            "Satisfação": "mean"
+        })
         .reset_index()
     )
 
@@ -637,6 +647,7 @@ else:
         x="Técnico",
         y="Realizado",
         text="Realizado",
+        hover_data=["Satisfação"],
         title=f"Ranking Diário - {nivel_tecnico}",
         color_discrete_sequence=[COR_LARANJA]
     )
@@ -675,8 +686,10 @@ if modo_gestao:
 
         ranking_mes = (
             df_mes.groupby("Técnico")
-            ["Realizado"]
-            .sum()
+            .agg({
+                "Realizado": "sum",
+                "Satisfação": "mean"
+            })
             .reset_index()
         )
 
@@ -690,6 +703,7 @@ if modo_gestao:
             x="Técnico",
             y="Realizado",
             text="Realizado",
+            hover_data=["Satisfação"],
             title=f"Ranking Mensal - {nivel}",
             color_discrete_sequence=[COR_CINZA]
         )
@@ -718,8 +732,10 @@ else:
 
     ranking_mes = (
         df_mes.groupby("Técnico")
-        ["Realizado"]
-        .sum()
+        .agg({
+            "Realizado": "sum",
+            "Satisfação": "mean"
+        })
         .reset_index()
     )
 
@@ -733,6 +749,7 @@ else:
         x="Técnico",
         y="Realizado",
         text="Realizado",
+        hover_data=["Satisfação"],
         title=f"Ranking Mensal - {nivel_tecnico}",
         color_discrete_sequence=[COR_CINZA]
     )
