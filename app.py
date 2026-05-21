@@ -354,27 +354,25 @@ if modo_gestao:
 
         with colunas[status]:
 
-            titulo_html = f"""
-            <div style="
-                background-color:{cores[status]};
-                padding:15px;
-                border-radius:12px;
-                text-align:center;
-                margin-bottom:15px;
-            ">
-                <h2 style="
-                    color:white;
-                    margin:0;
-                    font-size:30px;
-                    font-weight:bold;
-                ">
-                    {status}
-                </h2>
-            </div>
-            """
-
             st.markdown(
-                titulo_html,
+                f"""
+                <div style="
+                    background-color:{cores[status]};
+                    padding:15px;
+                    border-radius:12px;
+                    text-align:center;
+                    margin-bottom:15px;
+                ">
+                    <h2 style="
+                        color:white;
+                        margin:0;
+                        font-size:30px;
+                        font-weight:bold;
+                    ">
+                        {status}
+                    </h2>
+                </div>
+                """,
                 unsafe_allow_html=True
             )
 
@@ -459,27 +457,25 @@ if modo_gestao:
 
         with colunas[status]:
 
-            titulo_html = f"""
-            <div style="
-                background-color:{cores[status]};
-                padding:15px;
-                border-radius:12px;
-                text-align:center;
-                margin-bottom:15px;
-            ">
-                <h2 style="
-                    color:white;
-                    margin:0;
-                    font-size:30px;
-                    font-weight:bold;
-                ">
-                    {status}
-                </h2>
-            </div>
-            """
-
             st.markdown(
-                titulo_html,
+                f"""
+                <div style="
+                    background-color:{cores[status]};
+                    padding:15px;
+                    border-radius:12px;
+                    text-align:center;
+                    margin-bottom:15px;
+                ">
+                    <h2 style="
+                        color:white;
+                        margin:0;
+                        font-size:30px;
+                        font-weight:bold;
+                    ">
+                        {status}
+                    </h2>
+                </div>
+                """,
                 unsafe_allow_html=True
             )
 
@@ -562,199 +558,93 @@ with col6:
     )
 
 # ==================================================
-# RANKING DIÁRIO
+# GRÁFICO PRODUTIVIDADE MENSAL
 # ==================================================
 
 st.divider()
 
-if modo_gestao:
+st.subheader("📊 Produtividade Mensal")
 
-    st.subheader("🏆 Ranking Diário Geral por Nível")
+mes_atual = df["Data"].dt.month.max()
+ano_atual = df["Data"].dt.year.max()
 
-    ultima_data = df["Data"].max()
+dados_produtividade = dados_tecnico[
+    (dados_tecnico["Data"].dt.month == mes_atual)
+    &
+    (dados_tecnico["Data"].dt.year == ano_atual)
+]
 
-    niveis = sorted(df["Nível"].unique())
+dias_disponiveis = sorted(
+    dados_produtividade["Data Formatada"].unique()
+)
 
-    for nivel in niveis:
+dias_selecionados = st.multiselect(
+    "Selecione os dias que deseja visualizar",
+    dias_disponiveis,
+    default=dias_disponiveis
+)
 
-        st.markdown(f"## 🔹 {nivel}")
+dados_produtividade = dados_produtividade[
+    dados_produtividade["Data Formatada"]
+    .isin(dias_selecionados)
+]
 
-        df_dia = df[
-            (df["Data"] == ultima_data)
-            &
-            (df["Nível"] == nivel)
-        ]
-
-        ranking_dia = (
-            df_dia.groupby("Técnico")
-            .agg({
-                "Realizado": "sum",
-                "Satisfação": "mean"
-            })
-            .reset_index()
-        )
-
-        ranking_dia = ranking_dia.sort_values(
-            by="Realizado",
-            ascending=False
-        )
-
-        grafico_ranking_dia = px.bar(
-            ranking_dia,
-            x="Técnico",
-            y="Realizado",
-            text="Realizado",
-            hover_data=["Satisfação"],
-            title=f"Ranking Diário - {nivel}",
-            color_discrete_sequence=[COR_LARANJA]
-        )
-
-        st.plotly_chart(
-            grafico_ranking_dia,
-            use_container_width=True
-        )
-
-else:
-
-    st.subheader(
-        f"🏆 Ranking Diário - {nivel_tecnico}"
+grafico_prod = (
+    dados_produtividade.groupby(
+        ["Data", "Data Formatada"]
     )
+    .agg({
+        "Realizado": "sum",
+        "Esperado": "sum"
+    })
+    .reset_index()
+)
 
-    ultima_data = df["Data"].max()
+grafico_prod = grafico_prod.sort_values(
+    by="Data"
+)
 
-    df_dia = df[
-        (df["Data"] == ultima_data)
-        &
-        (df["Nível"] == nivel_tecnico)
-    ]
+grafico_long = grafico_prod.melt(
+    id_vars=["Data", "Data Formatada"],
+    value_vars=["Realizado", "Esperado"],
+    var_name="Indicador",
+    value_name="Quantidade"
+)
 
-    ranking_dia = (
-        df_dia.groupby("Técnico")
-        .agg({
-            "Realizado": "sum",
-            "Satisfação": "mean"
-        })
-        .reset_index()
-    )
+grafico_produtividade = px.bar(
+    grafico_long,
+    x="Data Formatada",
+    y="Quantidade",
+    color="Indicador",
+    barmode="group",
+    text="Quantidade",
+    title=f"Produtividade Mensal - {mes_atual:02d}/{ano_atual}",
+    labels={
+        "Data Formatada": "Dia",
+        "Quantidade": "Quantidade",
+        "Indicador": "Indicador"
+    },
+    color_discrete_map={
+        "Realizado": COR_LARANJA,
+        "Esperado": COR_CINZA
+    }
+)
 
-    ranking_dia = ranking_dia.sort_values(
-        by="Realizado",
-        ascending=False
-    )
+grafico_produtividade.update_traces(
+    textposition="outside"
+)
 
-    grafico_ranking_dia = px.bar(
-        ranking_dia,
-        x="Técnico",
-        y="Realizado",
-        text="Realizado",
-        hover_data=["Satisfação"],
-        title=f"Ranking Diário - {nivel_tecnico}",
-        color_discrete_sequence=[COR_LARANJA]
-    )
+grafico_produtividade.update_layout(
+    plot_bgcolor=COR_BRANCO,
+    paper_bgcolor=COR_BRANCO,
+    font_color=COR_CINZA,
+    xaxis_title="Dias",
+    yaxis_title="Quantidade",
+    legend_title="Indicadores",
+    xaxis=dict(type="category")
+)
 
-    st.plotly_chart(
-        grafico_ranking_dia,
-        use_container_width=True
-    )
-
-# ==================================================
-# RANKING MENSAL
-# ==================================================
-
-st.divider()
-
-if modo_gestao:
-
-    st.subheader("🏆 Ranking Mensal Geral por Nível")
-
-    mes_atual = df["Data"].dt.month.max()
-    ano_atual = df["Data"].dt.year.max()
-
-    niveis = sorted(df["Nível"].unique())
-
-    for nivel in niveis:
-
-        st.markdown(f"## 🔹 {nivel}")
-
-        df_mes = df[
-            (df["Data"].dt.month == mes_atual)
-            &
-            (df["Data"].dt.year == ano_atual)
-            &
-            (df["Nível"] == nivel)
-        ]
-
-        ranking_mes = (
-            df_mes.groupby("Técnico")
-            .agg({
-                "Realizado": "sum",
-                "Satisfação": "mean"
-            })
-            .reset_index()
-        )
-
-        ranking_mes = ranking_mes.sort_values(
-            by="Realizado",
-            ascending=False
-        )
-
-        grafico_ranking_mes = px.bar(
-            ranking_mes,
-            x="Técnico",
-            y="Realizado",
-            text="Realizado",
-            hover_data=["Satisfação"],
-            title=f"Ranking Mensal - {nivel}",
-            color_discrete_sequence=[COR_CINZA]
-        )
-
-        st.plotly_chart(
-            grafico_ranking_mes,
-            use_container_width=True
-        )
-
-else:
-
-    st.subheader(
-        f"🏆 Ranking Mensal - {nivel_tecnico}"
-    )
-
-    mes_atual = df["Data"].dt.month.max()
-    ano_atual = df["Data"].dt.year.max()
-
-    df_mes = df[
-        (df["Data"].dt.month == mes_atual)
-        &
-        (df["Data"].dt.year == ano_atual)
-        &
-        (df["Nível"] == nivel_tecnico)
-    ]
-
-    ranking_mes = (
-        df_mes.groupby("Técnico")
-        .agg({
-            "Realizado": "sum",
-            "Satisfação": "mean"
-        })
-        .reset_index()
-    )
-
-    ranking_mes = ranking_mes.sort_values(
-        by="Realizado",
-        ascending=False
-    )
-
-    grafico_ranking_mes = px.bar(
-        ranking_mes,
-        x="Técnico",
-        y="Realizado",
-        text="Realizado",
-        hover_data=["Satisfação"],
-        title=f"Ranking Mensal - {nivel_tecnico}",
-        color_discrete_sequence=[COR_CINZA]
-    )
-
-    st.plotly_chart(
-        grafico_ranking_mes,
-        use_container_width=True
-    )
+st.plotly_chart(
+    grafico_produtividade,
+    use_container_width=True
+)
