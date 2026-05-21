@@ -317,7 +317,6 @@ if modo_gestao:
         .agg({
             "Realizado": "sum",
             "Esperado": "sum",
-            "Satisfação": "mean"
         })
         .reset_index()
     )
@@ -388,7 +387,6 @@ if modo_gestao:
                     style="background-color:{cores[status]}CC;">
                         {row['Técnico'].title()}<br>
                         {row['Nível']}<br>
-                        😊 {round(row['Satisfação'],2)}%
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -420,7 +418,6 @@ if modo_gestao:
         .agg({
             "Realizado": "sum",
             "Esperado": "sum",
-            "Satisfação": "mean"
         })
         .reset_index()
     )
@@ -491,7 +488,6 @@ if modo_gestao:
                     style="background-color:{cores[status]}CC;">
                         {row['Técnico'].title()}<br>
                         {row['Nível']}<br>
-                        😊 {round(row['Satisfação'],2)}%
                     </div>
                     """,
                     unsafe_allow_html=True
