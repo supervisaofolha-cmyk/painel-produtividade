@@ -30,8 +30,15 @@ COR_CINZA = "#6B7280"
 COR_BRANCO = "#FFFFFF"
 FUNDO = "#F5F5F5"
 
+cores = {
+    "CRÍTICO": "#DC2626",
+    "ATENÇÃO": "#F97316",
+    "BOM": "#2563EB",
+    "EXCELENTE": "#16A34A"
+}
+
 # ==================================================
-# CSS PERSONALIZADO
+# CSS
 # ==================================================
 
 st.markdown(f"""
@@ -49,8 +56,13 @@ st.markdown(f"""
     box-shadow: 0px 2px 5px rgba(0,0,0,0.05);
 }}
 
-h1, h2, h3 {{
-    color: {COR_CINZA};
+.card-tecnico {{
+    padding:12px;
+    border-radius:10px;
+    margin-bottom:10px;
+    color:white;
+    font-weight:bold;
+    font-size:16px;
 }}
 
 </style>
@@ -168,9 +180,7 @@ if (
 
     modo_gestao = True
 
-    st.sidebar.success(
-        "Bem-vinda Gestão"
-    )
+    st.sidebar.success("Bem-vinda Gestão")
 
 else:
 
@@ -237,26 +247,57 @@ def definir_status(desvio):
         return "EXCELENTE"
 
 # ==================================================
-# CORES STATUS
-# ==================================================
-
-cores = {
-    "CRÍTICO": "#DC2626",
-    "ATENÇÃO": "#F97316",
-    "BOM": "#2563EB",
-    "EXCELENTE": "#16A34A"
-}
-
-# ==================================================
 # LEGENDA STATUS
 # ==================================================
 
-legendas = {
-    "CRÍTICO": "❌ Muito abaixo do esperado",
-    "ATENÇÃO": "⚠️ Abaixo do esperado",
-    "BOM": "✅ Dentro do esperado",
-    "EXCELENTE": "🏆 Acima do esperado"
-}
+if modo_gestao:
+
+    st.divider()
+
+    st.subheader("📌 Legenda dos Status")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    legenda = {
+        "CRÍTICO": "Desvio menor que -5",
+        "ATENÇÃO": "Desvio entre -5 e menor que 0",
+        "BOM": "Desvio entre 0 e 5",
+        "EXCELENTE": "Desvio acima de 5"
+    }
+
+    for status, coluna in zip(
+        ["CRÍTICO", "ATENÇÃO", "BOM", "EXCELENTE"],
+        [col1, col2, col3, col4]
+    ):
+
+        with coluna:
+
+            st.markdown(
+                f"""
+                <div style="
+                    background-color:{cores[status]};
+                    padding:15px;
+                    border-radius:12px;
+                    color:white;
+                    text-align:center;
+                    min-height:120px;
+                ">
+                    <h2 style="
+                        margin-bottom:10px;
+                    ">
+                        {status}
+                    </h2>
+
+                    <p style="
+                        font-size:18px;
+                        font-weight:bold;
+                    ">
+                        {legenda[status]}
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
 # ==================================================
 # QUARTIL DIÁRIO
@@ -315,49 +356,48 @@ if modo_gestao:
         "EXCELENTE"
     ]:
 
-        tecnicos = status_dia[
-            status_dia["Status"] == status
-        ]
-
-        nomes = ""
-
-        for _, row in tecnicos.iterrows():
-
-            nomes += f"""
-            <p style='font-size:18px; margin-bottom:10px;'>
-            {row['Técnico'].title()} - {row['Nível']}
-            </p>
-            """
-
         with colunas[status]:
 
-            st.markdown(
-                f"""
-                <div style="
-                    background-color:{cores[status]};
-                    padding:20px;
-                    border-radius:15px;
-                    min-height:500px;
+            titulo_html = f"""
+            <div style="
+                background-color:{cores[status]};
+                padding:15px;
+                border-radius:12px;
+                text-align:center;
+                margin-bottom:15px;
+            ">
+                <h2 style="
                     color:white;
-                    text-align:center;
+                    margin:0;
+                    font-size:30px;
+                    font-weight:bold;
                 ">
-
-                    <h1 style='margin-bottom:5px;'>
                     {status}
-                    </h1>
+                </h2>
+            </div>
+            """
 
-                    <p style='font-size:18px; font-weight:bold;'>
-                    {legendas[status]}
-                    </p>
-
-                    <hr>
-
-                    {nomes}
-
-                </div>
-                """,
+            st.markdown(
+                titulo_html,
                 unsafe_allow_html=True
             )
+
+            tecnicos = status_dia[
+                status_dia["Status"] == status
+            ]
+
+            for _, row in tecnicos.iterrows():
+
+                st.markdown(
+                    f"""
+                    <div class="card-tecnico"
+                    style="background-color:{cores[status]}CC;">
+                        {row['Técnico'].title()}<br>
+                        {row['Nível']}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
 # ==================================================
 # QUARTIL MENSAL
@@ -419,46 +459,285 @@ if modo_gestao:
         "EXCELENTE"
     ]:
 
-        tecnicos = status_mes[
-            status_mes["Status"] == status
-        ]
-
-        nomes = ""
-
-        for _, row in tecnicos.iterrows():
-
-            nomes += f"""
-            <p style='font-size:18px; margin-bottom:10px;'>
-            {row['Técnico'].title()} - {row['Nível']}
-            </p>
-            """
-
         with colunas[status]:
 
-            st.markdown(
-                f"""
-                <div style="
-                    background-color:{cores[status]};
-                    padding:20px;
-                    border-radius:15px;
-                    min-height:500px;
+            titulo_html = f"""
+            <div style="
+                background-color:{cores[status]};
+                padding:15px;
+                border-radius:12px;
+                text-align:center;
+                margin-bottom:15px;
+            ">
+                <h2 style="
                     color:white;
-                    text-align:center;
+                    margin:0;
+                    font-size:30px;
+                    font-weight:bold;
                 ">
-
-                    <h1 style='margin-bottom:5px;'>
                     {status}
-                    </h1>
+                </h2>
+            </div>
+            """
 
-                    <p style='font-size:18px; font-weight:bold;'>
-                    {legendas[status]}
-                    </p>
-
-                    <hr>
-
-                    {nomes}
-
-                </div>
-                """,
+            st.markdown(
+                titulo_html,
                 unsafe_allow_html=True
             )
+
+            tecnicos = status_mes[
+                status_mes["Status"] == status
+            ]
+
+            for _, row in tecnicos.iterrows():
+
+                st.markdown(
+                    f"""
+                    <div class="card-tecnico"
+                    style="background-color:{cores[status]}CC;">
+                        {row['Técnico'].title()}<br>
+                        {row['Nível']}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+# ==================================================
+# RESULTADOS INDIVIDUAIS
+# ==================================================
+
+st.divider()
+
+st.subheader(
+    f"📌 Resultados Individuais - {tecnico.title()}"
+)
+
+col1, col2, col3, col4, col5 = st.columns(5)
+
+with col1:
+    st.metric(
+        "Realizado Total",
+        int(dados_tecnico["Realizado"].sum())
+    )
+
+with col2:
+    st.metric(
+        "SSC Total",
+        int(dados_tecnico["SSC"].sum())
+    )
+
+with col3:
+    st.metric(
+        "RO Total",
+        int(dados_tecnico["RO"].sum())
+    )
+
+with col4:
+    st.metric(
+        "Votação Média",
+        f"{round(dados_tecnico['Votação'].mean(),2)}%"
+    )
+
+with col5:
+
+    classificacao_mode = (
+        dados_tecnico["Classificação"]
+        .dropna()
+        .mode()
+    )
+
+    if classificacao_mode.empty:
+        classificacao = "Sem classificação"
+    else:
+        classificacao = classificacao_mode.iloc[0]
+
+    st.metric(
+        "Classificação",
+        classificacao
+    )
+
+# ==================================================
+# RANKING DIÁRIO
+# ==================================================
+
+st.divider()
+
+if modo_gestao:
+
+    st.subheader("🏆 Ranking Diário Geral por Nível")
+
+    ultima_data = df["Data"].max()
+
+    niveis = sorted(df["Nível"].unique())
+
+    for nivel in niveis:
+
+        st.markdown(f"## 🔹 {nivel}")
+
+        df_dia = df[
+            (df["Data"] == ultima_data)
+            &
+            (df["Nível"] == nivel)
+        ]
+
+        ranking_dia = (
+            df_dia.groupby("Técnico")
+            ["Realizado"]
+            .sum()
+            .reset_index()
+        )
+
+        ranking_dia = ranking_dia.sort_values(
+            by="Realizado",
+            ascending=False
+        )
+
+        grafico_ranking_dia = px.bar(
+            ranking_dia,
+            x="Técnico",
+            y="Realizado",
+            text="Realizado",
+            title=f"Ranking Diário - {nivel}",
+            color_discrete_sequence=[COR_LARANJA]
+        )
+
+        st.plotly_chart(
+            grafico_ranking_dia,
+            use_container_width=True
+        )
+
+else:
+
+    st.subheader(
+        f"🏆 Ranking Diário - {nivel_tecnico}"
+    )
+
+    ultima_data = df["Data"].max()
+
+    df_dia = df[
+        (df["Data"] == ultima_data)
+        &
+        (df["Nível"] == nivel_tecnico)
+    ]
+
+    ranking_dia = (
+        df_dia.groupby("Técnico")
+        ["Realizado"]
+        .sum()
+        .reset_index()
+    )
+
+    ranking_dia = ranking_dia.sort_values(
+        by="Realizado",
+        ascending=False
+    )
+
+    grafico_ranking_dia = px.bar(
+        ranking_dia,
+        x="Técnico",
+        y="Realizado",
+        text="Realizado",
+        title=f"Ranking Diário - {nivel_tecnico}",
+        color_discrete_sequence=[COR_LARANJA]
+    )
+
+    st.plotly_chart(
+        grafico_ranking_dia,
+        use_container_width=True
+    )
+
+# ==================================================
+# RANKING MENSAL
+# ==================================================
+
+st.divider()
+
+if modo_gestao:
+
+    st.subheader("🏆 Ranking Mensal Geral por Nível")
+
+    mes_atual = df["Data"].dt.month.max()
+    ano_atual = df["Data"].dt.year.max()
+
+    niveis = sorted(df["Nível"].unique())
+
+    for nivel in niveis:
+
+        st.markdown(f"## 🔹 {nivel}")
+
+        df_mes = df[
+            (df["Data"].dt.month == mes_atual)
+            &
+            (df["Data"].dt.year == ano_atual)
+            &
+            (df["Nível"] == nivel)
+        ]
+
+        ranking_mes = (
+            df_mes.groupby("Técnico")
+            ["Realizado"]
+            .sum()
+            .reset_index()
+        )
+
+        ranking_mes = ranking_mes.sort_values(
+            by="Realizado",
+            ascending=False
+        )
+
+        grafico_ranking_mes = px.bar(
+            ranking_mes,
+            x="Técnico",
+            y="Realizado",
+            text="Realizado",
+            title=f"Ranking Mensal - {nivel}",
+            color_discrete_sequence=[COR_CINZA]
+        )
+
+        st.plotly_chart(
+            grafico_ranking_mes,
+            use_container_width=True
+        )
+
+else:
+
+    st.subheader(
+        f"🏆 Ranking Mensal - {nivel_tecnico}"
+    )
+
+    mes_atual = df["Data"].dt.month.max()
+    ano_atual = df["Data"].dt.year.max()
+
+    df_mes = df[
+        (df["Data"].dt.month == mes_atual)
+        &
+        (df["Data"].dt.year == ano_atual)
+        &
+        (df["Nível"] == nivel_tecnico)
+    ]
+
+    ranking_mes = (
+        df_mes.groupby("Técnico")
+        ["Realizado"]
+        .sum()
+        .reset_index()
+    )
+
+    ranking_mes = ranking_mes.sort_values(
+        by="Realizado",
+        ascending=False
+    )
+
+    grafico_ranking_mes = px.bar(
+        ranking_mes,
+        x="Técnico",
+        y="Realizado",
+        text="Realizado",
+        title=f"Ranking Mensal - {nivel_tecnico}",
+        color_discrete_sequence=[COR_CINZA]
+    )
+
+    st.plotly_chart(
+        grafico_ranking_mes,
+        use_container_width=True
+    )
