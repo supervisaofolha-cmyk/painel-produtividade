@@ -579,7 +579,7 @@ dias_disponiveis = sorted(
 )
 
 dias_selecionados = st.multiselect(
-    "Selecione os dias que deseja visualizar",
+    "Selecione os dias",
     dias_disponiveis,
     default=dias_disponiveis
 )
@@ -589,7 +589,7 @@ dados_produtividade = dados_produtividade[
     .isin(dias_selecionados)
 ]
 
-grafico_prod = (
+produtividade = (
     dados_produtividade.groupby(
         ["Data", "Data Formatada"]
     )
@@ -600,11 +600,11 @@ grafico_prod = (
     .reset_index()
 )
 
-grafico_prod = grafico_prod.sort_values(
+produtividade = produtividade.sort_values(
     by="Data"
 )
 
-grafico_long = grafico_prod.melt(
+produtividade_long = produtividade.melt(
     id_vars=["Data", "Data Formatada"],
     value_vars=["Realizado", "Esperado"],
     var_name="Indicador",
@@ -612,18 +612,18 @@ grafico_long = grafico_prod.melt(
 )
 
 grafico_produtividade = px.bar(
-    grafico_long,
+    produtividade_long,
     x="Data Formatada",
     y="Quantidade",
     color="Indicador",
     barmode="group",
     text="Quantidade",
-    title=f"Produtividade Mensal - {mes_atual:02d}/{ano_atual}",
     labels={
         "Data Formatada": "Dia",
         "Quantidade": "Quantidade",
         "Indicador": "Indicador"
     },
+    title="Produtividade do Mês",
     color_discrete_map={
         "Realizado": COR_LARANJA,
         "Esperado": COR_CINZA
@@ -638,7 +638,7 @@ grafico_produtividade.update_layout(
     plot_bgcolor=COR_BRANCO,
     paper_bgcolor=COR_BRANCO,
     font_color=COR_CINZA,
-    xaxis_title="Dias",
+    xaxis_title="Dia",
     yaxis_title="Quantidade",
     legend_title="Indicadores",
     xaxis=dict(type="category")
@@ -648,3 +648,279 @@ st.plotly_chart(
     grafico_produtividade,
     use_container_width=True
 )
+
+# ==================================================
+# SATISFAÇÃO
+# ==================================================
+
+st.divider()
+
+st.subheader("😊 Satisfação Média")
+
+satisfacao = (
+    dados_tecnico.groupby(
+        ["Data", "Data Formatada"]
+    )["Satisfação"]
+    .mean()
+    .reset_index()
+)
+
+satisfacao = satisfacao.sort_values(
+    by="Data"
+)
+
+grafico_satisfacao = px.line(
+    satisfacao,
+    x="Data Formatada",
+    y="Satisfação",
+    markers=True,
+    title="Satisfação Média por Dia",
+    labels={
+        "Data Formatada": "Data",
+        "Satisfação": "Satisfação (%)"
+    }
+)
+
+grafico_satisfacao.update_traces(
+    line_color=COR_LARANJA
+)
+
+grafico_satisfacao.update_layout(
+    plot_bgcolor=COR_BRANCO,
+    paper_bgcolor=COR_BRANCO,
+    font_color=COR_CINZA,
+    xaxis_title="Data",
+    yaxis_title="Satisfação (%)",
+    xaxis=dict(type="category")
+)
+
+st.plotly_chart(
+    grafico_satisfacao,
+    use_container_width=True
+)
+
+# ==================================================
+# RANKING DIÁRIO
+# ==================================================
+
+st.divider()
+
+ultima_data = df["Data"].max()
+
+if modo_gestao:
+
+    st.subheader("🏆 Ranking Diário Geral por Nível")
+
+    niveis = sorted(df["Nível"].unique())
+
+    for nivel in niveis:
+
+        st.markdown(f"## 🔹 {nivel}")
+
+        df_dia = df[
+            (df["Data"] == ultima_data)
+            &
+            (df["Nível"] == nivel)
+        ]
+
+        ranking_dia = (
+            df_dia.groupby("Técnico")
+            ["Realizado"]
+            .sum()
+            .reset_index()
+        )
+
+        ranking_dia = ranking_dia.sort_values(
+            by="Realizado",
+            ascending=False
+        )
+
+        grafico_ranking_dia = px.bar(
+            ranking_dia,
+            x="Técnico",
+            y="Realizado",
+            text="Realizado",
+            title=f"Ranking Diário - {nivel}",
+            color_discrete_sequence=[COR_LARANJA]
+        )
+
+        grafico_ranking_dia.update_traces(
+            textposition="outside"
+        )
+
+        grafico_ranking_dia.update_layout(
+            plot_bgcolor=COR_BRANCO,
+            paper_bgcolor=COR_BRANCO,
+            font_color=COR_CINZA,
+            xaxis_title="Técnico",
+            yaxis_title="Realizado Diário"
+        )
+
+        st.plotly_chart(
+            grafico_ranking_dia,
+            use_container_width=True
+        )
+
+else:
+
+    st.subheader(
+        f"🏆 Ranking Diário - {nivel_tecnico}"
+    )
+
+    df_dia = df[
+        (df["Data"] == ultima_data)
+        &
+        (df["Nível"] == nivel_tecnico)
+    ]
+
+    ranking_dia = (
+        df_dia.groupby("Técnico")
+        ["Realizado"]
+        .sum()
+        .reset_index()
+    )
+
+    ranking_dia = ranking_dia.sort_values(
+        by="Realizado",
+        ascending=False
+    )
+
+    grafico_ranking_dia = px.bar(
+        ranking_dia,
+        x="Técnico",
+        y="Realizado",
+        text="Realizado",
+        title=f"Ranking Diário - {nivel_tecnico}",
+        color_discrete_sequence=[COR_LARANJA]
+    )
+
+    grafico_ranking_dia.update_traces(
+        textposition="outside"
+    )
+
+    grafico_ranking_dia.update_layout(
+        plot_bgcolor=COR_BRANCO,
+        paper_bgcolor=COR_BRANCO,
+        font_color=COR_CINZA,
+        xaxis_title="Técnico",
+        yaxis_title="Realizado Diário"
+    )
+
+    st.plotly_chart(
+        grafico_ranking_dia,
+        use_container_width=True
+    )
+
+# ==================================================
+# RANKING MENSAL
+# ==================================================
+
+st.divider()
+
+if modo_gestao:
+
+    st.subheader("🏆 Ranking Mensal Geral por Nível")
+
+    niveis = sorted(df["Nível"].unique())
+
+    for nivel in niveis:
+
+        st.markdown(f"## 🔹 {nivel}")
+
+        df_mes = df[
+            (df["Data"].dt.month == mes_atual)
+            &
+            (df["Data"].dt.year == ano_atual)
+            &
+            (df["Nível"] == nivel)
+        ]
+
+        ranking_mes = (
+            df_mes.groupby("Técnico")
+            ["Realizado"]
+            .sum()
+            .reset_index()
+        )
+
+        ranking_mes = ranking_mes.sort_values(
+            by="Realizado",
+            ascending=False
+        )
+
+        grafico_ranking_mes = px.bar(
+            ranking_mes,
+            x="Técnico",
+            y="Realizado",
+            text="Realizado",
+            title=f"Ranking Mensal - {nivel}",
+            color_discrete_sequence=[COR_CINZA]
+        )
+
+        grafico_ranking_mes.update_traces(
+            textposition="outside"
+        )
+
+        grafico_ranking_mes.update_layout(
+            plot_bgcolor=COR_BRANCO,
+            paper_bgcolor=COR_BRANCO,
+            font_color=COR_CINZA,
+            xaxis_title="Técnico",
+            yaxis_title="Realizado Mensal"
+        )
+
+        st.plotly_chart(
+            grafico_ranking_mes,
+            use_container_width=True
+        )
+
+else:
+
+    st.subheader(
+        f"🏆 Ranking Mensal - {nivel_tecnico}"
+    )
+
+    df_mes = df[
+        (df["Data"].dt.month == mes_atual)
+        &
+        (df["Data"].dt.year == ano_atual)
+        &
+        (df["Nível"] == nivel_tecnico)
+    ]
+
+    ranking_mes = (
+        df_mes.groupby("Técnico")
+        ["Realizado"]
+        .sum()
+        .reset_index()
+    )
+
+    ranking_mes = ranking_mes.sort_values(
+        by="Realizado",
+        ascending=False
+    )
+
+    grafico_ranking_mes = px.bar(
+        ranking_mes,
+        x="Técnico",
+        y="Realizado",
+        text="Realizado",
+        title=f"Ranking Mensal - {nivel_tecnico}",
+        color_discrete_sequence=[COR_CINZA]
+    )
+
+    grafico_ranking_mes.update_traces(
+        textposition="outside"
+    )
+
+    grafico_ranking_mes.update_layout(
+        plot_bgcolor=COR_BRANCO,
+        paper_bgcolor=COR_BRANCO,
+        font_color=COR_CINZA,
+        xaxis_title="Técnico",
+        yaxis_title="Realizado Mensal"
+    )
+
+    st.plotly_chart(
+        grafico_ranking_mes,
+        use_container_width=True
+    )
