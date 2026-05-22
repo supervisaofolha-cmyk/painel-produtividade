@@ -586,12 +586,22 @@ def buscar_satisfacao_sgd_diaria(data_inicial, data_final, usuario, senha):
 
 def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
     data_inicial = inicio_mes(data_referencia)
+    registros_periodo = buscar_satisfacao_sgd(
+        data_inicial,
+        data_referencia,
+        usuario,
+        senha,
+    )
     registros_sgd = buscar_satisfacao_sgd_diaria(
         data_inicial,
         data_referencia,
         usuario,
         senha,
     )
+    registros_periodo_por_tecnico = {
+        normalizar_nome(registro["tecnico"]): registro
+        for registro in registros_periodo
+    }
     registros_por_chave = {
         (normalizar_nome(registro["tecnico"]), registro["data"]): registro
         for registro in registros_sgd
@@ -627,18 +637,23 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
 
         tecnico = ws.cell(row=row, column=col_tecnico).value
         chave_sgd = aliases.get(normalizar_nome(tecnico), normalizar_nome(tecnico))
+        registro_periodo = registros_periodo_por_tecnico.get(chave_sgd)
         registro = registros_por_chave.get((chave_sgd, data_linha))
 
-        if not registro:
+        if not registro_periodo and not registro:
             ws.cell(row=row, column=col_ssc).value = 0
             ws.cell(row=row, column=col_satisfacao).value = 0
             ws.cell(row=row, column=col_votacao).value = 0
             sem_alias.append(tecnico)
             continue
 
-        ws.cell(row=row, column=col_ssc).value = registro["ssc"]
-        ws.cell(row=row, column=col_satisfacao).value = registro["satisfacao"]
-        ws.cell(row=row, column=col_votacao).value = registro["votacao"]
+        ws.cell(row=row, column=col_ssc).value = 0 if not registro else registro["ssc"]
+        ws.cell(row=row, column=col_satisfacao).value = (
+            0 if not registro_periodo else registro_periodo["satisfacao"]
+        )
+        ws.cell(row=row, column=col_votacao).value = (
+            0 if not registro_periodo else registro_periodo["votacao"]
+        )
         atualizados.append(f"{tecnico} - {data_linha}")
 
     wb.save(ARQUIVO_PRODUTIVIDADE)
