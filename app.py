@@ -851,6 +851,17 @@ if dados_tecnico.empty:
     st.error("Nenhum dado encontrado.")
     st.stop()
 
+mes_atual = df["Data"].dt.month.max()
+ano_atual = df["Data"].dt.year.max()
+
+dados_mes_atual = dados_tecnico[
+    (dados_tecnico["Data"].dt.month == mes_atual)
+    & (dados_tecnico["Data"].dt.year == ano_atual)
+]
+
+ultima_data_mes = dados_mes_atual["Data"].max()
+dados_ultimo_dia = dados_mes_atual[dados_mes_atual["Data"] == ultima_data_mes]
+
 if modo_gestao:
     st.divider()
     st.subheader("📌 Legenda dos Status")
@@ -989,17 +1000,6 @@ if modo_gestao:
 
 st.divider()
 st.subheader(f"📌 Resultados Individuais - {tecnico.title()}")
-
-mes_atual = df["Data"].dt.month.max()
-ano_atual = df["Data"].dt.year.max()
-
-dados_mes_atual = dados_tecnico[
-    (dados_tecnico["Data"].dt.month == mes_atual)
-    & (dados_tecnico["Data"].dt.year == ano_atual)
-]
-
-ultima_data_mes = dados_mes_atual["Data"].max()
-dados_ultimo_dia = dados_mes_atual[dados_mes_atual["Data"] == ultima_data_mes]
 
 col1, col2, col3, col4, col5, col6 = st.columns(6)
 
