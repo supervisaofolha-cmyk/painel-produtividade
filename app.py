@@ -557,7 +557,7 @@ def extrair_registros_sgd(conteudo_xlsx):
             {
                 "tecnico": tecnico,
                 "satisfacao": float(ws.cell(row=row, column=5).value or 0),
-                "votacao": float(ws.cell(row=row, column=9).value or 0),
+                "votacao": float(ws.cell(row=row, column=11).value or 0),
                 "ssc": int(ws.cell(row=row, column=10).value or 0),
             }
         )
