@@ -969,9 +969,8 @@ def montar_grafico_ranking(ranking, titulo, eixo_x):
 
     grafico = px.bar(
         ranking,
-        x="Realizado",
-        y="Técnico Exibição",
-        orientation="h",
+        x="Técnico Exibição",
+        y="Realizado",
         color="Cor",
         text="Realizado",
         labels={
@@ -985,7 +984,7 @@ def montar_grafico_ranking(ranking, titulo, eixo_x):
             "Mesmo nível": COR_CINZA,
         },
         category_orders={
-            "Técnico Exibição": ranking["Técnico Exibição"].tolist()[::-1]
+            "Técnico Exibição": ranking["Técnico Exibição"].tolist()
         },
     )
 
@@ -994,8 +993,8 @@ def montar_grafico_ranking(ranking, titulo, eixo_x):
         plot_bgcolor=COR_BRANCO,
         paper_bgcolor=COR_BRANCO,
         font_color=COR_CINZA,
-        xaxis_title=eixo_x,
-        yaxis_title="Técnico",
+        xaxis_title="Técnico",
+        yaxis_title=eixo_x,
         legend_title="",
     )
     return grafico
