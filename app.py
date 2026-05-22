@@ -129,6 +129,26 @@ def cabecalhos(ws):
     }
 
 
+def normalizar_cabecalho(valor):
+    texto = str(valor or "").strip().lower()
+    texto = re.sub(r"\s+", " ", texto)
+    return texto
+
+
+def coluna(colunas, *nomes):
+    colunas_normalizadas = {
+        normalizar_cabecalho(nome): indice
+        for nome, indice in colunas.items()
+    }
+
+    for nome in nomes:
+        indice = colunas_normalizadas.get(normalizar_cabecalho(nome))
+        if indice:
+            return indice
+
+    raise KeyError(nomes[0])
+
+
 def status_por_desvio(desvio):
     if desvio < -5:
         return "CRÍTICO"
@@ -224,6 +244,12 @@ def inicio_mes(data_referencia):
     return date(data_referencia.year, data_referencia.month, 1)
 
 
+def criar_sessao_http():
+    sessao = requests.Session()
+    sessao.trust_env = False
+    return sessao
+
+
 def headers_powerbi():
     return {
         "Accept": "application/json",
@@ -243,7 +269,8 @@ def carregar_metadados_powerbi():
         f"{POWERBI_API_BASE}/public/reports/{POWERBI_RESOURCE_KEY}"
         "/modelsAndExploration?preferReadOnlySession=true"
     )
-    resposta = requests.get(url, headers=headers_powerbi(), timeout=30)
+    sessao = criar_sessao_http()
+    resposta = sessao.get(url, headers=headers_powerbi(), timeout=30)
     resposta.raise_for_status()
     return resposta.json()
 
@@ -342,7 +369,8 @@ def decodificar_linhas_powerbi(linhas):
 
 
 def buscar_produtividade_powerbi(data_referencia):
-    resposta = requests.post(
+    sessao = criar_sessao_http()
+    resposta = sessao.post(
         f"{POWERBI_API_BASE}/public/reports/querydata?synchronous=true",
         headers=headers_powerbi(),
         json=montar_consulta_powerbi(data_referencia),
@@ -366,6 +394,11 @@ def atualizar_planilha_com_bi(data_referencia):
     wb = openpyxl.load_workbook(ARQUIVO_PRODUTIVIDADE)
     ws = wb[ABA_PRODUTIVIDADE]
     colunas = cabecalhos(ws)
+    col_data = coluna(colunas, "Data")
+    col_tecnico = coluna(colunas, "Técnico")
+    col_atendidas = coluna(colunas, "Atendidas")
+    col_2min = coluna(colunas, " > 2min", "> 2min", ">2min")
+    col_tma = coluna(colunas, "TMA")
     tecnicos = tecnicos_da_planilha(ws, colunas)
     ws_aliases = garantir_aba_aliases(
         wb,
@@ -379,14 +412,14 @@ def atualizar_planilha_com_bi(data_referencia):
     sem_alias = []
 
     for row in range(2, ws.max_row + 1):
-        data_linha = ws.cell(row=row, column=colunas["Data"]).value
+        data_linha = ws.cell(row=row, column=col_data).value
         if not data_linha:
             continue
         data_linha = data_linha.date() if hasattr(data_linha, "date") else data_linha
         if data_linha != data_referencia:
             continue
 
-        tecnico = ws.cell(row=row, column=colunas["Técnico"]).value
+        tecnico = ws.cell(row=row, column=col_tecnico).value
         chave_agente = aliases.get(normalizar_nome(tecnico), normalizar_nome(tecnico))
         registro = registros_por_agente.get(chave_agente)
 
@@ -394,9 +427,9 @@ def atualizar_planilha_com_bi(data_referencia):
             sem_alias.append(tecnico)
             continue
 
-        ws.cell(row=row, column=colunas["Atendidas"]).value = registro["atendidas"]
-        ws.cell(row=row, column=colunas[" > 2min"]).value = registro["maior_2min"]
-        ws.cell(row=row, column=colunas["TMA"]).value = registro["tma"]
+        ws.cell(row=row, column=col_atendidas).value = registro["atendidas"]
+        ws.cell(row=row, column=col_2min).value = registro["maior_2min"]
+        ws.cell(row=row, column=col_tma).value = registro["tma"]
         atualizados.append(tecnico)
 
     wb.save(ARQUIVO_PRODUTIVIDADE)
@@ -410,7 +443,7 @@ def atualizar_planilha_com_bi(data_referencia):
 
 
 def login_sgd(usuario, senha):
-    sessao = requests.Session()
+    sessao = criar_sessao_http()
     resposta = sessao.post(
         SGD_LOGIN_URL,
         data={
