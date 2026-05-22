@@ -929,6 +929,64 @@ if modo_gestao:
                 unsafe_allow_html=True,
             )
 
+    st.divider()
+    st.subheader("Ranking Geral de Todos os Níveis")
+
+    niveis_disponiveis = sorted(
+        [nivel for nivel in df["Nível"].dropna().unique() if str(nivel).strip()]
+    )
+    nivel_ranking_geral = st.selectbox(
+        "Selecione o nível do ranking geral",
+        ["Todos os níveis"] + niveis_disponiveis,
+    )
+
+    base_ranking_geral = df[
+        (df["Data"].dt.month == mes_atual)
+        & (df["Data"].dt.year == ano_atual)
+    ]
+
+    if nivel_ranking_geral != "Todos os níveis":
+        base_ranking_geral = base_ranking_geral[
+            base_ranking_geral["Nível"] == nivel_ranking_geral
+        ]
+
+    ranking_geral_diario = (
+        base_ranking_geral[base_ranking_geral["Data"] == ultima_data_mes]
+        .groupby("Técnico", as_index=False)["Realizado"]
+        .sum()
+        .sort_values(by="Realizado", ascending=False)
+        .reset_index(drop=True)
+    )
+
+    ranking_geral_mensal = (
+        base_ranking_geral.groupby("Técnico", as_index=False)["Realizado"]
+        .sum()
+        .sort_values(by="Realizado", ascending=False)
+        .reset_index(drop=True)
+    )
+
+    aba_geral_diario, aba_geral_mensal = st.tabs(["Diário", "Mensal"])
+
+    with aba_geral_diario:
+        st.plotly_chart(
+            montar_grafico_ranking(
+                ranking_geral_diario,
+                f"Ranking Diário - {nivel_ranking_geral}",
+                "Produtividade do dia",
+            ),
+            use_container_width=True,
+        )
+
+    with aba_geral_mensal:
+        st.plotly_chart(
+            montar_grafico_ranking(
+                ranking_geral_mensal,
+                f"Ranking Mensal - {nivel_ranking_geral}",
+                "Produtividade do mês",
+            ),
+            use_container_width=True,
+        )
+
 st.divider()
 st.subheader(f"📌 Resultados Individuais - {tecnico.title()}")
 
@@ -1011,65 +1069,6 @@ def montar_grafico_ranking(ranking, titulo, eixo_x):
     )
     return grafico
 
-
-if modo_gestao:
-    st.divider()
-    st.subheader("Ranking Geral de Todos os Níveis")
-
-    niveis_disponiveis = sorted(
-        [nivel for nivel in df["Nível"].dropna().unique() if str(nivel).strip()]
-    )
-    nivel_ranking_geral = st.selectbox(
-        "Selecione o nível do ranking geral",
-        ["Todos os níveis"] + niveis_disponiveis,
-    )
-
-    base_ranking_geral = df[
-        (df["Data"].dt.month == mes_atual)
-        & (df["Data"].dt.year == ano_atual)
-    ]
-
-    if nivel_ranking_geral != "Todos os níveis":
-        base_ranking_geral = base_ranking_geral[
-            base_ranking_geral["Nível"] == nivel_ranking_geral
-        ]
-
-    ranking_geral_diario = (
-        base_ranking_geral[base_ranking_geral["Data"] == ultima_data_mes]
-        .groupby("Técnico", as_index=False)["Realizado"]
-        .sum()
-        .sort_values(by="Realizado", ascending=False)
-        .reset_index(drop=True)
-    )
-
-    ranking_geral_mensal = (
-        base_ranking_geral.groupby("Técnico", as_index=False)["Realizado"]
-        .sum()
-        .sort_values(by="Realizado", ascending=False)
-        .reset_index(drop=True)
-    )
-
-    aba_geral_diario, aba_geral_mensal = st.tabs(["Diário", "Mensal"])
-
-    with aba_geral_diario:
-        st.plotly_chart(
-            montar_grafico_ranking(
-                ranking_geral_diario,
-                f"Ranking Diário - {nivel_ranking_geral}",
-                "Produtividade do dia",
-            ),
-            use_container_width=True,
-        )
-
-    with aba_geral_mensal:
-        st.plotly_chart(
-            montar_grafico_ranking(
-                ranking_geral_mensal,
-                f"Ranking Mensal - {nivel_ranking_geral}",
-                "Produtividade do mês",
-            ),
-            use_container_width=True,
-        )
 
 st.divider()
 st.subheader("📊 Produtividade Mensal")
