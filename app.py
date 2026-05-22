@@ -1043,6 +1043,53 @@ def montar_grafico_ranking(ranking, titulo, eixo_x):
     return grafico
 
 
+if modo_gestao:
+    st.divider()
+    st.subheader("Ranking Geral de Todos os Níveis")
+
+    base_ranking_geral = df[
+        (df["Data"].dt.month == mes_atual)
+        & (df["Data"].dt.year == ano_atual)
+    ]
+
+    ranking_geral_diario = (
+        base_ranking_geral[base_ranking_geral["Data"] == ultima_data_mes]
+        .groupby("Técnico", as_index=False)["Realizado"]
+        .sum()
+        .sort_values(by="Realizado", ascending=False)
+        .reset_index(drop=True)
+    )
+
+    ranking_geral_mensal = (
+        base_ranking_geral.groupby("Técnico", as_index=False)["Realizado"]
+        .sum()
+        .sort_values(by="Realizado", ascending=False)
+        .reset_index(drop=True)
+    )
+
+    aba_geral_diario, aba_geral_mensal = st.tabs(["Diário", "Mensal"])
+
+    with aba_geral_diario:
+        st.plotly_chart(
+            montar_grafico_ranking(
+                ranking_geral_diario,
+                "Ranking Diário Geral",
+                "Produtividade do dia",
+            ),
+            use_container_width=True,
+        )
+
+    with aba_geral_mensal:
+        st.plotly_chart(
+            montar_grafico_ranking(
+                ranking_geral_mensal,
+                "Ranking Mensal Geral",
+                "Produtividade do mês",
+            ),
+            use_container_width=True,
+        )
+
+
 aba_ranking_diario, aba_ranking_mensal = st.tabs(["Diário", "Mensal"])
 
 with aba_ranking_diario:
