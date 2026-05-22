@@ -886,6 +886,34 @@ if modo_gestao:
                 unsafe_allow_html=True,
             )
 
+    st.divider()
+    data_status = df["Data"].max()
+    st.subheader(
+        f"Técnicos por Status em {data_status.strftime('%d/%m/%Y')}"
+    )
+
+    status_atual = (
+        df[df["Data"] == data_status][["Técnico", "Nível", "Classificação"]]
+        .dropna(subset=["Técnico", "Classificação"])
+        .sort_values(by=["Classificação", "Técnico"])
+    )
+
+    col1, col2, col3, col4 = st.columns(4)
+    for status, coluna in zip(
+        ["CRÍTICO", "ATENÇÃO", "BOM", "EXCELENTE"],
+        [col1, col2, col3, col4],
+    ):
+        grupo_status = status_atual[status_atual["Classificação"] == status]
+        with coluna:
+            st.markdown(f"**{status}**")
+            if grupo_status.empty:
+                st.caption("Nenhum técnico")
+            else:
+                for _, linha in grupo_status.iterrows():
+                    st.write(
+                        f"{str(linha['Técnico']).title()} - {linha['Nível']}"
+                    )
+
 st.divider()
 st.subheader(f"📌 Resultados Individuais - {tecnico.title()}")
 
