@@ -905,14 +905,29 @@ if modo_gestao:
     ):
         grupo_status = status_atual[status_atual["Classificação"] == status]
         with coluna:
-            st.markdown(f"**{status}**")
+            conteudo = [f"<strong>{status}</strong>"]
             if grupo_status.empty:
-                st.caption("Nenhum técnico")
+                conteudo.append("Nenhum técnico")
             else:
                 for _, linha in grupo_status.iterrows():
-                    st.write(
+                    conteudo.append(
                         f"{str(linha['Técnico']).title()} - {linha['Nível']}"
                     )
+
+            st.markdown(
+                f"""
+                <div style="
+                    background-color:{CORES_STATUS[status]};
+                    padding:14px;
+                    border-radius:12px;
+                    color:white;
+                    min-height:240px;
+                ">
+                    {'<br>'.join(conteudo)}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
 st.divider()
 st.subheader(f"📌 Resultados Individuais - {tecnico.title()}")
