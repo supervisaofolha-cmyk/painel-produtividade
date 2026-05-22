@@ -131,6 +131,8 @@ def cabecalhos(ws):
 
 def normalizar_cabecalho(valor):
     texto = str(valor or "").strip().lower()
+    texto = unicodedata.normalize("NFKD", texto)
+    texto = "".join(ch for ch in texto if not unicodedata.combining(ch))
     texto = re.sub(r"\s+", " ", texto)
     return texto
 
@@ -242,6 +244,13 @@ def data_dia_anterior():
 
 def inicio_mes(data_referencia):
     return date(data_referencia.year, data_referencia.month, 1)
+
+
+def datas_no_periodo(data_inicial, data_final):
+    atual = data_inicial
+    while atual <= data_final:
+        yield atual
+        atual += timedelta(days=1)
 
 
 def criar_sessao_http():
@@ -562,17 +571,40 @@ def buscar_satisfacao_sgd(data_inicial, data_final, usuario, senha):
     return extrair_registros_sgd(conteudo)
 
 
+def buscar_satisfacao_sgd_diaria(data_inicial, data_final, usuario, senha):
+    sessao = login_sgd(usuario, senha)
+    registros = []
+
+    for data_consulta in datas_no_periodo(data_inicial, data_final):
+        conteudo = gerar_relatorio_sgd(sessao, data_consulta, data_consulta)
+        for registro in extrair_registros_sgd(conteudo):
+            registro["data"] = data_consulta
+            registros.append(registro)
+
+    return registros
+
+
 def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
     data_inicial = inicio_mes(data_referencia)
-    registros_sgd = buscar_satisfacao_sgd(data_inicial, data_referencia, usuario, senha)
-    registros_por_tecnico = {
-        normalizar_nome(registro["tecnico"]): registro
+    registros_sgd = buscar_satisfacao_sgd_diaria(
+        data_inicial,
+        data_referencia,
+        usuario,
+        senha,
+    )
+    registros_por_chave = {
+        (normalizar_nome(registro["tecnico"]), registro["data"]): registro
         for registro in registros_sgd
     }
 
     wb = openpyxl.load_workbook(ARQUIVO_PRODUTIVIDADE)
     ws = wb[ABA_PRODUTIVIDADE]
     colunas = cabecalhos(ws)
+    col_data = coluna(colunas, "Data")
+    col_tecnico = coluna(colunas, "Técnico")
+    col_ssc = coluna(colunas, "SSC")
+    col_satisfacao = coluna(colunas, "Satisfação")
+    col_votacao = coluna(colunas, "Votação")
     tecnicos = tecnicos_da_planilha(ws, colunas)
     ws_aliases = garantir_aba_aliases(
         wb,
@@ -586,25 +618,25 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
     sem_alias = []
 
     for row in range(2, ws.max_row + 1):
-        data_linha = ws.cell(row=row, column=colunas["Data"]).value
+        data_linha = ws.cell(row=row, column=col_data).value
         if not data_linha:
             continue
         data_linha = data_linha.date() if hasattr(data_linha, "date") else data_linha
-        if data_linha != data_referencia:
+        if data_linha < data_inicial or data_linha > data_referencia:
             continue
 
-        tecnico = ws.cell(row=row, column=colunas["Técnico"]).value
+        tecnico = ws.cell(row=row, column=col_tecnico).value
         chave_sgd = aliases.get(normalizar_nome(tecnico), normalizar_nome(tecnico))
-        registro = registros_por_tecnico.get(chave_sgd)
+        registro = registros_por_chave.get((chave_sgd, data_linha))
 
         if not registro:
             sem_alias.append(tecnico)
             continue
 
-        ws.cell(row=row, column=colunas["SSC"]).value = registro["ssc"]
-        ws.cell(row=row, column=colunas["Satisfação"]).value = registro["satisfacao"]
-        ws.cell(row=row, column=colunas["Votação"]).value = registro["votacao"]
-        atualizados.append(tecnico)
+        ws.cell(row=row, column=col_ssc).value = registro["ssc"]
+        ws.cell(row=row, column=col_satisfacao).value = registro["satisfacao"]
+        ws.cell(row=row, column=col_votacao).value = registro["votacao"]
+        atualizados.append(f"{tecnico} - {data_linha}")
 
     wb.save(ARQUIVO_PRODUTIVIDADE)
 
@@ -612,6 +644,7 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
         "data": data_referencia.strftime("%d/%m/%Y"),
         "periodo": f"{data_inicial.strftime('%d/%m/%Y')} a {data_referencia.strftime('%d/%m/%Y')}",
         "fonte": len(registros_sgd),
+        "dias_processados": (data_referencia - data_inicial).days + 1,
         "atualizados": len(atualizados),
         "sem_alias": sorted(set(sem_alias)),
     }
@@ -692,6 +725,9 @@ usuarios["tecnico"] = usuarios["tecnico"].astype(str).str.lower().str.strip()
 df["Data"] = pd.to_datetime(df["Data"], dayfirst=True, errors="coerce")
 df = df.dropna(subset=["Data"])
 df["Data Formatada"] = df["Data"].dt.strftime("%d/%m/%Y")
+for coluna in ["SSC", "Satisfação", "Votação"]:
+    if coluna in df.columns:
+        df[coluna] = pd.to_numeric(df[coluna], errors="coerce").fillna(0)
 df = recalcular_colunas_derivadas(df)
 
 st.sidebar.title("🔐 Login")
@@ -763,7 +799,8 @@ if usuario_digitado == "gestao" and senha_digitada == "30071997":
                     st.sidebar.error(f"Não foi possível atualizar o SGD: {erro}")
                 else:
                     st.sidebar.success(
-                        f"{resultado['atualizados']} técnicos atualizados. "
+                        f"{resultado['atualizados']} registros atualizados em "
+                        f"{resultado['dias_processados']} dias. "
                         f"Período: {resultado['periodo']}."
                     )
                     if resultado["sem_alias"]:
@@ -848,13 +885,13 @@ dados_ultimo_dia = dados_mes_atual[dados_mes_atual["Data"] == ultima_data_mes]
 col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 with col1:
-    st.metric("Realizado Total", int(dados_tecnico["Realizado"].sum()))
+    st.metric("Realizado Total", int(dados_mes_atual["Realizado"].sum()))
 
 with col2:
-    st.metric("SSC Total", int(dados_tecnico["SSC"].sum()))
+    st.metric("SSC Total", int(dados_mes_atual["SSC"].sum()))
 
 with col3:
-    st.metric("RO Total", int(dados_tecnico["RO"].sum()))
+    st.metric("RO Total", int(dados_mes_atual["RO"].sum()))
 
 with col4:
     votacao_ultimo_dia = round(dados_ultimo_dia["Votação"].mean(), 2)
@@ -865,7 +902,7 @@ with col5:
     st.metric("Satisfação", f"{satisfacao_ultimo_dia}%")
 
 with col6:
-    classificacao_mode = dados_tecnico["Classificação"].dropna().mode()
+    classificacao_mode = dados_mes_atual["Classificação"].dropna().mode()
     classificacao = (
         "Sem classificação"
         if classificacao_mode.empty
@@ -937,3 +974,37 @@ grafico_produtividade.update_layout(
 )
 
 st.plotly_chart(grafico_produtividade, use_container_width=True)
+
+st.divider()
+st.subheader("SSC Atendido por Dia")
+
+ssc_diario = (
+    dados_produtividade.groupby(["Data", "Data Formatada"])["SSC"]
+    .sum()
+    .reset_index()
+    .sort_values(by="Data")
+)
+
+grafico_ssc = px.line(
+    ssc_diario,
+    x="Data Formatada",
+    y="SSC",
+    markers=True,
+    labels={
+        "Data Formatada": "Dia",
+        "SSC": "SSC Atendido",
+    },
+    title="SSC Atendido no Mês",
+)
+
+grafico_ssc.update_traces(line_color=COR_LARANJA, marker_color=COR_LARANJA)
+grafico_ssc.update_layout(
+    plot_bgcolor=COR_BRANCO,
+    paper_bgcolor=COR_BRANCO,
+    font_color=COR_CINZA,
+    xaxis_title="Dia",
+    yaxis_title="SSC Atendido",
+    xaxis=dict(type="category"),
+)
+
+st.plotly_chart(grafico_ssc, use_container_width=True)
