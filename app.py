@@ -937,54 +937,91 @@ nivel_tecnico = (
     else dados_tecnico["Nível"].dropna().iloc[0]
 )
 
-ranking_nivel = df[
+base_ranking_nivel = df[
     (df["Data"].dt.month == mes_atual)
     & (df["Data"].dt.year == ano_atual)
     & (df["Nível"] == nivel_tecnico)
 ]
 
-ranking_nivel = (
-    ranking_nivel.groupby("Técnico", as_index=False)["Realizado"]
+ranking_diario = (
+    base_ranking_nivel[base_ranking_nivel["Data"] == ultima_data_mes]
+    .groupby("Técnico", as_index=False)["Realizado"]
     .sum()
     .sort_values(by="Realizado", ascending=False)
     .reset_index(drop=True)
 )
-ranking_nivel["Posição"] = ranking_nivel.index + 1
-ranking_nivel["Técnico Exibição"] = ranking_nivel["Técnico"].str.title()
-ranking_nivel["Cor"] = ranking_nivel["Técnico"].apply(
-    lambda nome: "Selecionado" if nome == tecnico else "Mesmo nível"
+
+ranking_mensal = (
+    base_ranking_nivel.groupby("Técnico", as_index=False)["Realizado"]
+    .sum()
+    .sort_values(by="Realizado", ascending=False)
+    .reset_index(drop=True)
 )
 
-grafico_ranking = px.bar(
-    ranking_nivel.sort_values(by="Realizado", ascending=True),
-    x="Realizado",
-    y="Técnico Exibição",
-    orientation="h",
-    color="Cor",
-    text="Posição",
-    labels={
-        "Realizado": "Realizados no mês",
-        "Técnico Exibição": "Técnico",
-        "Cor": "",
-    },
-    title=f"Ranking de {str(nivel_tecnico)}",
-    color_discrete_map={
-        "Selecionado": COR_LARANJA,
-        "Mesmo nível": COR_CINZA,
-    },
-)
 
-grafico_ranking.update_traces(textposition="outside")
-grafico_ranking.update_layout(
-    plot_bgcolor=COR_BRANCO,
-    paper_bgcolor=COR_BRANCO,
-    font_color=COR_CINZA,
-    xaxis_title="Realizados no mês",
-    yaxis_title="Técnico",
-    legend_title="",
-)
+def montar_grafico_ranking(ranking, titulo, eixo_x):
+    ranking = ranking.copy()
+    ranking["Posição"] = ranking.index + 1
+    ranking["Técnico Exibição"] = ranking["Técnico"].str.title()
+    ranking["Cor"] = ranking["Técnico"].apply(
+        lambda nome: "Selecionado" if nome == tecnico else "Mesmo nível"
+    )
 
-st.plotly_chart(grafico_ranking, use_container_width=True)
+    grafico = px.bar(
+        ranking,
+        x="Realizado",
+        y="Técnico Exibição",
+        orientation="h",
+        color="Cor",
+        text="Realizado",
+        labels={
+            "Realizado": eixo_x,
+            "Técnico Exibição": "Técnico",
+            "Cor": "",
+        },
+        title=titulo,
+        color_discrete_map={
+            "Selecionado": COR_LARANJA,
+            "Mesmo nível": COR_CINZA,
+        },
+        category_orders={
+            "Técnico Exibição": ranking["Técnico Exibição"].tolist()[::-1]
+        },
+    )
+
+    grafico.update_traces(textposition="outside")
+    grafico.update_layout(
+        plot_bgcolor=COR_BRANCO,
+        paper_bgcolor=COR_BRANCO,
+        font_color=COR_CINZA,
+        xaxis_title=eixo_x,
+        yaxis_title="Técnico",
+        legend_title="",
+    )
+    return grafico
+
+
+aba_ranking_diario, aba_ranking_mensal = st.tabs(["Diário", "Mensal"])
+
+with aba_ranking_diario:
+    st.plotly_chart(
+        montar_grafico_ranking(
+            ranking_diario,
+            f"Ranking Diário de {str(nivel_tecnico)}",
+            "Produtividade do dia",
+        ),
+        use_container_width=True,
+    )
+
+with aba_ranking_mensal:
+    st.plotly_chart(
+        montar_grafico_ranking(
+            ranking_mensal,
+            f"Ranking Mensal de {str(nivel_tecnico)}",
+            "Produtividade do mês",
+        ),
+        use_container_width=True,
+    )
 
 st.divider()
 st.subheader("📊 Produtividade Mensal")
