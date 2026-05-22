@@ -862,6 +862,47 @@ dados_mes_atual = dados_tecnico[
 ultima_data_mes = dados_mes_atual["Data"].max()
 dados_ultimo_dia = dados_mes_atual[dados_mes_atual["Data"] == ultima_data_mes]
 
+
+def montar_grafico_ranking(ranking, titulo, eixo_x):
+    ranking = ranking.copy()
+    ranking["Posição"] = ranking.index + 1
+    ranking["Técnico Exibição"] = ranking["Técnico"].str.title()
+    ranking["Cor"] = ranking["Técnico"].apply(
+        lambda nome: "Selecionado" if nome == tecnico else "Mesmo nível"
+    )
+
+    grafico = px.bar(
+        ranking,
+        x="Técnico Exibição",
+        y="Realizado",
+        color="Cor",
+        text="Realizado",
+        labels={
+            "Realizado": eixo_x,
+            "Técnico Exibição": "Técnico",
+            "Cor": "",
+        },
+        title=titulo,
+        color_discrete_map={
+            "Selecionado": COR_LARANJA,
+            "Mesmo nível": COR_CINZA,
+        },
+        category_orders={
+            "Técnico Exibição": ranking["Técnico Exibição"].tolist()
+        },
+    )
+
+    grafico.update_traces(textposition="outside")
+    grafico.update_layout(
+        plot_bgcolor=COR_BRANCO,
+        paper_bgcolor=COR_BRANCO,
+        font_color=COR_CINZA,
+        xaxis_title="Técnico",
+        yaxis_title=eixo_x,
+        legend_title="",
+    )
+    return grafico
+
 if modo_gestao:
     st.divider()
     st.subheader("📌 Legenda dos Status")
@@ -1028,47 +1069,6 @@ with col6:
         else classificacao_mode.iloc[0]
     )
     st.metric("Classificação", classificacao)
-
-def montar_grafico_ranking(ranking, titulo, eixo_x):
-    ranking = ranking.copy()
-    ranking["Posição"] = ranking.index + 1
-    ranking["Técnico Exibição"] = ranking["Técnico"].str.title()
-    ranking["Cor"] = ranking["Técnico"].apply(
-        lambda nome: "Selecionado" if nome == tecnico else "Mesmo nível"
-    )
-
-    grafico = px.bar(
-        ranking,
-        x="Técnico Exibição",
-        y="Realizado",
-        color="Cor",
-        text="Realizado",
-        labels={
-            "Realizado": eixo_x,
-            "Técnico Exibição": "Técnico",
-            "Cor": "",
-        },
-        title=titulo,
-        color_discrete_map={
-            "Selecionado": COR_LARANJA,
-            "Mesmo nível": COR_CINZA,
-        },
-        category_orders={
-            "Técnico Exibição": ranking["Técnico Exibição"].tolist()
-        },
-    )
-
-    grafico.update_traces(textposition="outside")
-    grafico.update_layout(
-        plot_bgcolor=COR_BRANCO,
-        paper_bgcolor=COR_BRANCO,
-        font_color=COR_CINZA,
-        xaxis_title="Técnico",
-        yaxis_title=eixo_x,
-        legend_title="",
-    )
-    return grafico
-
 
 st.divider()
 st.subheader("📊 Produtividade Mensal")
