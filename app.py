@@ -630,6 +630,9 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
         registro = registros_por_chave.get((chave_sgd, data_linha))
 
         if not registro:
+            ws.cell(row=row, column=col_ssc).value = 0
+            ws.cell(row=row, column=col_satisfacao).value = 0
+            ws.cell(row=row, column=col_votacao).value = 0
             sem_alias.append(tecnico)
             continue
 
