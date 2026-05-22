@@ -971,37 +971,6 @@ with col6:
     )
     st.metric("Classificação", classificacao)
 
-st.divider()
-st.subheader("Ranking de Realizados no Nível")
-
-nivel_tecnico = (
-    dados_mes_atual["Nível"].dropna().iloc[0]
-    if not dados_mes_atual["Nível"].dropna().empty
-    else dados_tecnico["Nível"].dropna().iloc[0]
-)
-
-base_ranking_nivel = df[
-    (df["Data"].dt.month == mes_atual)
-    & (df["Data"].dt.year == ano_atual)
-    & (df["Nível"] == nivel_tecnico)
-]
-
-ranking_diario = (
-    base_ranking_nivel[base_ranking_nivel["Data"] == ultima_data_mes]
-    .groupby("Técnico", as_index=False)["Realizado"]
-    .sum()
-    .sort_values(by="Realizado", ascending=False)
-    .reset_index(drop=True)
-)
-
-ranking_mensal = (
-    base_ranking_nivel.groupby("Técnico", as_index=False)["Realizado"]
-    .sum()
-    .sort_values(by="Realizado", ascending=False)
-    .reset_index(drop=True)
-)
-
-
 def montar_grafico_ranking(ranking, titulo, eixo_x):
     ranking = ranking.copy()
     ranking["Posição"] = ranking.index + 1
@@ -1101,29 +1070,6 @@ if modo_gestao:
             ),
             use_container_width=True,
         )
-
-
-aba_ranking_diario, aba_ranking_mensal = st.tabs(["Diário", "Mensal"])
-
-with aba_ranking_diario:
-    st.plotly_chart(
-        montar_grafico_ranking(
-            ranking_diario,
-            f"Ranking Diário de {str(nivel_tecnico)}",
-            "Produtividade do dia",
-        ),
-        use_container_width=True,
-    )
-
-with aba_ranking_mensal:
-    st.plotly_chart(
-        montar_grafico_ranking(
-            ranking_mensal,
-            f"Ranking Mensal de {str(nivel_tecnico)}",
-            "Produtividade do mês",
-        ),
-        use_container_width=True,
-    )
 
 st.divider()
 st.subheader("📊 Produtividade Mensal")
