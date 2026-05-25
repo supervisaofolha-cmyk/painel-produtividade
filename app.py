@@ -747,9 +747,11 @@ usuarios["tecnico"] = usuarios["tecnico"].astype(str).str.lower().str.strip()
 df["Data"] = pd.to_datetime(df["Data"], dayfirst=True, errors="coerce")
 df = df.dropna(subset=["Data"])
 df["Data Formatada"] = df["Data"].dt.strftime("%d/%m/%Y")
-for coluna in ["SSC", "Satisfação", "Votação"]:
-    if coluna in df.columns:
-        df[coluna] = pd.to_numeric(df[coluna], errors="coerce").fillna(0)
+for coluna_numerica in ["SSC", "Satisfação", "Votação"]:
+    if coluna_numerica in df.columns:
+        df[coluna_numerica] = pd.to_numeric(
+            df[coluna_numerica], errors="coerce"
+        ).fillna(0)
 df = recalcular_colunas_derivadas(df)
 
 st.sidebar.title("🔐 Login")
