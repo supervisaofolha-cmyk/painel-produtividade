@@ -15,6 +15,7 @@ OUT = Path(r"C:\Users\esther.queiroz\Downloads\clientes_vs_abandonos 052026_enri
 PROFILE = Path(r"C:\Users\esther.queiroz\AppData\Local\Temp\sgd_playwright_profile")
 SEARCH_URL = "https://sgd.dominiosistemas.com.br/sgsc/faces/loc-cliente.html"
 LOGIN_URL_PART = "sgd.dominiosistemas.com.br/login"
+CDP_URL = "http://127.0.0.1:9222"
 
 NEW_HEADERS = [
     "Nome_Licenciado",
@@ -175,6 +176,7 @@ def main():
     parser.add_argument("--limit", type=int, default=10)
     parser.add_argument("--start-row", type=int, default=2)
     parser.add_argument("--save-every", type=int, default=10)
+    parser.add_argument("--connect-cdp", action="store_true")
     args = parser.parse_args()
 
     wb, ws = ensure_workbook()
@@ -198,13 +200,19 @@ def main():
         return 0
 
     with sync_playwright() as p:
-        context = p.chromium.launch_persistent_context(
-            str(PROFILE),
-            channel="chrome",
-            headless=False,
-            viewport={"width": 1280, "height": 800},
-        )
-        page = context.pages[0] if context.pages else context.new_page()
+        browser = None
+        if args.connect_cdp:
+            browser = p.chromium.connect_over_cdp(CDP_URL)
+            context = browser.contexts[0]
+            page = context.pages[0] if context.pages else context.new_page()
+        else:
+            context = p.chromium.launch_persistent_context(
+                str(PROFILE),
+                channel="chrome",
+                headless=False,
+                viewport={"width": 1280, "height": 800},
+            )
+            page = context.pages[0] if context.pages else context.new_page()
         wait_for_login(page)
 
         done = 0
@@ -235,7 +243,10 @@ def main():
                 print(f"Progresso salvo em {OUT}")
 
         wb.save(OUT)
-        context.close()
+        if browser:
+            browser.close()
+        else:
+            context.close()
 
     print(f"Finalizado. Arquivo: {OUT}")
     return 0
