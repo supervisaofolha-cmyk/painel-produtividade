@@ -582,7 +582,7 @@ def gerar_relatorio_sgd(sessao, data_inicial, data_final):
     html = resposta.text
 
     link_download = None
-    for _ in range(5):
+    for _ in range(10):
         dados = montar_campos_sgd(html, data_inicial, data_final)
         resposta = sessao.post(SGD_RELATORIO_URL, data=dados, timeout=180)
         resposta.raise_for_status()
@@ -638,7 +638,12 @@ def buscar_satisfacao_sgd_diaria(data_inicial, data_final, usuario, senha):
     registros = []
 
     for data_consulta in datas_no_periodo(data_inicial, data_final):
-        conteudo = gerar_relatorio_sgd(sessao, data_consulta, data_consulta)
+        if data_consulta.weekday() >= 5:
+            continue
+        try:
+            conteudo = gerar_relatorio_sgd(sessao, data_consulta, data_consulta)
+        except ValueError:
+            continue
         for registro in extrair_registros_sgd(conteudo):
             registro["data"] = data_consulta
             registros.append(registro)
@@ -677,6 +682,7 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
     col_ssc = coluna(colunas, "SSC")
     col_satisfacao = coluna(colunas, "Satisfação")
     col_votacao = coluna(colunas, "Votação")
+    linhas_criadas = garantir_linhas_da_data(ws, colunas, data_referencia)
     tecnicos = tecnicos_da_planilha(ws, colunas)
     ws_aliases = garantir_aba_aliases(
         wb,
@@ -725,6 +731,7 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
         "periodo": f"{data_inicial.strftime('%d/%m/%Y')} a {data_referencia.strftime('%d/%m/%Y')}",
         "fonte": len(registros_sgd),
         "dias_processados": (data_referencia - data_inicial).days + 1,
+        "linhas_criadas": linhas_criadas,
         "atualizados": len(atualizados),
         "sem_alias": sorted(set(sem_alias)),
     }
@@ -889,6 +896,10 @@ if usuario_digitado == "gestao" and senha_digitada == "30071997":
                         f"{resultado['dias_processados']} dias. "
                         f"Período: {resultado['periodo']}."
                     )
+                    if resultado["linhas_criadas"]:
+                        st.sidebar.info(
+                            f"{resultado['linhas_criadas']} linhas foram criadas para essa data."
+                        )
                     if resultado["sem_alias"]:
                         st.sidebar.warning(
                             "Revise a coluna Agente SGD da aba Aliases para: "
