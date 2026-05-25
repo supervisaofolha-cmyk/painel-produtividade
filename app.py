@@ -1863,12 +1863,33 @@ with col6:
 
 if not modo_gestao:
     percentual_absorcao = PERCENTUAL_ABSORCAO_POR_NIVEL.get(nivel_tecnico, 0)
+    dias_meta_valor = float(dias_uteis_para_meta(ano_atual, mes_atual))
+    if pontoweb_email and pontoweb_senha:
+        try:
+            resumo_meta_pontoweb = obter_resumo_meta_pontoweb(
+                tecnico,
+                ano_atual,
+                mes_atual,
+                pontoweb_email,
+                pontoweb_senha,
+                pontoweb_banco_id,
+                pontoweb_banco_identificador,
+            )
+            dias_meta_valor = float(resumo_meta_pontoweb["dias_considerados"])
+        except Exception:
+            pass
+
+    if dias_meta_valor.is_integer():
+        dias_meta_exibicao = builtins.str(int(dias_meta_valor))
+    else:
+        dias_meta_exibicao = f"{dias_meta_valor:.2f}".replace(".", ",")
+
     with col7:
         st.metric("Percentual de Absorção", f"{percentual_absorcao:.2f}%")
     with col8:
         st.metric(
             "Dias Úteis para Meta",
-            dias_uteis_para_meta(ano_atual, mes_atual),
+            dias_meta_exibicao,
         )
 
 if not modo_gestao:
