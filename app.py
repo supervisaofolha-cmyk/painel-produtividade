@@ -905,12 +905,72 @@ def recalcular_colunas_derivadas(df):
     return df
 
 
+def precisa_atualizar_colunas(dataframe, data_referencia, colunas_verificacao):
+    dados_dia = dataframe[dataframe["Data"] == pd.Timestamp(data_referencia)]
+    if dados_dia.empty:
+        return True
+
+    for nome_coluna in colunas_verificacao:
+        if nome_coluna not in dados_dia.columns:
+            return True
+        if dados_dia[nome_coluna].isna().any():
+            return True
+
+    return False
+
+
+def atualizar_dados_automaticamente():
+    if st.session_state.get("auto_refresh_executado"):
+        return
+
+    st.session_state["auto_refresh_executado"] = True
+    data_referencia = data_dia_anterior()
+    env_local = carregar_env_local()
+    usuario_sgd = env_local.get("SGD_USUARIO", os.getenv("SGD_USUARIO", ""))
+    senha_sgd = env_local.get("SGD_SENHA", os.getenv("SGD_SENHA", ""))
+
+    try:
+        df_atual = pd.read_excel(ARQUIVO_PRODUTIVIDADE)
+        df_atual.columns = df_atual.columns.str.strip()
+        df_atual["Data"] = pd.to_datetime(df_atual["Data"], dayfirst=True, errors="coerce")
+        df_atual = df_atual.dropna(subset=["Data"])
+    except Exception:
+        return
+
+    try:
+        if precisa_atualizar_colunas(
+            df_atual,
+            data_referencia,
+            ["Atendidas", "> 2min" if "> 2min" in df_atual.columns else " > 2min", "TMA"],
+        ):
+            atualizar_planilha_com_bi(data_referencia)
+    except Exception:
+        pass
+
+    try:
+        if precisa_atualizar_colunas(df_atual, data_referencia, ["RO"]):
+            atualizar_planilha_com_ro(data_referencia)
+    except Exception:
+        pass
+
+    try:
+        if usuario_sgd and senha_sgd and precisa_atualizar_colunas(
+            df_atual,
+            data_referencia,
+            ["SSC", "Satisfação", "Votação"],
+        ):
+            atualizar_planilha_com_sgd(data_referencia, usuario_sgd, senha_sgd)
+    except Exception:
+        pass
+
+
 try:
     locale.setlocale(locale.LC_TIME, "pt_BR.UTF-8")
 except Exception:
     pass
 
 st.set_page_config(page_title="Painel de Produtividade", layout="wide")
+atualizar_dados_automaticamente()
 
 st.markdown(
     f"""
