@@ -1,3 +1,4 @@
+import csv
 import json
 import locale
 import os
@@ -7,8 +8,9 @@ import uuid
 import builtins
 from datetime import date, timedelta
 from difflib import SequenceMatcher
+from html import unescape
 from html.parser import HTMLParser
-from io import BytesIO
+from io import BytesIO, StringIO
 
 import openpyxl
 import pandas as pd
@@ -28,6 +30,7 @@ POWERBI_API_BASE = "https://wabi-brazil-south-b-primary-api.analysis.windows.net
 SGD_BASE_URL = "https://sgd.dominiosistemas.com.br"
 SGD_LOGIN_URL = f"{SGD_BASE_URL}/login"
 SGD_RELATORIO_URL = f"{SGD_BASE_URL}/sgsc/faces/rel-satisfacao.html"
+RO_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1O-1uJ6D9al9piHgOv_Ju0fpL-3Xbz3zK"
 
 COR_LARANJA = "#F97316"
 COR_CINZA = "#6B7280"
@@ -54,6 +57,26 @@ MESES_POWERBI = {
     10: "outubro",
     11: "novembro",
     12: "dezembro",
+}
+
+MESES_RO = {
+    1: "Janeiro",
+    2: "Fevereiro",
+    3: "Marco",
+    4: "Abril",
+    5: "Maio",
+    6: "Junho",
+    7: "Julho",
+    8: "Agosto",
+    9: "Setembro",
+    10: "Outubro",
+    11: "Novembro",
+    12: "Dezembro",
+}
+
+MOTIVOS_RO_CONTAM = {
+    "Ligação com duração inferior a 2 minutos/Retorno solicitado pela supervisão",
+    "Ligação transferida para outro técnico ou setor (Transferência)",
 }
 
 
@@ -317,6 +340,90 @@ def criar_sessao_http():
     sessao = requests.Session()
     sessao.trust_env = False
     return sessao
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def listar_arquivos_ro():
+    sessao = criar_sessao_http()
+    resposta = sessao.get(RO_DRIVE_FOLDER_URL, timeout=30)
+    resposta.raise_for_status()
+
+    arquivos = []
+    vistos = set()
+    for arquivo_id, titulo in re.findall(
+        r'data-id="([^"]+)"[^>]*data-tooltip="([^"]+)"',
+        resposta.text,
+    ):
+        if arquivo_id in vistos:
+            continue
+        vistos.add(arquivo_id)
+        arquivos.append(
+            {
+                "id": arquivo_id,
+                "titulo": unescape(titulo),
+            }
+        )
+
+    return arquivos
+
+
+def planilha_ro_do_mes(data_referencia):
+    esperado = normalizar_cabecalho(
+        f"RO {MESES_RO[data_referencia.month]} {data_referencia.year} (respostas)"
+    )
+
+    for arquivo in listar_arquivos_ro():
+        if esperado in normalizar_cabecalho(arquivo["titulo"]):
+            return arquivo
+
+    raise ValueError("Não encontrei a planilha de respostas do RO para esse mês.")
+
+
+def buscar_ro_forms(data_referencia):
+    arquivo = planilha_ro_do_mes(data_referencia)
+    sessao = criar_sessao_http()
+    resposta = sessao.get(
+        f"https://docs.google.com/spreadsheets/d/{arquivo['id']}/export?format=csv",
+        timeout=60,
+    )
+    resposta.raise_for_status()
+
+    texto_csv = resposta.content.decode("utf-8-sig", errors="replace")
+    leitor = csv.DictReader(StringIO(texto_csv))
+    contagens = {}
+    motivos_validos = {
+        normalizar_cabecalho(motivo) for motivo in MOTIVOS_RO_CONTAM
+    }
+
+    for linha in leitor:
+        linha_normalizada = {
+            normalizar_cabecalho(chave): (valor or "").strip()
+            for chave, valor in linha.items()
+            if chave
+        }
+
+        tecnico = linha_normalizada.get("nome tecnico", "")
+        data_texto = linha_normalizada.get("data", "")
+        motivo = linha_normalizada.get("ligacao inferior a 2 min", "")
+
+        if (
+            not tecnico
+            or not data_texto
+            or normalizar_cabecalho(motivo) not in motivos_validos
+        ):
+            continue
+
+        data_linha = pd.to_datetime(data_texto, dayfirst=True, errors="coerce")
+        if pd.isna(data_linha) or data_linha.date() != data_referencia:
+            continue
+
+        chave = normalizar_nome(tecnico)
+        contagens[chave] = contagens.get(chave, 0) + 1
+
+    return {
+        "arquivo": arquivo["titulo"],
+        "contagens": contagens,
+    }
 
 
 def headers_powerbi():
@@ -633,20 +740,21 @@ def buscar_satisfacao_sgd(data_inicial, data_final, usuario, senha):
     return extrair_registros_sgd(conteudo)
 
 
-def buscar_satisfacao_sgd_diaria(data_inicial, data_final, usuario, senha):
+def buscar_satisfacao_sgd_diaria(data_referencia, usuario, senha):
     sessao = login_sgd(usuario, senha)
     registros = []
 
-    for data_consulta in datas_no_periodo(data_inicial, data_final):
-        if data_consulta.weekday() >= 5:
-            continue
-        try:
-            conteudo = gerar_relatorio_sgd(sessao, data_consulta, data_consulta)
-        except ValueError:
-            continue
-        for registro in extrair_registros_sgd(conteudo):
-            registro["data"] = data_consulta
-            registros.append(registro)
+    if data_referencia.weekday() >= 5:
+        return registros
+
+    try:
+        conteudo = gerar_relatorio_sgd(sessao, data_referencia, data_referencia)
+    except ValueError:
+        return registros
+
+    for registro in extrair_registros_sgd(conteudo):
+        registro["data"] = data_referencia
+        registros.append(registro)
 
     return registros
 
@@ -660,7 +768,6 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
         senha,
     )
     registros_sgd = buscar_satisfacao_sgd_diaria(
-        data_inicial,
         data_referencia,
         usuario,
         senha,
@@ -700,7 +807,7 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
         if not data_linha:
             continue
         data_linha = data_linha.date() if hasattr(data_linha, "date") else data_linha
-        if data_linha < data_inicial or data_linha > data_referencia:
+        if data_linha != data_referencia:
             continue
 
         tecnico = ws.cell(row=row, column=col_tecnico).value
@@ -730,10 +837,50 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
         "data": data_referencia.strftime("%d/%m/%Y"),
         "periodo": f"{data_inicial.strftime('%d/%m/%Y')} a {data_referencia.strftime('%d/%m/%Y')}",
         "fonte": len(registros_sgd),
-        "dias_processados": (data_referencia - data_inicial).days + 1,
+        "dias_processados": 1,
         "linhas_criadas": linhas_criadas,
         "atualizados": len(atualizados),
         "sem_alias": sorted(set(sem_alias)),
+    }
+
+
+def atualizar_planilha_com_ro(data_referencia):
+    dados_ro = buscar_ro_forms(data_referencia)
+    contagens = dados_ro["contagens"]
+
+    wb = openpyxl.load_workbook(ARQUIVO_PRODUTIVIDADE)
+    ws = wb[ABA_PRODUTIVIDADE]
+    colunas = cabecalhos(ws)
+    col_data = coluna(colunas, "Data")
+    col_tecnico = coluna(colunas, "Técnico")
+    col_ro = coluna(colunas, "RO")
+    linhas_criadas = garantir_linhas_da_data(ws, colunas, data_referencia)
+
+    atualizados = 0
+
+    for row in range(2, ws.max_row + 1):
+        data_linha = ws.cell(row=row, column=col_data).value
+        if not data_linha:
+            continue
+        data_linha = data_linha.date() if hasattr(data_linha, "date") else data_linha
+        if data_linha != data_referencia:
+            continue
+
+        tecnico = ws.cell(row=row, column=col_tecnico).value
+        ws.cell(row=row, column=col_ro).value = contagens.get(
+            normalizar_nome(tecnico),
+            0,
+        )
+        atualizados += 1
+
+    wb.save(ARQUIVO_PRODUTIVIDADE)
+
+    return {
+        "data": data_referencia.strftime("%d/%m/%Y"),
+        "arquivo": dados_ro["arquivo"],
+        "fonte": sum(contagens.values()),
+        "linhas_criadas": linhas_criadas,
+        "atualizados": atualizados,
     }
 
 
@@ -864,6 +1011,28 @@ if usuario_digitado == "gestao" and senha_digitada == "30071997":
                     st.sidebar.warning(
                         "Revise a coluna Agente BI da aba Aliases para: "
                         + ", ".join(resultado["sem_alias"][:8])
+                    )
+                st.cache_data.clear()
+                st.rerun()
+
+    if st.sidebar.button("Atualizar RO do dia anterior"):
+        with st.spinner("Buscando dados do RO e atualizando a planilha..."):
+            try:
+                resultado = atualizar_planilha_com_ro(data_referencia)
+            except PermissionError:
+                st.sidebar.error("Feche a produtividade.xlsx no Excel e tente novamente.")
+            except Exception as erro:
+                st.sidebar.error(f"Não foi possível atualizar o RO: {erro}")
+            else:
+                st.sidebar.success(
+                    f"{resultado['atualizados']} técnicos atualizados em {resultado['data']}."
+                )
+                st.sidebar.info(
+                    f"Origem: {resultado['arquivo']}. Total de RO válidos: {resultado['fonte']}."
+                )
+                if resultado["linhas_criadas"]:
+                    st.sidebar.info(
+                        f"{resultado['linhas_criadas']} linhas foram criadas para essa data."
                     )
                 st.cache_data.clear()
                 st.rerun()
