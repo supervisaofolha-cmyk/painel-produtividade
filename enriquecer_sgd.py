@@ -57,6 +57,15 @@ def normalize_text(text):
 
 def extract_from_text(text, phone):
     clean = normalize_text(text)
+    zero_occurrence = re.search(r"Encontrada\(s\)\s*0\s*ocorr", clean, re.IGNORECASE)
+    if zero_occurrence:
+        return {
+            "status": "Nao encontrado",
+            "nome": "",
+            "deca": "",
+            "obs": "Nenhum resultado na pesquisa por telefone",
+        }
+
     if "Nenhum registro" in clean or "não encontrado" in clean.lower():
         return {
             "status": "Nao encontrado",
