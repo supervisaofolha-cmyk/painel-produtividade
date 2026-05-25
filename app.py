@@ -4,6 +4,7 @@ import os
 import re
 import unicodedata
 import uuid
+import builtins
 from datetime import date, timedelta
 from difflib import SequenceMatcher
 from html.parser import HTMLParser
@@ -112,7 +113,7 @@ def carregar_env_local():
 
 
 def normalizar_nome(valor):
-    texto = str(valor or "").strip().lower()
+    texto = builtins.str(valor or "").strip().lower()
     texto = unicodedata.normalize("NFKD", texto)
     texto = "".join(ch for ch in texto if not unicodedata.combining(ch))
     texto = re.sub(r"\([^)]*\)", " ", texto)
@@ -123,14 +124,14 @@ def normalizar_nome(valor):
 
 def cabecalhos(ws):
     return {
-        str(cell.value).strip(): cell.column
+        builtins.str(cell.value).strip(): cell.column
         for cell in ws[1]
         if cell.value is not None
     }
 
 
 def normalizar_cabecalho(valor):
-    texto = str(valor or "").strip().lower()
+    texto = builtins.str(valor or "").strip().lower()
     texto = unicodedata.normalize("NFKD", texto)
     texto = "".join(ch for ch in texto if not unicodedata.combining(ch))
     texto = re.sub(r"\s+", " ", texto)
@@ -239,7 +240,10 @@ def ler_aliases(ws_aliases, coluna_alias):
 
 
 def data_dia_anterior():
-    return date.today() - timedelta(days=1)
+    data_referencia = date.today() - timedelta(days=1)
+    while data_referencia.weekday() >= 5:
+        data_referencia -= timedelta(days=1)
+    return data_referencia
 
 
 def inicio_mes(data_referencia):
@@ -262,8 +266,8 @@ def criar_sessao_http():
 def headers_powerbi():
     return {
         "Accept": "application/json",
-        "ActivityId": str(uuid.uuid4()),
-        "RequestId": str(uuid.uuid4()),
+        "ActivityId": builtins.str(uuid.uuid4()),
+        "RequestId": builtins.str(uuid.uuid4()),
         "X-PowerBI-ResourceKey": POWERBI_RESOURCE_KEY,
         "User-Agent": "Mozilla/5.0",
         "Origin": "https://app.powerbi.com",
@@ -311,7 +315,7 @@ def montar_consulta_powerbi(data_referencia):
             {
                 "Query": consulta,
                 "ApplicationContext": {
-                    "DatasetId": str(metadados["models"][0]["id"]),
+                    "DatasetId": builtins.str(metadados["models"][0]["id"]),
                     "Sources": [
                         {
                             "ReportId": metadados["exploration"]["reportId"],
@@ -550,7 +554,7 @@ def extrair_registros_sgd(conteudo_xlsx):
 
     for row in range(10, ws.max_row + 1):
         tecnico = ws.cell(row=row, column=2).value
-        if not tecnico or str(tecnico).strip().lower().startswith("total"):
+        if not tecnico or builtins.str(tecnico).strip().lower().startswith("total"):
             continue
 
         registros.append(
@@ -756,8 +760,8 @@ if usuario_input == "" or senha_input == "":
     st.warning("Digite usuário e senha.")
     st.stop()
 
-usuario_digitado = str(usuario_input).lower().strip()
-senha_digitada = str(senha_input).replace(".0", "").strip()
+usuario_digitado = builtins.str(usuario_input).lower().strip()
+senha_digitada = builtins.str(senha_input).replace(".0", "").strip()
 
 modo_gestao = False
 
@@ -963,7 +967,7 @@ if modo_gestao:
             else:
                 for _, linha in grupo_status.iterrows():
                     conteudo.append(
-                        f"{str(linha['Técnico']).title()} - {linha['Nível']}"
+                        f"{builtins.str(linha['Técnico']).title()} - {linha['Nível']}"
                     )
 
             st.markdown(
@@ -985,7 +989,7 @@ if modo_gestao:
     st.subheader("Ranking Geral de Todos os Níveis")
 
     niveis_disponiveis = sorted(
-        [nivel for nivel in df["Nível"].dropna().unique() if str(nivel).strip()]
+        [nivel for nivel in df["Nível"].dropna().unique() if builtins.str(nivel).strip()]
     )
     nivel_ranking_geral = st.selectbox(
         "Selecione o nível do ranking geral",
