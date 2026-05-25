@@ -1383,7 +1383,6 @@ def atualizar_dados_automaticamente():
 
     st.session_state["auto_refresh_executado"] = True
     data_referencia = data_dia_anterior()
-    env_local = carregar_env_local()
     usuario_sgd = env_local.get("SGD_USUARIO", os.getenv("SGD_USUARIO", ""))
     senha_sgd = env_local.get("SGD_SENHA", os.getenv("SGD_SENHA", ""))
 
@@ -1483,6 +1482,16 @@ for coluna_numerica in ["SSC", "Satisfação", "Votação"]:
             df[coluna_numerica], errors="coerce"
         ).fillna(0)
 df = recalcular_colunas_derivadas(df)
+env_local = carregar_env_local()
+pontoweb_email = env_local.get("PONTOWEB_EMAIL", os.getenv("PONTOWEB_EMAIL", ""))
+pontoweb_senha = env_local.get("PONTOWEB_SENHA", os.getenv("PONTOWEB_SENHA", ""))
+pontoweb_banco_id = env_local.get(
+    "PONTOWEB_BANCO_ID", os.getenv("PONTOWEB_BANCO_ID", "")
+)
+pontoweb_banco_identificador = env_local.get(
+    "PONTOWEB_BANCO_IDENTIFICADOR",
+    os.getenv("PONTOWEB_BANCO_IDENTIFICADOR", ""),
+)
 
 st.sidebar.title("🔐 Login")
 usuario_input = st.sidebar.text_input("Usuário")
