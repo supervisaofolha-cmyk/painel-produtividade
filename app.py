@@ -197,6 +197,62 @@ def tecnicos_da_planilha(ws, colunas):
     )
 
 
+def garantir_linhas_da_data(ws, colunas, data_referencia):
+    col_data = coluna(colunas, "Data")
+    col_tecnico = coluna(colunas, "Técnico")
+    col_nivel = coluna(colunas, "Nível")
+
+    linhas_existentes = []
+    datas_existentes = set()
+    linhas_por_data = {}
+
+    for row in range(2, ws.max_row + 1):
+        data_linha = ws.cell(row=row, column=col_data).value
+        if not data_linha:
+            continue
+        data_linha = data_linha.date() if hasattr(data_linha, "date") else data_linha
+        datas_existentes.add(data_linha)
+        linhas_por_data.setdefault(data_linha, []).append(row)
+        if data_linha == data_referencia:
+            linhas_existentes.append(row)
+
+    if linhas_existentes:
+        return 0
+
+    datas_anteriores = [data for data in datas_existentes if data < data_referencia]
+    if not datas_anteriores:
+        return 0
+
+    data_base = max(datas_anteriores)
+    criadas = 0
+
+    for row_base in linhas_por_data[data_base]:
+        tecnico = ws.cell(row=row_base, column=col_tecnico).value
+        nivel = ws.cell(row=row_base, column=col_nivel).value
+        ws.append(
+            [
+                data_referencia,
+                tecnico,
+                nivel,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            ]
+        )
+        criadas += 1
+
+    return criadas
+
+
 def garantir_aba_aliases(wb, tecnicos, candidatos, coluna_alias):
     if ABA_ALIASES not in wb.sheetnames:
         ws_aliases = wb.create_sheet(ABA_ALIASES)
@@ -412,6 +468,7 @@ def atualizar_planilha_com_bi(data_referencia):
     col_atendidas = coluna(colunas, "Atendidas")
     col_2min = coluna(colunas, " > 2min", "> 2min", ">2min")
     col_tma = coluna(colunas, "TMA")
+    linhas_criadas = garantir_linhas_da_data(ws, colunas, data_referencia)
     tecnicos = tecnicos_da_planilha(ws, colunas)
     ws_aliases = garantir_aba_aliases(
         wb,
@@ -450,6 +507,7 @@ def atualizar_planilha_com_bi(data_referencia):
     return {
         "data": data_referencia.strftime("%d/%m/%Y"),
         "fonte": len(registros_bi),
+        "linhas_criadas": linhas_criadas,
         "atualizados": len(atualizados),
         "sem_alias": sorted(set(sem_alias)),
     }
@@ -791,6 +849,10 @@ if usuario_digitado == "gestao" and senha_digitada == "30071997":
                 st.sidebar.success(
                     f"{resultado['atualizados']} técnicos atualizados em {resultado['data']}."
                 )
+                if resultado["linhas_criadas"]:
+                    st.sidebar.info(
+                        f"{resultado['linhas_criadas']} linhas foram criadas para essa data."
+                    )
                 if resultado["sem_alias"]:
                     st.sidebar.warning(
                         "Revise a coluna Agente BI da aba Aliases para: "
