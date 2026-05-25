@@ -175,13 +175,26 @@ def wait_for_login(page):
     raise RuntimeError("Login nao concluido em 10 minutos.")
 
 
+def goto_search(page):
+    try:
+        if "sgd.dominiosistemas.com.br/sgsc/faces/loc-cliente.html" not in page.url:
+            page.goto(SEARCH_URL, wait_until="domcontentloaded", timeout=60000)
+        else:
+            page.wait_for_load_state("domcontentloaded", timeout=30000)
+    except PlaywrightTimeoutError:
+        page.wait_for_timeout(2000)
+
+
 def search_phone(page, phone, debug_dir, row):
-    page.goto(SEARCH_URL, wait_until="load")
+    goto_search(page)
     page.locator('select[name="locForm:usuario"]').select_option("5")
     page.locator('input[name="locForm:palavraChave"]').fill(phone)
 
-    page.locator('input[name="locForm:localizarBtn"]').click(no_wait_after=True)
-    page.wait_for_load_state("domcontentloaded", timeout=30000)
+    try:
+        with page.expect_navigation(wait_until="domcontentloaded", timeout=60000):
+            page.locator('input[name="locForm:localizarBtn"]').click(no_wait_after=True)
+    except PlaywrightTimeoutError:
+        page.wait_for_load_state("domcontentloaded", timeout=30000)
     page.wait_for_timeout(1500)
 
     result_rows = extract_result_rows(page)
