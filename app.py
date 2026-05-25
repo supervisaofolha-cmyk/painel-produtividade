@@ -597,6 +597,9 @@ def atualizar_planilha_com_bi(data_referencia):
             continue
 
         tecnico = ws.cell(row=row, column=col_tecnico).value
+        ws.cell(row=row, column=col_atendidas).value = 0
+        ws.cell(row=row, column=col_2min).value = 0
+        ws.cell(row=row, column=col_tma).value = 0
         chave_agente = aliases.get(normalizar_nome(tecnico), normalizar_nome(tecnico))
         registro = registros_por_agente.get(chave_agente)
 
