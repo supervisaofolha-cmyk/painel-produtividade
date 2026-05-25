@@ -40,13 +40,18 @@ def digits(value):
     return re.sub(r"\D+", "", str(value or ""))
 
 
-def ensure_workbook(src_path, out_path):
+def ensure_workbook(src_path, out_path, sheet_name=None):
     if out_path.exists():
         wb = load_workbook(out_path)
     else:
         wb = load_workbook(src_path)
 
-    ws = wb["Resultado da consulta"]
+    if sheet_name and sheet_name in wb.sheetnames:
+        ws = wb[sheet_name]
+    elif "Resultado da consulta" in wb.sheetnames:
+        ws = wb["Resultado da consulta"]
+    else:
+        ws = wb[wb.sheetnames[0]]
     headers = [ws.cell(1, col).value for col in range(1, ws.max_column + 1)]
     for header in NEW_HEADERS:
         if header not in headers:
@@ -467,6 +472,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, default=DEFAULT_SRC)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--sheet-name", default="")
     parser.add_argument("--limit", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=0)
     parser.add_argument("--batch-output-dir", type=Path, default=DEFAULT_BATCH_DIR)
@@ -479,7 +485,7 @@ def main():
     source_path = args.source
     output_path = args.output
 
-    wb, ws = ensure_workbook(source_path, output_path)
+    wb, ws = ensure_workbook(source_path, output_path, args.sheet_name or None)
     cols = header_map(ws)
     debug_dir = output_path.with_suffix("")
     debug_dir.mkdir(exist_ok=True)
