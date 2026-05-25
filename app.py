@@ -1275,6 +1275,16 @@ if modo_gestao:
             )
 
     st.divider()
+    st.subheader("Percentual de Absorção por Nível")
+    col1, col2, col3, col4, col5 = st.columns(5)
+    for (nivel, percentual), coluna in zip(
+        PERCENTUAL_ABSORCAO_POR_NIVEL.items(),
+        [col1, col2, col3, col4, col5],
+    ):
+        with coluna:
+            st.metric(nivel, f"{percentual:.2f}%")
+
+    st.divider()
     data_status = df["Data"].max()
     st.subheader(
         f"Técnicos por Status em {data_status.strftime('%d/%m/%Y')}"
