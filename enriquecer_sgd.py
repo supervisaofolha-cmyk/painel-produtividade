@@ -115,6 +115,42 @@ def extract_from_text(text, phone):
     }
 
 
+def extract_result_rows(page):
+    return page.eval_on_selector_all(
+        "table.tableSorter tbody tr",
+        """rows => rows.map(row => {
+            const cells = Array.from(row.querySelectorAll('td')).map(td =>
+                td.innerText.replace(/\\s+/g, ' ').trim()
+            );
+            const details = row.querySelector('a[href*="d-cliente.html?clienteID="]');
+            return {
+                codigo: cells[0] || '',
+                razao: cells[1] || '',
+                representante: cells[2] || '',
+                tipo: cells[6] || '',
+                telefone: cells[9] || '',
+                detailsHref: details ? details.getAttribute('href') : ''
+            };
+        }).filter(row => row.codigo || row.razao)""",
+    )
+
+
+def result_from_row(row):
+    obs = []
+    if row.get("representante"):
+        obs.append(f"Representante: {row['representante']}")
+    if row.get("telefone"):
+        obs.append(f"Telefone suporte: {row['telefone']}")
+    if row.get("tipo"):
+        obs.append(f"Tipo: {row['tipo']}")
+    return {
+        "status": "Encontrado",
+        "nome": row.get("razao", ""),
+        "deca": row.get("codigo", ""),
+        "obs": "; ".join(obs),
+    }
+
+
 def save_result(ws, cols, row, result):
     ws.cell(row, cols["Nome_Licenciado"]).value = result["nome"]
     ws.cell(row, cols["Codigo_DECA"]).value = result["deca"]
@@ -148,23 +184,26 @@ def search_phone(page, phone, debug_dir, row):
     page.wait_for_load_state("domcontentloaded", timeout=30000)
     page.wait_for_timeout(1500)
 
-    # Some searches may land on a details page directly. Otherwise, click the
-    # strongest result link when there is exactly one obvious client row.
-    links = page.locator('a[href*="cliente"], a[href*="cad-cliente"], a[href*="alt-cliente"]')
-    count = links.count()
-    if count == 1:
-        links.first.click(no_wait_after=True)
-        page.wait_for_load_state("domcontentloaded", timeout=30000)
-        page.wait_for_timeout(1000)
-    elif count > 1:
-        body_text = normalize_text(page.locator("body").inner_text(timeout=10000))
+    result_rows = extract_result_rows(page)
+    if len(result_rows) == 1:
+        return result_from_row(result_rows[0])
+    if len(result_rows) > 1:
+        phone_matches = [
+            item for item in result_rows if digits(item.get("telefone")) == phone
+        ]
+        if len(phone_matches) == 1:
+            return result_from_row(phone_matches[0])
+
+        candidates = " | ".join(
+            f"{item.get('codigo')} - {item.get('razao')}" for item in result_rows
+        )
         debug_path = debug_dir / f"row_{row}_{phone}_multiplo.html"
         debug_path.write_text(page.content(), encoding="utf-8")
         return {
             "status": "Multiplo resultado",
             "nome": "",
             "deca": "",
-            "obs": f"{count} links de cliente encontrados; HTML: {debug_path}",
+            "obs": f"{len(result_rows)} resultados: {candidates}; HTML: {debug_path}",
         }
 
     body_text = page.locator("body").inner_text(timeout=10000)
