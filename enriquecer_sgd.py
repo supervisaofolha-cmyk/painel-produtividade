@@ -16,8 +16,8 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
 
 
-SRC = Path(r"C:\Users\esther.queiroz\Downloads\clientes_vs_abandonos 052026.xlsx")
-OUT = Path(r"C:\Users\esther.queiroz\Downloads\clientes_vs_abandonos 052026_enriquecido.xlsx")
+DEFAULT_SRC = Path(r"C:\Users\esther.queiroz\Downloads\clientes_vs_abandonos 052026.xlsx")
+DEFAULT_OUT = Path(r"C:\Users\esther.queiroz\Downloads\clientes_vs_abandonos 052026_enriquecido.xlsx")
 PROFILE = Path(r"C:\Users\esther.queiroz\AppData\Local\Temp\sgd_playwright_profile")
 SEARCH_URL = "https://sgd.dominiosistemas.com.br/sgsc/faces/loc-cliente.html"
 LOGIN_URL_PART = "sgd.dominiosistemas.com.br/login"
@@ -40,11 +40,11 @@ def digits(value):
     return re.sub(r"\D+", "", str(value or ""))
 
 
-def ensure_workbook():
-    if OUT.exists():
-        wb = load_workbook(OUT)
+def ensure_workbook(src_path, out_path):
+    if out_path.exists():
+        wb = load_workbook(out_path)
     else:
-        wb = load_workbook(SRC)
+        wb = load_workbook(src_path)
 
     ws = wb["Resultado da consulta"]
     headers = [ws.cell(1, col).value for col in range(1, ws.max_column + 1)]
@@ -53,7 +53,7 @@ def ensure_workbook():
             ws.cell(1, ws.max_column + 1).value = header
             headers.append(header)
 
-    wb.save(OUT)
+    wb.save(out_path)
     return wb, ws
 
 
@@ -465,6 +465,8 @@ def search_phone_requests(http_config, phone, debug_dir, row):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--source", type=Path, default=DEFAULT_SRC)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--limit", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=0)
     parser.add_argument("--batch-output-dir", type=Path, default=DEFAULT_BATCH_DIR)
@@ -474,9 +476,12 @@ def main():
     parser.add_argument("--workers", type=int, default=4)
     args = parser.parse_args()
 
-    wb, ws = ensure_workbook()
+    source_path = args.source
+    output_path = args.output
+
+    wb, ws = ensure_workbook(source_path, output_path)
     cols = header_map(ws)
-    debug_dir = OUT.with_suffix("")
+    debug_dir = output_path.with_suffix("")
     debug_dir.mkdir(exist_ok=True)
     batch_dir = args.batch_output_dir
     batch_dir.mkdir(parents=True, exist_ok=True)
@@ -544,8 +549,8 @@ def main():
                     done += 1
                     print(f"  -> linha {row}: {result['status']} | {result['nome']} | {result['deca']}")
                     if done % args.save_every == 0:
-                        wb.save(OUT)
-                        print(f"Progresso salvo em {OUT}")
+                        wb.save(output_path)
+                        print(f"Progresso salvo em {output_path}")
         else:
             for row, phone in rows:
                 try:
@@ -575,10 +580,10 @@ def main():
                 done += 1
                 print(f"  -> {result['status']} | {result['nome']} | {result['deca']}")
                 if done % args.save_every == 0:
-                    wb.save(OUT)
-                    print(f"Progresso salvo em {OUT}")
+                    wb.save(output_path)
+                    print(f"Progresso salvo em {output_path}")
 
-        wb.save(OUT)
+        wb.save(output_path)
         export_batch_workbook(ws, batch_rows, batch_path)
         if browser:
             browser.close()
@@ -590,11 +595,11 @@ def main():
         "batch_size": len(batch_rows),
         "row_start": batch_rows[0],
         "row_end": batch_rows[-1],
-        "main_workbook": str(OUT),
+        "main_workbook": str(output_path),
         "batch_workbook": str(batch_path),
         "status_counts": summarize_batch(ws, cols, batch_rows),
     }
-    print(f"Finalizado. Arquivo: {OUT}")
+    print(f"Finalizado. Arquivo: {output_path}")
     print("BATCH_SUMMARY " + json.dumps(summary, ensure_ascii=True))
     return 0
 
