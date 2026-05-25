@@ -626,6 +626,7 @@ def atualizar_planilha_com_bi(data_referencia):
         ws.cell(row=row, column=col_tma).value = registro["tma"]
         atualizados.append(tecnico)
 
+    zerar_colunas_sem_movimento_ws(ws)
     wb.save(ARQUIVO_PRODUTIVIDADE)
 
     return {
@@ -848,6 +849,7 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
         )
         atualizados.append(f"{tecnico} - {data_linha}")
 
+    zerar_colunas_sem_movimento_ws(ws)
     wb.save(ARQUIVO_PRODUTIVIDADE)
 
     return {
@@ -890,6 +892,7 @@ def atualizar_planilha_com_ro(data_referencia):
         )
         atualizados += 1
 
+    zerar_colunas_sem_movimento_ws(ws)
     wb.save(ARQUIVO_PRODUTIVIDADE)
 
     return {
