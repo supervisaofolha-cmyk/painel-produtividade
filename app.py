@@ -32,6 +32,15 @@ SGD_BASE_URL = "https://sgd.dominiosistemas.com.br"
 SGD_LOGIN_URL = f"{SGD_BASE_URL}/login"
 SGD_RELATORIO_URL = f"{SGD_BASE_URL}/sgsc/faces/rel-satisfacao.html"
 RO_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1O-1uJ6D9al9piHgOv_Ju0fpL-3Xbz3zK"
+PONTOWEB_BASE_URL = "https://pontoweb.secullum.com.br/"
+PONTOWEB_CLIENT_ID = "3001"
+PONTOWEB_REDIRECT_URI = f"{PONTOWEB_BASE_URL}Auth"
+PONTOWEB_AUTH_URL = (
+    "https://autenticador.secullum.com.br/Authorization"
+    f"?response_type=code&client_id={PONTOWEB_CLIENT_ID}"
+    f"&redirect_uri={PONTOWEB_REDIRECT_URI}"
+)
+PONTOWEB_TOKEN_URL = "https://autenticador.secullum.com.br/Token"
 
 COR_LARANJA = "#F97316"
 COR_CINZA = "#6B7280"
@@ -374,6 +383,355 @@ def dias_uteis_para_meta(ano, mes):
             continue
         total += 1
     return total
+
+
+def eh_feriado_federal(data_atual):
+    return (data_atual.month, data_atual.day) in FERIADOS_FEDERAIS_FIXOS
+
+
+def hhmm_para_minutos(valor):
+    texto = builtins.str(valor or "").strip()
+    if not texto or ":" not in texto:
+        return 0
+
+    negativo = texto.startswith("-")
+    texto = texto.lstrip("+-")
+    partes = texto.split(":")
+    if len(partes) != 2 or not all(parte.isdigit() for parte in partes):
+        return 0
+
+    minutos = int(partes[0]) * 60 + int(partes[1])
+    return -minutos if negativo else minutos
+
+
+def extrair_valor_input(html, nome_campo):
+    padrao = re.compile(
+        rf'<input[^>]+name="{re.escape(nome_campo)}"[^>]+value="([^"]*)"',
+        re.IGNORECASE,
+    )
+    match = padrao.search(html)
+    return unescape(match.group(1)) if match else ""
+
+
+def extrair_erro_login_pontoweb(html):
+    match = re.search(
+        r'<span[^>]*class="[^"]*field-validation-error[^"]*"[^>]*>(.*?)</span>',
+        html,
+        re.IGNORECASE | re.DOTALL,
+    )
+    if not match:
+        return ""
+    mensagem = re.sub(r"<[^>]+>", " ", match.group(1))
+    return re.sub(r"\s+", " ", unescape(mensagem)).strip()
+
+
+def login_pontoweb(email, senha):
+    sessao = criar_sessao_http()
+    resposta_login = sessao.get(PONTOWEB_AUTH_URL, timeout=30)
+    resposta_login.raise_for_status()
+
+    html_login = resposta_login.text
+    token_verificacao = extrair_valor_input(html_login, "__RequestVerificationToken")
+    cliente_id = extrair_valor_input(html_login, "ClienteId") or PONTOWEB_CLIENT_ID
+    redirect_uri = extrair_valor_input(html_login, "RedirectUri") or PONTOWEB_REDIRECT_URI
+
+    payload = {
+        "Email": email,
+        "Senha": senha,
+        "ContinuarConectado": "true",
+        "ClienteId": cliente_id,
+        "RedirectUri": redirect_uri,
+        "__RequestVerificationToken": token_verificacao,
+        "action:Login": "Login",
+    }
+
+    resposta_autorizacao = sessao.post(
+        PONTOWEB_AUTH_URL,
+        data=payload,
+        headers={"Referer": PONTOWEB_AUTH_URL},
+        allow_redirects=False,
+        timeout=30,
+    )
+
+    if resposta_autorizacao.status_code not in {302, 303}:
+        mensagem = extrair_erro_login_pontoweb(resposta_autorizacao.text)
+        if mensagem:
+            raise ValueError(mensagem)
+        raise ValueError("Login do PontoWeb inválido.")
+
+    location = resposta_autorizacao.headers.get("Location", "")
+    if not location:
+        raise ValueError("O PontoWeb não retornou o código de autorização.")
+
+    match_code = re.search(r"[?&]code=([^&]+)", location)
+    if not match_code:
+        raise ValueError("Não encontrei o código de autorização do PontoWeb.")
+
+    resposta_token = sessao.post(
+        PONTOWEB_TOKEN_URL,
+        data={
+            "client_id": cliente_id,
+            "redirect_uri": redirect_uri,
+            "grant_type": "authorization_code",
+            "code": match_code.group(1),
+        },
+        headers={"Content-type": "application/x-www-form-urlencoded; charset=UTF-8"},
+        timeout=30,
+    )
+    resposta_token.raise_for_status()
+
+    dados_token = resposta_token.json()
+    return {
+        "sessao": sessao,
+        "access_token": dados_token["access_token"],
+        "refresh_token": dados_token.get("refresh_token", ""),
+    }
+
+
+def cabecalhos_pontoweb(access_token, identificador_banco=""):
+    headers = {"Authorization": f"Bearer {access_token}"}
+    if identificador_banco:
+        headers["secullumbancoselecionado"] = identificador_banco
+    return headers
+
+
+def buscar_toolbar_pontoweb(sessao, access_token):
+    resposta = sessao.get(
+        f"{PONTOWEB_BASE_URL}Toolbar",
+        headers=cabecalhos_pontoweb(access_token),
+        timeout=30,
+    )
+    resposta.raise_for_status()
+    return resposta.json()
+
+
+def localizar_lista_bancos(objeto):
+    if isinstance(objeto, list):
+        if objeto and all(
+            isinstance(item, dict)
+            and ("BancoId" in item or "bancoId" in item)
+            and ("Identificador" in item or "identificador" in item)
+            for item in objeto
+        ):
+            return objeto
+        for item in objeto:
+            lista = localizar_lista_bancos(item)
+            if lista:
+                return lista
+        return []
+
+    if isinstance(objeto, dict):
+        for chave in ("listaBancos", "ListaBancos", "bancos", "Bancos"):
+            valor = objeto.get(chave)
+            if isinstance(valor, list) and valor:
+                return valor
+        for valor in objeto.values():
+            lista = localizar_lista_bancos(valor)
+            if lista:
+                return lista
+
+    return []
+
+
+def selecionar_banco_pontoweb(lista_bancos, banco_id="", identificador=""):
+    if not lista_bancos:
+        return {}
+
+    banco_id = builtins.str(banco_id or "").strip()
+    identificador = builtins.str(identificador or "").strip()
+
+    for banco in lista_bancos:
+        if banco_id and builtins.str(
+            banco.get("BancoId", banco.get("bancoId", ""))
+        ) == banco_id:
+            return banco
+        if identificador and builtins.str(
+            banco.get("Identificador", banco.get("identificador", ""))
+        ) == identificador:
+            return banco
+
+    return lista_bancos[0]
+
+
+def buscar_funcionarios_pontoweb(sessao, access_token, identificador_banco):
+    resposta = sessao.get(
+        f"{PONTOWEB_BASE_URL}Funcionarios",
+        headers=cabecalhos_pontoweb(access_token, identificador_banco),
+        timeout=60,
+    )
+    resposta.raise_for_status()
+    return resposta.json()
+
+
+def buscar_calculos_pontoweb(
+    sessao,
+    access_token,
+    identificador_banco,
+    funcionario_id,
+    data_inicial,
+    data_final,
+):
+    endpoint = (
+        f"{PONTOWEB_BASE_URL}Calculos/"
+        f"{funcionario_id}/{data_inicial.strftime('%Y-%m-%d')}/"
+        f"{data_final.strftime('%Y-%m-%d')}"
+    )
+    resposta = sessao.get(
+        endpoint,
+        headers=cabecalhos_pontoweb(access_token, identificador_banco),
+        timeout=60,
+    )
+    resposta.raise_for_status()
+    return resposta.json()
+
+
+def indice_coluna_calculo(colunas, *nomes):
+    nomes_normalizados = {normalizar_nome(nome) for nome in nomes}
+    for indice, coluna_calculo in enumerate(colunas):
+        nome_coluna = coluna_calculo.get("NomeExibicao") or coluna_calculo.get("Nome")
+        if normalizar_nome(nome_coluna) in nomes_normalizados:
+            return indice
+    return -1
+
+
+def valor_linha_calculo(linha, indice):
+    if indice < 0 or indice >= len(linha):
+        return ""
+    return linha[indice]
+
+
+def calcular_resumo_meta_pontoweb(
+    tecnico,
+    ano,
+    mes,
+    email,
+    senha,
+    banco_id="",
+    banco_identificador="",
+):
+    login = login_pontoweb(email, senha)
+    sessao = login["sessao"]
+    access_token = login["access_token"]
+
+    toolbar = buscar_toolbar_pontoweb(sessao, access_token)
+    lista_bancos = localizar_lista_bancos(toolbar)
+    banco = selecionar_banco_pontoweb(lista_bancos, banco_id, banco_identificador)
+    identificador_banco = builtins.str(
+        banco.get("Identificador", banco.get("identificador", ""))
+    )
+
+    funcionarios = buscar_funcionarios_pontoweb(sessao, access_token, identificador_banco)
+    nomes_funcionarios = [
+        funcionario.get("Nome", "")
+        for funcionario in funcionarios
+        if funcionario.get("Nome")
+    ]
+    alias = melhor_alias(tecnico, nomes_funcionarios)
+    chave_tecnico = normalizar_nome(alias or tecnico)
+
+    funcionario = next(
+        (
+            item
+            for item in funcionarios
+            if normalizar_nome(item.get("Nome", "")) == chave_tecnico
+        ),
+        None,
+    )
+
+    if not funcionario:
+        raise ValueError(f"Não encontrei o técnico {tecnico} no PontoWeb.")
+
+    data_inicial = date(ano, mes, 1)
+    data_final = date(ano, mes, calendar.monthrange(ano, mes)[1])
+    dados_calculo = buscar_calculos_pontoweb(
+        sessao,
+        access_token,
+        identificador_banco,
+        funcionario.get("Id"),
+        data_inicial,
+        data_final,
+    )
+
+    colunas = dados_calculo.get("Colunas", [])
+    linhas = dados_calculo.get("Linhas", [])
+    situacoes = dados_calculo.get("SituacaoDias", [])
+
+    idx_data = indice_coluna_calculo(colunas, "Data")
+    idx_faltas = indice_coluna_calculo(colunas, "Faltas")
+    idx_carga = indice_coluna_calculo(colunas, "Carga")
+    idx_bdeb = indice_coluna_calculo(colunas, "BDeb.", "BDeb")
+
+    abatimento_total = 0.0
+    dias_base = dias_uteis_para_meta(ano, mes)
+
+    for indice_linha, linha in enumerate(linhas):
+        data_texto = builtins.str(valor_linha_calculo(linha, idx_data)).strip()
+        match_data = re.search(r"(\d{2}/\d{2}/\d{4})", data_texto)
+        if not match_data:
+            continue
+
+        data_linha = pd.to_datetime(match_data.group(1), dayfirst=True, errors="coerce")
+        if pd.isna(data_linha):
+            continue
+
+        data_linha = data_linha.date()
+        if data_linha.year != ano or data_linha.month != mes:
+            continue
+        if data_linha.weekday() >= 5 or eh_feriado_federal(data_linha):
+            continue
+
+        valores_linha = [builtins.str(valor or "").strip().upper() for valor in linha]
+        faltas_minutos = max(hhmm_para_minutos(valor_linha_calculo(linha, idx_faltas)), 0)
+        carga_minutos = max(hhmm_para_minutos(valor_linha_calculo(linha, idx_carga)), 0)
+        bdeb_minutos = max(hhmm_para_minutos(valor_linha_calculo(linha, idx_bdeb)), 0)
+        situacao = situacoes[indice_linha] if indice_linha < len(situacoes) else None
+
+        if any("FERIAS" in normalizar_nome(valor) for valor in valores_linha):
+            abatimento_total += 1
+            continue
+
+        if any("ATESTAD" in normalizar_nome(valor) for valor in valores_linha):
+            abatimento_total += 1
+            continue
+
+        if carga_minutos <= 0:
+            continue
+
+        if situacao == 2 and faltas_minutos >= carga_minutos:
+            abatimento_total += 1
+            continue
+
+        minutos_ausentes = max(faltas_minutos, bdeb_minutos)
+        if 0 < minutos_ausentes < carga_minutos:
+            abatimento_total += minutos_ausentes / carga_minutos
+
+    dias_considerados = max(dias_base - abatimento_total, 0)
+    return {
+        "dias_base": dias_base,
+        "abatimento": round(abatimento_total, 2),
+        "dias_considerados": round(dias_considerados, 2),
+    }
+
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def obter_resumo_meta_pontoweb(
+    tecnico,
+    ano,
+    mes,
+    email,
+    senha,
+    banco_id="",
+    banco_identificador="",
+):
+    return calcular_resumo_meta_pontoweb(
+        tecnico,
+        ano,
+        mes,
+        email,
+        senha,
+        banco_id,
+        banco_identificador,
+    )
 
 
 def criar_sessao_http():
