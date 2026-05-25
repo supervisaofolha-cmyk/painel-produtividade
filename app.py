@@ -85,6 +85,14 @@ TECNICOS_DESCONSIDERADOS_ESPERADO = {
     "lucas luiz romero",
 }
 
+PERCENTUAL_ABSORCAO_POR_NIVEL = {
+    "Técnico III": 3.23,
+    "Técnico II": 2.59,
+    "Técnico I": 2.12,
+    "JR": 1.85,
+    "Estágio": 0.92,
+}
+
 
 class FormularioSGDParser(HTMLParser):
     def __init__(self):
@@ -1370,7 +1378,13 @@ if modo_gestao:
 st.divider()
 st.subheader(f"📌 Resultados Individuais - {tecnico.title()}")
 
-col1, col2, col3, col4, col5, col6 = st.columns(6)
+nivel_mode = dados_mes_atual["Nível"].dropna().mode()
+nivel_tecnico = None if nivel_mode.empty else nivel_mode.iloc[0]
+
+if modo_gestao:
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+else:
+    col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
 
 with col1:
     st.metric("Realizado Total", int(dados_mes_atual["Realizado"].sum()))
@@ -1399,9 +1413,11 @@ with col6:
     st.metric("Classificação", classificacao)
 
 if not modo_gestao:
-    nivel_mode = dados_mes_atual["Nível"].dropna().mode()
-    nivel_tecnico = None if nivel_mode.empty else nivel_mode.iloc[0]
+    percentual_absorcao = PERCENTUAL_ABSORCAO_POR_NIVEL.get(nivel_tecnico, 0)
+    with col7:
+        st.metric("Percentual de Absorção", f"{percentual_absorcao:.2f}%")
 
+if not modo_gestao:
     if nivel_tecnico:
         base_ranking_nivel = df[
             (df["Data"].dt.month == mes_atual)
