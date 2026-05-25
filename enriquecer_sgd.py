@@ -1,12 +1,13 @@
 import argparse
+import json
 import html
 import re
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import unquote
 
+from openpyxl import Workbook
 from openpyxl import load_workbook
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
@@ -18,6 +19,9 @@ PROFILE = Path(r"C:\Users\esther.queiroz\AppData\Local\Temp\sgd_playwright_profi
 SEARCH_URL = "https://sgd.dominiosistemas.com.br/sgsc/faces/loc-cliente.html"
 LOGIN_URL_PART = "sgd.dominiosistemas.com.br/login"
 CDP_URL = "http://127.0.0.1:9222"
+DEFAULT_BATCH_DIR = Path(
+    r"C:\Users\esther.queiroz\Downloads\lotes_clientes_vs_abandonos_052026"
+)
 
 NEW_HEADERS = [
     "Nome_Licenciado",
@@ -51,6 +55,52 @@ def ensure_workbook():
 
 def header_map(ws):
     return {ws.cell(1, col).value: col for col in range(1, ws.max_column + 1)}
+
+
+def select_pending_rows(ws, cols, start_row, limit):
+    rows = []
+    for row in range(start_row, ws.max_row + 1):
+        phone = digits(ws.cell(row, 1).value)
+        if not phone:
+            continue
+        if ws.cell(row, cols["SGD_Status"]).value:
+            continue
+        rows.append((row, phone))
+        if limit and len(rows) >= limit:
+            break
+    return rows
+
+
+def next_batch_number(batch_dir):
+    existing = []
+    for path in batch_dir.glob("clientes_vs_abandonos_052026_lote_*.xlsx"):
+        match = re.search(r"_lote_(\d+)\.xlsx$", path.name)
+        if match:
+            existing.append(int(match.group(1)))
+    return (max(existing) + 1) if existing else 1
+
+
+def export_batch_workbook(source_ws, batch_rows, batch_path):
+    batch_wb = Workbook()
+    batch_ws = batch_wb.active
+    batch_ws.title = source_ws.title
+
+    for col in range(1, source_ws.max_column + 1):
+        batch_ws.cell(1, col).value = source_ws.cell(1, col).value
+
+    for out_row, src_row in enumerate(batch_rows, start=2):
+        for col in range(1, source_ws.max_column + 1):
+            batch_ws.cell(out_row, col).value = source_ws.cell(src_row, col).value
+
+    batch_wb.save(batch_path)
+
+
+def summarize_batch(ws, cols, batch_rows):
+    counts = {}
+    for src_row in batch_rows:
+        status = ws.cell(src_row, cols["SGD_Status"]).value or "Sem status"
+        counts[status] = counts.get(status, 0) + 1
+    return counts
 
 
 def normalize_text(text):
@@ -335,6 +385,8 @@ def search_phone_http(request_context, view_state, phone, debug_dir, row):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=10)
+    parser.add_argument("--batch-size", type=int, default=0)
+    parser.add_argument("--batch-output-dir", type=Path, default=DEFAULT_BATCH_DIR)
     parser.add_argument("--start-row", type=int, default=2)
     parser.add_argument("--save-every", type=int, default=10)
     parser.add_argument("--connect-cdp", action="store_true")
@@ -344,21 +396,19 @@ def main():
     cols = header_map(ws)
     debug_dir = OUT.with_suffix("")
     debug_dir.mkdir(exist_ok=True)
+    batch_dir = args.batch_output_dir
+    batch_dir.mkdir(parents=True, exist_ok=True)
 
-    rows = []
-    for row in range(args.start_row, ws.max_row + 1):
-        phone = digits(ws.cell(row, 1).value)
-        if not phone:
-            continue
-        if ws.cell(row, cols["SGD_Status"]).value:
-            continue
-        rows.append((row, phone))
-        if args.limit and len(rows) >= args.limit:
-            break
+    effective_limit = args.batch_size or args.limit
+    rows = select_pending_rows(ws, cols, args.start_row, effective_limit)
 
     print(f"Linhas pendentes selecionadas: {len(rows)}")
     if not rows:
         return 0
+
+    batch_rows = [row for row, _phone in rows]
+    batch_number = next_batch_number(batch_dir)
+    batch_path = batch_dir / f"clientes_vs_abandonos_052026_lote_{batch_number:04d}.xlsx"
 
     with sync_playwright() as p:
         browser = None
@@ -410,12 +460,23 @@ def main():
                 print(f"Progresso salvo em {OUT}")
 
         wb.save(OUT)
+        export_batch_workbook(ws, batch_rows, batch_path)
         if browser:
             browser.close()
         else:
             context.close()
 
+    summary = {
+        "batch_number": batch_number,
+        "batch_size": len(batch_rows),
+        "row_start": batch_rows[0],
+        "row_end": batch_rows[-1],
+        "main_workbook": str(OUT),
+        "batch_workbook": str(batch_path),
+        "status_counts": summarize_batch(ws, cols, batch_rows),
+    }
     print(f"Finalizado. Arquivo: {OUT}")
+    print("BATCH_SUMMARY " + json.dumps(summary, ensure_ascii=True))
     return 0
 
 
