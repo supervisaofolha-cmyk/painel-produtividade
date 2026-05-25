@@ -901,6 +901,38 @@ def atualizar_planilha_com_ro(data_referencia):
     }
 
 
+def zerar_colunas_sem_movimento_ws(ws):
+    colunas = cabecalhos(ws)
+    col_atendidas = coluna(colunas, "Atendidas")
+    col_chat = coluna(colunas, "CHAT")
+    colunas_zeradas = [
+        col_atendidas,
+        coluna(colunas, " > 2min", "> 2min", ">2min"),
+        coluna(colunas, "TMA"),
+        coluna(colunas, "RO"),
+        col_chat,
+        coluna(colunas, "Realizado"),
+        coluna(colunas, "Esperado"),
+        coluna(colunas, "Desvio"),
+    ]
+
+    for row in range(2, ws.max_row + 1):
+        atendidas = ws.cell(row=row, column=col_atendidas).value or 0
+        chat = ws.cell(row=row, column=col_chat).value or 0
+        try:
+            atendidas = float(atendidas)
+        except Exception:
+            atendidas = 0
+        try:
+            chat = float(chat)
+        except Exception:
+            chat = 0
+
+        if atendidas == 0 and chat == 0:
+            for indice_coluna in colunas_zeradas:
+                ws.cell(row=row, column=indice_coluna).value = 0
+
+
 def recalcular_colunas_derivadas(df):
     esperado_por_nivel = {
         "Técnico III": 35,
@@ -917,6 +949,16 @@ def recalcular_colunas_derivadas(df):
 
     if "Atendidas" in df.columns:
         df["Atendidas"] = pd.to_numeric(df["Atendidas"], errors="coerce").fillna(0)
+    if "TMA" in df.columns:
+        df["TMA"] = pd.to_numeric(df["TMA"], errors="coerce").fillna(0)
+
+    linhas_sem_movimento = (df["Atendidas"] == 0) & (df["CHAT"] == 0)
+    colunas_para_zerar = [coluna_2min, "RO", "CHAT"]
+    if "TMA" in df.columns:
+        colunas_para_zerar.append("TMA")
+    for nome_coluna in colunas_para_zerar:
+        if nome_coluna in df.columns:
+            df.loc[linhas_sem_movimento, nome_coluna] = 0
 
     df["Realizado"] = df[coluna_2min] + df["RO"] + df["CHAT"]
     meta_por_linha = df["Nível"].map(esperado_por_nivel).fillna(0)
@@ -928,6 +970,7 @@ def recalcular_colunas_derivadas(df):
     total_atendidas_dia = atendidas_validas.groupby(df["Data"]).transform("sum")
     proporcional = total_atendidas_dia * (meta_por_linha / 1083)
     df["Esperado"] = proporcional.clip(upper=meta_por_linha).round(0)
+    df.loc[linhas_sem_movimento, "Esperado"] = 0
     df["Desvio"] = df["Realizado"] - df["Esperado"]
     df["Classificação"] = df["Desvio"].apply(status_por_desvio)
     return df
