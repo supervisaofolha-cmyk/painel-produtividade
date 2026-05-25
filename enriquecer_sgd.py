@@ -135,19 +135,18 @@ def search_phone(page, phone, debug_dir, row):
     page.locator('select[name="locForm:usuario"]').select_option("5")
     page.locator('input[name="locForm:palavraChave"]').fill(phone)
 
-    with page.expect_navigation(wait_until="load", timeout=30000):
-        page.locator('input[name="locForm:localizarBtn"]').click()
-
-    page.wait_for_timeout(700)
+    page.locator('input[name="locForm:localizarBtn"]').click(no_wait_after=True)
+    page.wait_for_load_state("domcontentloaded", timeout=30000)
+    page.wait_for_timeout(1500)
 
     # Some searches may land on a details page directly. Otherwise, click the
     # strongest result link when there is exactly one obvious client row.
     links = page.locator('a[href*="cliente"], a[href*="cad-cliente"], a[href*="alt-cliente"]')
     count = links.count()
     if count == 1:
-        with page.expect_navigation(wait_until="load", timeout=30000):
-            links.first.click()
-        page.wait_for_timeout(700)
+        links.first.click(no_wait_after=True)
+        page.wait_for_load_state("domcontentloaded", timeout=30000)
+        page.wait_for_timeout(1000)
     elif count > 1:
         body_text = normalize_text(page.locator("body").inner_text(timeout=10000))
         debug_path = debug_dir / f"row_{row}_{phone}_multiplo.html"
