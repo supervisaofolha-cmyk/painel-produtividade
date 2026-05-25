@@ -1,12 +1,15 @@
 import argparse
+import concurrent.futures
 import json
 import html
 import re
+import threading
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
 
+import requests
 from openpyxl import Workbook
 from openpyxl import load_workbook
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -22,6 +25,7 @@ CDP_URL = "http://127.0.0.1:9222"
 DEFAULT_BATCH_DIR = Path(
     r"C:\Users\esther.queiroz\Downloads\lotes_clientes_vs_abandonos_052026"
 )
+thread_local = threading.local()
 
 NEW_HEADERS = [
     "Nome_Licenciado",
@@ -101,6 +105,43 @@ def summarize_batch(ws, cols, batch_rows):
         status = ws.cell(src_row, cols["SGD_Status"]).value or "Sem status"
         counts[status] = counts.get(status, 0) + 1
     return counts
+
+
+def build_http_config(context, page):
+    return {
+        "cookies": context.cookies(),
+        "user_agent": page.evaluate("() => navigator.userAgent"),
+    }
+
+
+def make_requests_session(http_config):
+    session = requests.Session()
+    session.headers.update(
+        {
+            "User-Agent": http_config["user_agent"],
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+        }
+    )
+    for cookie in http_config["cookies"]:
+        session.cookies.set(
+            cookie["name"],
+            cookie["value"],
+            domain=cookie.get("domain"),
+            path=cookie.get("path", "/"),
+        )
+    return session
+
+
+def get_thread_session(http_config):
+    session = getattr(thread_local, "session", None)
+    marker = getattr(thread_local, "http_marker", None)
+    current_marker = (http_config["user_agent"], len(http_config["cookies"]))
+    if session is None or marker != current_marker:
+        session = make_requests_session(http_config)
+        thread_local.session = session
+        thread_local.http_marker = current_marker
+    return session
 
 
 def normalize_text(text):
@@ -382,6 +423,46 @@ def search_phone_http(request_context, view_state, phone, debug_dir, row):
     return result, next_view_state
 
 
+def search_phone_requests(http_config, phone, debug_dir, row):
+    session = get_thread_session(http_config)
+    response = session.get(SEARCH_URL, timeout=60)
+    content = response.text
+    view_state = extract_view_state(content)
+    data = {
+        "locForm": "locForm",
+        "origemRequest": "",
+        "telefoneRequest": "",
+        "conversationID": "",
+        "locForm:segmento": "0",
+        "locForm:usuario": "5",
+        "locForm:palavraChave": phone,
+        "locForm:localizarBtn": "Localizar",
+        "javax.faces.ViewState": view_state,
+    }
+    response = session.post(SEARCH_URL, data=data, timeout=60)
+    content = response.text
+
+    if LOGIN_URL_PART in response.url or "DomÃ­nio Sistemas - Login" in content:
+        raise RuntimeError("Sessao expirada ou nao autenticada")
+
+    result_rows = extract_result_rows_from_html(content)
+    parsed_result = result_from_result_rows(
+        result_rows, phone, debug_dir, row, content
+    )
+    if parsed_result:
+        return parsed_result
+
+    result = extract_from_text(strip_tags(content), phone)
+    if result["status"] != "Encontrado" or not result["deca"] or not result["nome"]:
+        debug_path = debug_dir / f"row_{row}_{phone}.html"
+        debug_path.write_text(content, encoding="utf-8")
+        if result["obs"]:
+            result["obs"] = f"{result['obs']}; HTML: {debug_path}"
+        else:
+            result["obs"] = f"HTML: {debug_path}"
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=10)
@@ -390,6 +471,7 @@ def main():
     parser.add_argument("--start-row", type=int, default=2)
     parser.add_argument("--save-every", type=int, default=10)
     parser.add_argument("--connect-cdp", action="store_true")
+    parser.add_argument("--workers", type=int, default=4)
     args = parser.parse_args()
 
     wb, ws = ensure_workbook()
@@ -426,38 +508,75 @@ def main():
             page = context.pages[0] if context.pages else context.new_page()
         wait_for_login(page)
         view_state = ""
+        http_config = build_http_config(context, page) if args.connect_cdp else None
 
         done = 0
-        for row, phone in rows:
-            try:
-                print(f"Consultando linha {row}: {phone}")
-                if args.connect_cdp:
-                    result, view_state = search_phone_http(
-                        context.request, view_state, phone, debug_dir, row
+        if args.connect_cdp and args.workers > 1:
+            future_map = {}
+            with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
+                for row, phone in rows:
+                    print(f"Consultando linha {row}: {phone}")
+                    future = executor.submit(
+                        search_phone_requests, http_config, phone, debug_dir, row
                     )
-                else:
-                    result = search_phone(page, phone, debug_dir, row)
-            except PlaywrightTimeoutError as exc:
-                result = {
-                    "status": "Erro",
-                    "nome": "",
-                    "deca": "",
-                    "obs": f"Timeout na consulta: {exc}",
-                }
-            except Exception as exc:
-                result = {
-                    "status": "Erro",
-                    "nome": "",
-                    "deca": "",
-                    "obs": f"Erro na consulta: {exc}",
-                }
+                    future_map[future] = (row, phone)
 
-            save_result(ws, cols, row, result)
-            done += 1
-            print(f"  -> {result['status']} | {result['nome']} | {result['deca']}")
-            if done % args.save_every == 0:
-                wb.save(OUT)
-                print(f"Progresso salvo em {OUT}")
+                for future in concurrent.futures.as_completed(future_map):
+                    row, phone = future_map[future]
+                    try:
+                        result = future.result()
+                    except requests.Timeout as exc:
+                        result = {
+                            "status": "Erro",
+                            "nome": "",
+                            "deca": "",
+                            "obs": f"Timeout na consulta: {exc}",
+                        }
+                    except Exception as exc:
+                        result = {
+                            "status": "Erro",
+                            "nome": "",
+                            "deca": "",
+                            "obs": f"Erro na consulta: {exc}",
+                        }
+
+                    save_result(ws, cols, row, result)
+                    done += 1
+                    print(f"  -> linha {row}: {result['status']} | {result['nome']} | {result['deca']}")
+                    if done % args.save_every == 0:
+                        wb.save(OUT)
+                        print(f"Progresso salvo em {OUT}")
+        else:
+            for row, phone in rows:
+                try:
+                    print(f"Consultando linha {row}: {phone}")
+                    if args.connect_cdp:
+                        result, view_state = search_phone_http(
+                            context.request, view_state, phone, debug_dir, row
+                        )
+                    else:
+                        result = search_phone(page, phone, debug_dir, row)
+                except PlaywrightTimeoutError as exc:
+                    result = {
+                        "status": "Erro",
+                        "nome": "",
+                        "deca": "",
+                        "obs": f"Timeout na consulta: {exc}",
+                    }
+                except Exception as exc:
+                    result = {
+                        "status": "Erro",
+                        "nome": "",
+                        "deca": "",
+                        "obs": f"Erro na consulta: {exc}",
+                    }
+
+                save_result(ws, cols, row, result)
+                done += 1
+                print(f"  -> {result['status']} | {result['nome']} | {result['deca']}")
+                if done % args.save_every == 0:
+                    wb.save(OUT)
+                    print(f"Progresso salvo em {OUT}")
 
         wb.save(OUT)
         export_batch_workbook(ws, batch_rows, batch_path)
