@@ -79,6 +79,12 @@ MOTIVOS_RO_CONTAM = {
     "Ligação transferida para outro técnico ou setor (Transferência)",
 }
 
+TECNICOS_DESCONSIDERADOS_ESPERADO = {
+    "patricia karla de sousa araujo",
+    "lorena dias de araujo",
+    "lucas luiz romero",
+}
+
 
 class FormularioSGDParser(HTMLParser):
     def __init__(self):
@@ -901,8 +907,19 @@ def recalcular_colunas_derivadas(df):
         if coluna in df.columns:
             df[coluna] = pd.to_numeric(df[coluna], errors="coerce").fillna(0)
 
+    if "Atendidas" in df.columns:
+        df["Atendidas"] = pd.to_numeric(df["Atendidas"], errors="coerce").fillna(0)
+
     df["Realizado"] = df[coluna_2min] + df["RO"] + df["CHAT"]
-    df["Esperado"] = df["Nível"].map(esperado_por_nivel).fillna(0)
+    meta_por_linha = df["Nível"].map(esperado_por_nivel).fillna(0)
+    tecnicos_normalizados = df["Técnico"].apply(normalizar_nome)
+    atendidas_validas = df["Atendidas"].where(
+        ~tecnicos_normalizados.isin(TECNICOS_DESCONSIDERADOS_ESPERADO),
+        0,
+    )
+    total_atendidas_dia = atendidas_validas.groupby(df["Data"]).transform("sum")
+    proporcional = total_atendidas_dia * (meta_por_linha / 1083)
+    df["Esperado"] = proporcional.clip(upper=meta_por_linha).round(0)
     df["Desvio"] = df["Realizado"] - df["Esperado"]
     df["Classificação"] = df["Desvio"].apply(status_por_desvio)
     return df
