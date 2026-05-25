@@ -1,9 +1,11 @@
 import argparse
+import html
 import re
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import unquote
 
 from openpyxl import load_workbook
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -135,6 +137,54 @@ def extract_result_rows(page):
     )
 
 
+def extract_view_state(content):
+    match = re.search(
+        r'name="javax\.faces\.ViewState"[^>]*value="([^"]*)"', content
+    )
+    if not match:
+        match = re.search(
+            r'id="[^"]*:javax\.faces\.ViewState:[^"]*"[^>]*value="([^"]*)"',
+            content,
+        )
+    return html.unescape(match.group(1)) if match else ""
+
+
+def strip_tags(value):
+    value = re.sub(r"<br\s*/?>", " ", value, flags=re.IGNORECASE)
+    value = re.sub(r"<[^>]+>", " ", value)
+    return normalize_text(html.unescape(value))
+
+
+def extract_result_rows_from_html(content):
+    table_match = re.search(
+        r'<table[^>]+class="[^"]*\btableSorter\b[^"]*"[^>]*>.*?<tbody>(.*?)</tbody>',
+        content,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if not table_match:
+        return []
+
+    rows = []
+    for row_html in re.findall(
+        r"<tr[^>]*>(.*?)</tr>", table_match.group(1), flags=re.IGNORECASE | re.DOTALL
+    ):
+        cells = re.findall(
+            r"<td[^>]*>(.*?)</td>", row_html, flags=re.IGNORECASE | re.DOTALL
+        )
+        if len(cells) < 10:
+            continue
+        rows.append(
+            {
+                "codigo": strip_tags(cells[0]),
+                "razao": strip_tags(cells[1]),
+                "representante": strip_tags(cells[2]),
+                "tipo": strip_tags(cells[6]),
+                "telefone": strip_tags(cells[9]),
+            }
+        )
+    return [row for row in rows if row["codigo"] or row["razao"]]
+
+
 def result_from_row(row):
     obs = []
     if row.get("representante"):
@@ -149,6 +199,30 @@ def result_from_row(row):
         "deca": row.get("codigo", ""),
         "obs": "; ".join(obs),
     }
+
+
+def result_from_result_rows(result_rows, phone, debug_dir, row, content):
+    if len(result_rows) == 1:
+        return result_from_row(result_rows[0])
+    if len(result_rows) > 1:
+        phone_matches = [
+            item for item in result_rows if digits(item.get("telefone")) == phone
+        ]
+        if len(phone_matches) == 1:
+            return result_from_row(phone_matches[0])
+
+        candidates = " | ".join(
+            f"{item.get('codigo')} - {item.get('razao')}" for item in result_rows
+        )
+        debug_path = debug_dir / f"row_{row}_{phone}_multiplo.html"
+        debug_path.write_text(content, encoding="utf-8")
+        return {
+            "status": "Multiplo resultado",
+            "nome": "",
+            "deca": "",
+            "obs": f"{len(result_rows)} resultados: {candidates}; HTML: {debug_path}",
+        }
+    return None
 
 
 def save_result(ws, cols, row, result):
@@ -198,26 +272,11 @@ def search_phone(page, phone, debug_dir, row):
     page.wait_for_timeout(1500)
 
     result_rows = extract_result_rows(page)
-    if len(result_rows) == 1:
-        return result_from_row(result_rows[0])
-    if len(result_rows) > 1:
-        phone_matches = [
-            item for item in result_rows if digits(item.get("telefone")) == phone
-        ]
-        if len(phone_matches) == 1:
-            return result_from_row(phone_matches[0])
-
-        candidates = " | ".join(
-            f"{item.get('codigo')} - {item.get('razao')}" for item in result_rows
-        )
-        debug_path = debug_dir / f"row_{row}_{phone}_multiplo.html"
-        debug_path.write_text(page.content(), encoding="utf-8")
-        return {
-            "status": "Multiplo resultado",
-            "nome": "",
-            "deca": "",
-            "obs": f"{len(result_rows)} resultados: {candidates}; HTML: {debug_path}",
-        }
+    parsed_result = result_from_result_rows(
+        result_rows, phone, debug_dir, row, page.content()
+    )
+    if parsed_result:
+        return parsed_result
 
     body_text = page.locator("body").inner_text(timeout=10000)
     result = extract_from_text(body_text, phone)
@@ -229,6 +288,48 @@ def search_phone(page, phone, debug_dir, row):
         else:
             result["obs"] = f"HTML: {debug_path}"
     return result
+
+
+def search_phone_http(request_context, view_state, phone, debug_dir, row):
+    if not view_state:
+        response = request_context.get(SEARCH_URL, timeout=60000)
+        content = response.text()
+        view_state = extract_view_state(content)
+
+    data = {
+        "locForm": "locForm",
+        "origemRequest": "",
+        "telefoneRequest": "",
+        "conversationID": "",
+        "locForm:segmento": "0",
+        "locForm:usuario": "5",
+        "locForm:palavraChave": phone,
+        "locForm:localizarBtn": "Localizar",
+        "javax.faces.ViewState": view_state,
+    }
+    response = request_context.post(SEARCH_URL, form=data, timeout=60000)
+    content = response.text()
+    next_view_state = extract_view_state(content)
+
+    if LOGIN_URL_PART in response.url or "Domínio Sistemas - Login" in content:
+        raise RuntimeError("Sessao expirada ou nao autenticada")
+
+    result_rows = extract_result_rows_from_html(content)
+    parsed_result = result_from_result_rows(
+        result_rows, phone, debug_dir, row, content
+    )
+    if parsed_result:
+        return parsed_result, next_view_state
+
+    result = extract_from_text(strip_tags(content), phone)
+    if result["status"] != "Encontrado" or not result["deca"] or not result["nome"]:
+        debug_path = debug_dir / f"row_{row}_{phone}.html"
+        debug_path.write_text(content, encoding="utf-8")
+        if result["obs"]:
+            result["obs"] = f"{result['obs']}; HTML: {debug_path}"
+        else:
+            result["obs"] = f"HTML: {debug_path}"
+    return result, next_view_state
 
 
 def main():
@@ -274,12 +375,18 @@ def main():
             )
             page = context.pages[0] if context.pages else context.new_page()
         wait_for_login(page)
+        view_state = ""
 
         done = 0
         for row, phone in rows:
             try:
                 print(f"Consultando linha {row}: {phone}")
-                result = search_phone(page, phone, debug_dir, row)
+                if args.connect_cdp:
+                    result, view_state = search_phone_http(
+                        context.request, view_state, phone, debug_dir, row
+                    )
+                else:
+                    result = search_phone(page, phone, debug_dir, row)
             except PlaywrightTimeoutError as exc:
                 result = {
                     "status": "Erro",
