@@ -1,0 +1,245 @@
+import argparse
+import re
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+from openpyxl import load_workbook
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import sync_playwright
+
+
+SRC = Path(r"C:\Users\esther.queiroz\Downloads\clientes_vs_abandonos 052026.xlsx")
+OUT = Path(r"C:\Users\esther.queiroz\Downloads\clientes_vs_abandonos 052026_enriquecido.xlsx")
+PROFILE = Path(r"C:\Users\esther.queiroz\AppData\Local\Temp\sgd_playwright_profile")
+SEARCH_URL = "https://sgd.dominiosistemas.com.br/sgsc/faces/loc-cliente.html"
+LOGIN_URL_PART = "sgd.dominiosistemas.com.br/login"
+
+NEW_HEADERS = [
+    "Nome_Licenciado",
+    "Codigo_DECA",
+    "SGD_Status",
+    "SGD_Observacao",
+    "Consultado_Em",
+]
+
+
+def digits(value):
+    return re.sub(r"\D+", "", str(value or ""))
+
+
+def ensure_workbook():
+    if OUT.exists():
+        wb = load_workbook(OUT)
+    else:
+        wb = load_workbook(SRC)
+
+    ws = wb["Resultado da consulta"]
+    headers = [ws.cell(1, col).value for col in range(1, ws.max_column + 1)]
+    for header in NEW_HEADERS:
+        if header not in headers:
+            ws.cell(1, ws.max_column + 1).value = header
+            headers.append(header)
+
+    wb.save(OUT)
+    return wb, ws
+
+
+def header_map(ws):
+    return {ws.cell(1, col).value: col for col in range(1, ws.max_column + 1)}
+
+
+def normalize_text(text):
+    return re.sub(r"\s+", " ", text or "").strip()
+
+
+def extract_from_text(text, phone):
+    clean = normalize_text(text)
+    if "Nenhum registro" in clean or "não encontrado" in clean.lower():
+        return {
+            "status": "Nao encontrado",
+            "nome": "",
+            "deca": "",
+            "obs": "Nenhum resultado na pesquisa por telefone",
+        }
+
+    deca_match = re.search(r"(?:DECA|Deca|deca)\D{0,20}(\d{2,})", clean)
+    code_match = re.search(r"(?:Código|Codigo|Cód\.?|Cod\.?)\D{0,20}(\d{2,})", clean)
+
+    deca = deca_match.group(1) if deca_match else ""
+    code = code_match.group(1) if code_match else ""
+
+    # Prefer labels commonly used by the client details page.
+    name = ""
+    for pattern in [
+        r"(?:Licenciado|Cliente|Nome|Razão Social|Razao Social)\s*:?\s*([A-Z0-9][^:\n\r]{3,120})",
+        r"\b\d{2,}\s+([A-Z][A-Z0-9 .,&/-]{5,120})",
+    ]:
+        match = re.search(pattern, clean)
+        if match:
+            name = normalize_text(match.group(1))
+            break
+
+    if deca or code or name:
+        return {
+            "status": "Encontrado",
+            "nome": name,
+            "deca": deca or code,
+            "obs": "",
+        }
+
+    if phone in clean:
+        return {
+            "status": "Encontrado",
+            "nome": "",
+            "deca": "",
+            "obs": "Resultado encontrado, mas campos nao identificados automaticamente",
+        }
+
+    return {
+        "status": "Nao encontrado",
+        "nome": "",
+        "deca": "",
+        "obs": "Telefone nao apareceu no resultado da pesquisa",
+    }
+
+
+def save_result(ws, cols, row, result):
+    ws.cell(row, cols["Nome_Licenciado"]).value = result["nome"]
+    ws.cell(row, cols["Codigo_DECA"]).value = result["deca"]
+    ws.cell(row, cols["SGD_Status"]).value = result["status"]
+    ws.cell(row, cols["SGD_Observacao"]).value = result["obs"]
+    ws.cell(row, cols["Consultado_Em"]).value = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def wait_for_login(page):
+    page.goto(SEARCH_URL, wait_until="load")
+    if LOGIN_URL_PART not in page.url:
+        return
+
+    print("Chrome aberto na tela de login do SGD. Faça login nessa janela.")
+    print("Depois do login, o script continua automaticamente.")
+    deadline = time.time() + 600
+    while time.time() < deadline:
+        if LOGIN_URL_PART not in page.url:
+            page.goto(SEARCH_URL, wait_until="load")
+            return
+        time.sleep(2)
+    raise RuntimeError("Login nao concluido em 10 minutos.")
+
+
+def search_phone(page, phone, debug_dir, row):
+    page.goto(SEARCH_URL, wait_until="load")
+    page.locator('select[name="locForm:usuario"]').select_option("5")
+    page.locator('input[name="locForm:palavraChave"]').fill(phone)
+
+    with page.expect_navigation(wait_until="load", timeout=30000):
+        page.locator('input[name="locForm:localizarBtn"]').click()
+
+    page.wait_for_timeout(700)
+
+    # Some searches may land on a details page directly. Otherwise, click the
+    # strongest result link when there is exactly one obvious client row.
+    links = page.locator('a[href*="cliente"], a[href*="cad-cliente"], a[href*="alt-cliente"]')
+    count = links.count()
+    if count == 1:
+        with page.expect_navigation(wait_until="load", timeout=30000):
+            links.first.click()
+        page.wait_for_timeout(700)
+    elif count > 1:
+        body_text = normalize_text(page.locator("body").inner_text(timeout=10000))
+        debug_path = debug_dir / f"row_{row}_{phone}_multiplo.html"
+        debug_path.write_text(page.content(), encoding="utf-8")
+        return {
+            "status": "Multiplo resultado",
+            "nome": "",
+            "deca": "",
+            "obs": f"{count} links de cliente encontrados; HTML: {debug_path}",
+        }
+
+    body_text = page.locator("body").inner_text(timeout=10000)
+    result = extract_from_text(body_text, phone)
+    if result["status"] != "Encontrado" or not result["deca"] or not result["nome"]:
+        debug_path = debug_dir / f"row_{row}_{phone}.html"
+        debug_path.write_text(page.content(), encoding="utf-8")
+        if result["obs"]:
+            result["obs"] = f"{result['obs']}; HTML: {debug_path}"
+        else:
+            result["obs"] = f"HTML: {debug_path}"
+    return result
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--limit", type=int, default=10)
+    parser.add_argument("--start-row", type=int, default=2)
+    parser.add_argument("--save-every", type=int, default=10)
+    args = parser.parse_args()
+
+    wb, ws = ensure_workbook()
+    cols = header_map(ws)
+    debug_dir = OUT.with_suffix("")
+    debug_dir.mkdir(exist_ok=True)
+
+    rows = []
+    for row in range(args.start_row, ws.max_row + 1):
+        phone = digits(ws.cell(row, 1).value)
+        if not phone:
+            continue
+        if ws.cell(row, cols["SGD_Status"]).value:
+            continue
+        rows.append((row, phone))
+        if args.limit and len(rows) >= args.limit:
+            break
+
+    print(f"Linhas pendentes selecionadas: {len(rows)}")
+    if not rows:
+        return 0
+
+    with sync_playwright() as p:
+        context = p.chromium.launch_persistent_context(
+            str(PROFILE),
+            channel="chrome",
+            headless=False,
+            viewport={"width": 1280, "height": 800},
+        )
+        page = context.pages[0] if context.pages else context.new_page()
+        wait_for_login(page)
+
+        done = 0
+        for row, phone in rows:
+            try:
+                print(f"Consultando linha {row}: {phone}")
+                result = search_phone(page, phone, debug_dir, row)
+            except PlaywrightTimeoutError as exc:
+                result = {
+                    "status": "Erro",
+                    "nome": "",
+                    "deca": "",
+                    "obs": f"Timeout na consulta: {exc}",
+                }
+            except Exception as exc:
+                result = {
+                    "status": "Erro",
+                    "nome": "",
+                    "deca": "",
+                    "obs": f"Erro na consulta: {exc}",
+                }
+
+            save_result(ws, cols, row, result)
+            done += 1
+            print(f"  -> {result['status']} | {result['nome']} | {result['deca']}")
+            if done % args.save_every == 0:
+                wb.save(OUT)
+                print(f"Progresso salvo em {OUT}")
+
+        wb.save(OUT)
+        context.close()
+
+    print(f"Finalizado. Arquivo: {OUT}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
