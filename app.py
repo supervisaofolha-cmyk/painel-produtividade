@@ -11,6 +11,7 @@ from difflib import SequenceMatcher
 from html import unescape
 from html.parser import HTMLParser
 from io import BytesIO, StringIO
+import calendar
 
 import openpyxl
 import pandas as pd
@@ -91,6 +92,18 @@ PERCENTUAL_ABSORCAO_POR_NIVEL = {
     "Técnico I": 2.12,
     "JR": 1.85,
     "Estágio": 0.92,
+}
+
+FERIADOS_FEDERAIS_FIXOS = {
+    (1, 1),
+    (4, 21),
+    (5, 1),
+    (9, 7),
+    (10, 12),
+    (11, 2),
+    (11, 15),
+    (11, 20),
+    (12, 25),
 }
 
 
@@ -348,6 +361,19 @@ def datas_no_periodo(data_inicial, data_final):
     while atual <= data_final:
         yield atual
         atual += timedelta(days=1)
+
+
+def dias_uteis_para_meta(ano, mes):
+    ultimo_dia = calendar.monthrange(ano, mes)[1]
+    total = 0
+    for dia in range(1, ultimo_dia + 1):
+        data_atual = date(ano, mes, dia)
+        if data_atual.weekday() >= 5:
+            continue
+        if (mes, dia) in FERIADOS_FEDERAIS_FIXOS:
+            continue
+        total += 1
+    return total
 
 
 def criar_sessao_http():
@@ -1440,7 +1466,7 @@ nivel_tecnico = None if nivel_mode.empty else nivel_mode.iloc[0]
 if modo_gestao:
     col1, col2, col3, col4, col5, col6 = st.columns(6)
 else:
-    col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 
 with col1:
     st.metric("Realizado Total", int(dados_mes_atual["Realizado"].sum()))
@@ -1472,6 +1498,11 @@ if not modo_gestao:
     percentual_absorcao = PERCENTUAL_ABSORCAO_POR_NIVEL.get(nivel_tecnico, 0)
     with col7:
         st.metric("Percentual de Absorção", f"{percentual_absorcao:.2f}%")
+    with col8:
+        st.metric(
+            "Dias Úteis para Meta",
+            dias_uteis_para_meta(ano_atual, mes_atual),
+        )
 
 if not modo_gestao:
     if nivel_tecnico:
