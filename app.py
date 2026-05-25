@@ -1381,6 +1381,56 @@ with col6:
     )
     st.metric("Classificação", classificacao)
 
+if not modo_gestao:
+    nivel_mode = dados_mes_atual["Nível"].dropna().mode()
+    nivel_tecnico = None if nivel_mode.empty else nivel_mode.iloc[0]
+
+    if nivel_tecnico:
+        base_ranking_nivel = df[
+            (df["Data"].dt.month == mes_atual)
+            & (df["Data"].dt.year == ano_atual)
+            & (df["Nível"] == nivel_tecnico)
+        ]
+
+        ranking_nivel_diario = (
+            base_ranking_nivel[base_ranking_nivel["Data"] == ultima_data_mes]
+            .groupby("Técnico", as_index=False)["Realizado"]
+            .sum()
+            .sort_values(by="Realizado", ascending=False)
+            .reset_index(drop=True)
+        )
+
+        ranking_nivel_mensal = (
+            base_ranking_nivel.groupby("Técnico", as_index=False)["Realizado"]
+            .sum()
+            .sort_values(by="Realizado", ascending=False)
+            .reset_index(drop=True)
+        )
+
+        st.divider()
+        st.subheader(f"Ranking do Seu Nível - {nivel_tecnico}")
+        aba_nivel_diario, aba_nivel_mensal = st.tabs(["Diário", "Mensal"])
+
+        with aba_nivel_diario:
+            st.plotly_chart(
+                montar_grafico_ranking(
+                    ranking_nivel_diario,
+                    f"Ranking Diário - {nivel_tecnico}",
+                    "Produtividade do dia",
+                ),
+                use_container_width=True,
+            )
+
+        with aba_nivel_mensal:
+            st.plotly_chart(
+                montar_grafico_ranking(
+                    ranking_nivel_mensal,
+                    f"Ranking Mensal - {nivel_tecnico}",
+                    "Produtividade do mês",
+                ),
+                use_container_width=True,
+            )
+
 st.divider()
 st.subheader("📊 Produtividade Mensal")
 
