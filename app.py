@@ -1383,6 +1383,7 @@ def atualizar_dados_automaticamente():
 
     st.session_state["auto_refresh_executado"] = True
     data_referencia = data_dia_anterior()
+    env_local = carregar_env_local()
     usuario_sgd = env_local.get("SGD_USUARIO", os.getenv("SGD_USUARIO", ""))
     senha_sgd = env_local.get("SGD_SENHA", os.getenv("SGD_SENHA", ""))
 
