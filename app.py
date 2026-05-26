@@ -2053,15 +2053,35 @@ dados_produtividade = dados_tecnico[
     & (dados_tecnico["Data"].dt.year == ano_atual)
 ]
 
-dias_disponiveis = sorted(dados_produtividade["Data Formatada"].unique())
-dias_selecionados = st.multiselect(
-    "Selecione os dias",
-    dias_disponiveis,
-    default=dias_disponiveis,
-)
+data_inicial_padrao = dados_produtividade["Data"].min()
+data_final_padrao = dados_produtividade["Data"].max()
+
+col_periodo_1, col_periodo_2 = st.columns(2)
+with col_periodo_1:
+    periodo_inicial_texto = st.text_input(
+        "Período inicial",
+        value=data_inicial_padrao.strftime("%d/%m/%Y"),
+    )
+with col_periodo_2:
+    periodo_final_texto = st.text_input(
+        "Período final",
+        value=data_final_padrao.strftime("%d/%m/%Y"),
+    )
+
+try:
+    periodo_inicial = datetime.strptime(periodo_inicial_texto, "%d/%m/%Y").date()
+    periodo_final = datetime.strptime(periodo_final_texto, "%d/%m/%Y").date()
+except ValueError:
+    st.error("Informe o período no formato dd/mm/aaaa.")
+    st.stop()
+
+if periodo_inicial > periodo_final:
+    st.error("O período inicial não pode ser maior que o período final.")
+    st.stop()
 
 dados_produtividade = dados_produtividade[
-    dados_produtividade["Data Formatada"].isin(dias_selecionados)
+    (dados_produtividade["Data"].dt.date >= periodo_inicial)
+    & (dados_produtividade["Data"].dt.date <= periodo_final)
 ]
 
 produtividade = (
