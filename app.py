@@ -27,6 +27,7 @@ ABA_ALIASES = "Aliases"
 
 POWERBI_RESOURCE_KEY = "6b54dc9f-c2f8-4ee5-bbd2-e2ca5781ab06"
 POWERBI_API_BASE = "https://wabi-brazil-south-b-primary-api.analysis.windows.net"
+POWERBI_FILA_NOME = "Folha - FGTS/DCTF/ESOCIAL"
 
 SGD_BASE_URL = "https://sgd.dominiosistemas.com.br"
 SGD_LOGIN_URL = f"{SGD_BASE_URL}/login"
@@ -853,6 +854,41 @@ def trimestre_powerbi(data_referencia):
     return f"Trim {((data_referencia.month - 1) // 3) + 1}"
 
 
+def aplicar_filtro_fila_powerbi(query):
+    fontes = query.setdefault("From", [])
+    if not any(
+        fonte.get("Entity") == "Filas" and fonte.get("Name") == "f"
+        for fonte in fontes
+    ):
+        fontes.append({"Name": "f", "Entity": "Filas", "Type": 0})
+
+    query.setdefault("Where", []).append(
+        {
+            "Condition": {
+                "In": {
+                    "Expressions": [
+                        {
+                            "Column": {
+                                "Expression": {"SourceRef": {"Source": "f"}},
+                                "Property": "Fila",
+                            }
+                        }
+                    ],
+                    "Values": [
+                        [
+                            {
+                                "Literal": {
+                                    "Value": f"'{POWERBI_FILA_NOME}'",
+                                }
+                            }
+                        ]
+                    ],
+                }
+            }
+        }
+    )
+
+
 def montar_consulta_powerbi(data_referencia):
     metadados = carregar_metadados_powerbi()
     secao_mapa = next(
@@ -869,6 +905,7 @@ def montar_consulta_powerbi(data_referencia):
     valores_data[1]["Literal"]["Value"] = f"'{trimestre_powerbi(data_referencia)}'"
     valores_data[2]["Literal"]["Value"] = f"'{MESES_POWERBI[data_referencia.month]}'"
     valores_data[3]["Literal"]["Value"] = f"{data_referencia.day}L"
+    aplicar_filtro_fila_powerbi(comando["Query"])
 
     return {
         "version": "1.0.0",
