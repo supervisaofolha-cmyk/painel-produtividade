@@ -1679,7 +1679,10 @@ else:
     st.sidebar.success(f"Bem-vindo(a), {tecnico.title()}")
 
 if modo_gestao:
-    tecnico = st.selectbox("Selecione o Técnico", sorted(df["Técnico"].unique()))
+    tecnicos_disponiveis = sorted(df["Técnico"].unique())
+    tecnico = st.session_state.get("tecnico_gestao", tecnicos_disponiveis[0])
+    if tecnico not in tecnicos_disponiveis:
+        tecnico = tecnicos_disponiveis[0]
 
 dados_tecnico = df[df["Técnico"] == tecnico]
 
@@ -1884,6 +1887,14 @@ if modo_gestao:
             ),
             use_container_width=True,
         )
+
+if modo_gestao:
+    tecnico = st.selectbox(
+        "Selecione o Técnico",
+        tecnicos_disponiveis,
+        index=tecnicos_disponiveis.index(tecnico),
+        key="tecnico_gestao",
+    )
 
 st.divider()
 st.subheader(f"📌 Resultados Individuais - {tecnico.title()}")
