@@ -1964,6 +1964,40 @@ if not modo_gestao:
             dias_meta_exibicao,
         )
 
+    st.caption("Referência da classificação")
+    col_leg_1, col_leg_2, col_leg_3, col_leg_4 = st.columns(4)
+    for status, descricao, coluna in zip(
+        ["CRÍTICO", "ATENÇÃO", "BOM", "EXCELENTE"],
+        [
+            "Desvio menor que -5",
+            "Desvio entre -5 e menor que 0",
+            "Desvio entre 0 e 5",
+            "Desvio acima de 5",
+        ],
+        [col_leg_1, col_leg_2, col_leg_3, col_leg_4],
+    ):
+        with coluna:
+            st.markdown(
+                f"""
+                <div style="
+                    border:1px solid #E5E7EB;
+                    border-left:6px solid {CORES_STATUS[status]};
+                    border-radius:10px;
+                    padding:10px 12px;
+                    background-color:#FFFFFF;
+                    min-height:74px;
+                ">
+                    <div style="font-weight:700;color:#111827;font-size:13px;">
+                        {status}
+                    </div>
+                    <div style="color:#6B7280;font-size:12px;margin-top:4px;">
+                        {descricao}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
 if not modo_gestao:
     if nivel_tecnico:
         base_ranking_nivel = df[
