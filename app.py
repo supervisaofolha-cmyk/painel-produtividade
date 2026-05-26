@@ -27,7 +27,8 @@ ABA_ALIASES = "Aliases"
 
 POWERBI_RESOURCE_KEY = "6b54dc9f-c2f8-4ee5-bbd2-e2ca5781ab06"
 POWERBI_API_BASE = "https://wabi-brazil-south-b-primary-api.analysis.windows.net"
-POWERBI_FILA_NOME = "Folha - FGTS/DCTF/ESOCIAL"
+X2_CONTROLLER_BASE_URL = "http://192.168.1.252/x2-controller"
+POWERBI_FILA_FALLBACK = "Folha - FGTS/DCTF/ESOCIAL"
 
 SGD_BASE_URL = "https://sgd.dominiosistemas.com.br"
 SGD_LOGIN_URL = f"{SGD_BASE_URL}/login"
@@ -854,6 +855,31 @@ def trimestre_powerbi(data_referencia):
     return f"Trim {((data_referencia.month - 1) // 3) + 1}"
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def carregar_filas_folha_bi():
+    try:
+        sessao = criar_sessao_http()
+        resposta = sessao.get(
+            f"{X2_CONTROLLER_BASE_URL}/api/ami/queues",
+            timeout=30,
+        )
+        resposta.raise_for_status()
+        dados = resposta.json()
+        filas = []
+
+        for fila in dados.get("queues", []):
+            nome = builtins.str(fila.get("name") or "").strip()
+            if nome and "folha" in nome.lower() and nome not in filas:
+                filas.append(nome)
+
+        if filas:
+            return filas
+    except Exception:
+        pass
+
+    return [POWERBI_FILA_FALLBACK]
+
+
 def aplicar_filtro_fila_powerbi(query):
     fontes = query.setdefault("From", [])
     if not any(
@@ -861,6 +887,11 @@ def aplicar_filtro_fila_powerbi(query):
         for fonte in fontes
     ):
         fontes.append({"Name": "f", "Entity": "Filas", "Type": 0})
+
+    valores_fila = [
+        [{"Literal": {"Value": f"'{fila}'"}}]
+        for fila in carregar_filas_folha_bi()
+    ]
 
     query.setdefault("Where", []).append(
         {
@@ -874,15 +905,7 @@ def aplicar_filtro_fila_powerbi(query):
                             }
                         }
                     ],
-                    "Values": [
-                        [
-                            {
-                                "Literal": {
-                                    "Value": f"'{POWERBI_FILA_NOME}'",
-                                }
-                            }
-                        ]
-                    ],
+                    "Values": valores_fila,
                 }
             }
         }
