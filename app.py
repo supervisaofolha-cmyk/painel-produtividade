@@ -1899,6 +1899,37 @@ if modo_gestao:
                 st.cache_data.clear()
                 st.rerun()
 
+        if st.button("Atualizar Ponto do mês", key="atualizar_pontoweb_mes"):
+            if not pontoweb_email or not pontoweb_senha:
+                st.sidebar.error("Informe usuário e senha do PontoWeb.")
+            else:
+                with st.spinner("Buscando abatimentos no PontoWeb e atualizando a planilha..."):
+                    try:
+                        resultado = atualizar_planilha_com_pontoweb_mes(
+                            ano_atual,
+                            mes_atual,
+                            pontoweb_email,
+                            pontoweb_senha,
+                            pontoweb_banco_id,
+                            pontoweb_banco_identificador,
+                        )
+                    except PermissionError:
+                        st.sidebar.error("Feche a produtividade.xlsx no Excel e tente novamente.")
+                    except Exception as erro:
+                        st.sidebar.error(f"Não foi possível atualizar o PontoWeb: {erro}")
+                    else:
+                        st.sidebar.success(
+                            f"{resultado['tecnicos_processados']} técnicos processados. "
+                            f"{resultado['linhas_atualizadas']} linhas atualizadas."
+                        )
+                        if resultado["erros"]:
+                            st.sidebar.warning(
+                                "Sem retorno do PontoWeb para: "
+                                + ", ".join(list(resultado["erros"].keys())[:6])
+                            )
+                        st.cache_data.clear()
+                        st.rerun()
+
     if not pontoweb_email or not pontoweb_senha:
         st.sidebar.caption(
             "O quadro Dias Úteis para Meta usa o Ponto quando o usuário e a senha do PontoWeb são informados."
