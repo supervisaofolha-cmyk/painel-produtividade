@@ -1678,36 +1678,36 @@ else:
     tecnico = login.iloc[0]["tecnico"]
     st.sidebar.success(f"Bem-vindo(a), {tecnico.title()}")
 
-st.sidebar.divider()
-with st.sidebar.expander("PontoWeb", expanded=False):
-    pontoweb_email = st.text_input(
-        "Usuário Ponto",
-        value=pontoweb_email,
-        key="pontoweb_email_input",
-    )
-    pontoweb_senha = st.text_input(
-        "Senha Ponto",
-        value=pontoweb_senha,
-        type="password",
-        key="pontoweb_senha_input",
-    )
-    pontoweb_banco_id = st.text_input(
-        "Banco ID (opcional)",
-        value=pontoweb_banco_id,
-        key="pontoweb_banco_id_input",
-    )
-    pontoweb_banco_identificador = st.text_input(
-        "Banco identificador (opcional)",
-        value=pontoweb_banco_identificador,
-        key="pontoweb_banco_identificador_input",
-    )
-
-if not pontoweb_email or not pontoweb_senha:
-    st.sidebar.caption(
-        "O quadro Dias Úteis para Meta usa o Ponto quando o usuário e a senha do PontoWeb são informados."
-    )
-
 if modo_gestao:
+    st.sidebar.divider()
+    with st.sidebar.expander("PontoWeb", expanded=False):
+        pontoweb_email = st.text_input(
+            "Usuário Ponto",
+            value=pontoweb_email,
+            key="pontoweb_email_input",
+        )
+        pontoweb_senha = st.text_input(
+            "Senha Ponto",
+            value=pontoweb_senha,
+            type="password",
+            key="pontoweb_senha_input",
+        )
+        pontoweb_banco_id = st.text_input(
+            "Banco ID (opcional)",
+            value=pontoweb_banco_id,
+            key="pontoweb_banco_id_input",
+        )
+        pontoweb_banco_identificador = st.text_input(
+            "Banco identificador (opcional)",
+            value=pontoweb_banco_identificador,
+            key="pontoweb_banco_identificador_input",
+        )
+
+    if not pontoweb_email or not pontoweb_senha:
+        st.sidebar.caption(
+            "O quadro Dias Úteis para Meta usa o Ponto quando o usuário e a senha do PontoWeb são informados."
+        )
+
     tecnicos_disponiveis = sorted(df["Técnico"].unique())
     tecnico = st.session_state.get("tecnico_gestao", tecnicos_disponiveis[0])
     if tecnico not in tecnicos_disponiveis:
