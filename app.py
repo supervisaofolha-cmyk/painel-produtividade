@@ -1965,6 +1965,8 @@ with col6:
 if not modo_gestao:
     percentual_absorcao = PERCENTUAL_ABSORCAO_POR_NIVEL.get(nivel_tecnico, 0)
     dias_meta_valor = float(dias_uteis_para_meta(ano_atual, mes_atual))
+    fonte_dias_meta = "Calendário do mês"
+    detalhe_dias_meta = "Sem abatimentos do PontoWeb."
     if pontoweb_email and pontoweb_senha:
         try:
             resumo_meta_pontoweb = obter_resumo_meta_pontoweb(
@@ -1977,8 +1979,13 @@ if not modo_gestao:
                 pontoweb_banco_identificador,
             )
             dias_meta_valor = float(resumo_meta_pontoweb["dias_considerados"])
-        except Exception:
-            pass
+            fonte_dias_meta = "PontoWeb"
+            detalhe_dias_meta = (
+                f"Dias base: {resumo_meta_pontoweb['dias_base']} | "
+                f"Abatimento: {resumo_meta_pontoweb['abatimento']}"
+            )
+        except Exception as erro_pontoweb:
+            detalhe_dias_meta = f"PontoWeb indisponível: {erro_pontoweb}"
 
     if dias_meta_valor.is_integer():
         dias_meta_exibicao = builtins.str(int(dias_meta_valor))
@@ -1992,6 +1999,7 @@ if not modo_gestao:
             "Dias Úteis para Meta",
             dias_meta_exibicao,
         )
+    st.caption(f"Fonte: {fonte_dias_meta}. {detalhe_dias_meta}")
 
     st.caption("Referência da classificação")
     col_leg_1, col_leg_2, col_leg_3, col_leg_4 = st.columns(4)
