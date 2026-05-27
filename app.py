@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import tempfile
+import time
 import unicodedata
 import uuid
 import zipfile
@@ -37,6 +38,8 @@ POWERBI_FILA_FALLBACK = "Folha - FGTS/DCTF/ESOCIAL"
 SGD_BASE_URL = "https://sgd.dominiosistemas.com.br"
 SGD_LOGIN_URL = f"{SGD_BASE_URL}/login"
 SGD_RELATORIO_URL = f"{SGD_BASE_URL}/sgsc/faces/rel-satisfacao.html"
+SGD_RELATORIO_TIMEOUT = 300
+SGD_RELATORIO_TENTATIVAS = 3
 RO_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1O-1uJ6D9al9piHgOv_Ju0fpL-3Xbz3zK"
 PONTOWEB_BASE_URL = "https://pontoweb.secullum.com.br/"
 PONTOWEB_CLIENT_ID = "3001"
@@ -1227,8 +1230,32 @@ def gerar_relatorio_sgd(sessao, data_inicial, data_final):
     link_download = None
     for _ in range(10):
         dados = montar_campos_sgd(html, data_inicial, data_final)
-        resposta = sessao.post(SGD_RELATORIO_URL, data=dados, timeout=180)
-        resposta.raise_for_status()
+        ultima_excecao = None
+        for tentativa in range(1, SGD_RELATORIO_TENTATIVAS + 1):
+            try:
+                resposta = sessao.post(
+                    SGD_RELATORIO_URL,
+                    data=dados,
+                    timeout=SGD_RELATORIO_TIMEOUT,
+                )
+                resposta.raise_for_status()
+                break
+            except requests.exceptions.ReadTimeout as exc:
+                ultima_excecao = exc
+                if tentativa == SGD_RELATORIO_TENTATIVAS:
+                    periodo = (
+                        f"{data_inicial.strftime('%d/%m/%Y')} a "
+                        f"{data_final.strftime('%d/%m/%Y')}"
+                    )
+                    raise TimeoutError(
+                        "O SGD demorou mais do que o esperado para gerar o "
+                        f"relatÃ³rio do perÃ­odo {periodo}. Tente novamente em "
+                        "alguns minutos."
+                    ) from exc
+                time.sleep(3 * tentativa)
+        else:
+            if ultima_excecao:
+                raise ultima_excecao
 
         tipo = resposta.headers.get("content-type", "")
         if "spreadsheet" in tipo:
