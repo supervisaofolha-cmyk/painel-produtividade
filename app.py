@@ -3,8 +3,11 @@ import json
 import locale
 import os
 import re
+import shutil
+import tempfile
 import unicodedata
 import uuid
+import zipfile
 import builtins
 from datetime import date, datetime, timedelta
 from difflib import SequenceMatcher
@@ -21,6 +24,7 @@ import streamlit as st
 
 
 ARQUIVO_PRODUTIVIDADE = "produtividade.xlsx"
+ARQUIVO_PRODUTIVIDADE_BACKUP = "produtividade_backup.xlsx"
 ARQUIVO_USUARIOS = "usuarios.xlsx"
 ABA_PRODUTIVIDADE = "Produtividade"
 ABA_ALIASES = "Aliases"
