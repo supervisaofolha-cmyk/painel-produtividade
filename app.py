@@ -430,6 +430,59 @@ def ler_aliases(ws_aliases, coluna_alias):
     return aliases
 
 
+def localizar_funcionario_por_nome(funcionarios, nome_referencia):
+    nome_normalizado = normalizar_nome(nome_referencia)
+    if not nome_normalizado:
+        return None
+
+    tokens_referencia = set(nome_normalizado.split())
+    melhor_funcionario = None
+    melhor_score = 0.0
+
+    for funcionario in funcionarios:
+        nome_funcionario = funcionario.get("Nome", "")
+        nome_funcionario_normalizado = normalizar_nome(nome_funcionario)
+        if not nome_funcionario_normalizado:
+            continue
+        if nome_funcionario_normalizado == nome_normalizado:
+            return funcionario
+
+        tokens_funcionario = set(nome_funcionario_normalizado.split())
+        intersecao = len(tokens_referencia & tokens_funcionario)
+        uniao = len(tokens_referencia | tokens_funcionario) or 1
+        score_tokens = intersecao / uniao
+        score_texto = SequenceMatcher(
+            None,
+            nome_normalizado,
+            nome_funcionario_normalizado,
+        ).ratio()
+        score = max(score_texto, (score_tokens * 0.7) + (score_texto * 0.3))
+
+        if score > melhor_score:
+            melhor_score = score
+            melhor_funcionario = funcionario
+
+    return melhor_funcionario if melhor_score >= 0.6 else None
+
+
+def obter_alias_pontoweb(tecnico):
+    try:
+        wb = carregar_workbook_produtividade(read_only=True, data_only=True)
+    except Exception:
+        return ""
+
+    if ABA_ALIASES not in wb.sheetnames:
+        return ""
+
+    ws_aliases = wb[ABA_ALIASES]
+    for row in range(2, ws_aliases.max_row + 1):
+        tecnico_planilha = ws_aliases.cell(row=row, column=1).value
+        if normalizar_nome(tecnico_planilha) != normalizar_nome(tecnico):
+            continue
+        return builtins.str(ws_aliases.cell(row=row, column=4).value or "").strip()
+    return ""
+
+
 def data_dia_anterior():
     data_referencia = date.today() - timedelta(days=1)
     while data_referencia.weekday() >= 5:
@@ -697,22 +750,20 @@ def calcular_resumo_meta_pontoweb(
     )
 
     funcionarios = buscar_funcionarios_pontoweb(sessao, access_token, identificador_banco)
+    alias_pontoweb = obter_alias_pontoweb(tecnico)
     nomes_funcionarios = [
         funcionario.get("Nome", "")
         for funcionario in funcionarios
         if funcionario.get("Nome")
     ]
-    alias = melhor_alias(tecnico, nomes_funcionarios)
-    chave_tecnico = normalizar_nome(alias or tecnico)
+    funcionario = None
 
-    funcionario = next(
-        (
-            item
-            for item in funcionarios
-            if normalizar_nome(item.get("Nome", "")) == chave_tecnico
-        ),
-        None,
-    )
+    for nome_referencia in [alias_pontoweb, tecnico, melhor_alias(tecnico, nomes_funcionarios)]:
+        if not nome_referencia:
+            continue
+        funcionario = localizar_funcionario_por_nome(funcionarios, nome_referencia)
+        if funcionario:
+            break
 
     if not funcionario:
         raise ValueError(f"Não encontrei o técnico {tecnico} no PontoWeb.")
@@ -1454,6 +1505,22 @@ def atualizar_planilha_com_pontoweb_mes(
     banco_id="",
     banco_identificador="",
 ):
+    login = login_pontoweb(email, senha)
+    sessao = login["sessao"]
+    access_token = login["access_token"]
+    toolbar = buscar_toolbar_pontoweb(sessao, access_token)
+    lista_bancos = localizar_lista_bancos(toolbar)
+    banco = selecionar_banco_pontoweb(lista_bancos, banco_id, banco_identificador)
+    identificador_banco = builtins.str(
+        banco.get("Identificador", banco.get("identificador", ""))
+    )
+    funcionarios = buscar_funcionarios_pontoweb(sessao, access_token, identificador_banco)
+    nomes_funcionarios = [
+        funcionario.get("Nome", "")
+        for funcionario in funcionarios
+        if funcionario.get("Nome")
+    ]
+
     wb = carregar_workbook_produtividade()
     ws = wb[ABA_PRODUTIVIDADE]
     colunas = cabecalhos(ws)
@@ -1486,12 +1553,20 @@ def atualizar_planilha_com_pontoweb_mes(
         }
     )
 
+    ws_aliases = garantir_aba_aliases(
+        wb,
+        tecnicos_mes,
+        nomes_funcionarios,
+        coluna_alias=4,
+    )
+    aliases_pontoweb = ler_aliases(ws_aliases, coluna_alias=4)
+
     dias_por_tecnico = {}
     erros = {}
     for tecnico in tecnicos_mes:
         try:
             resumo = calcular_resumo_meta_pontoweb(
-                tecnico,
+                aliases_pontoweb.get(normalizar_nome(tecnico), tecnico),
                 ano,
                 mes,
                 email,
