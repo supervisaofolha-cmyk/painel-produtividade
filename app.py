@@ -330,7 +330,7 @@ def melhor_alias(nome_tecnico, candidatos):
 
 
 def garantir_estrutura_aliases(ws_aliases):
-    headers = ["Técnico Planilha", "Agente BI", "Agente SGD"]
+    headers = ["Técnico Planilha", "Agente BI", "Agente SGD", "Agente Ponto"]
     for indice, header in enumerate(headers, start=1):
         if ws_aliases.cell(row=1, column=indice).value != header:
             ws_aliases.cell(row=1, column=indice).value = header
@@ -405,7 +405,7 @@ def garantir_aba_aliases(wb, tecnicos, candidatos, coluna_alias):
     for tecnico in tecnicos:
         tecnico_normalizado = normalizar_nome(tecnico)
         if tecnico_normalizado not in existentes:
-            ws_aliases.append([tecnico, "", ""])
+            ws_aliases.append([tecnico, "", "", ""])
             row = ws_aliases.max_row
             existentes[tecnico_normalizado] = row
         else:
