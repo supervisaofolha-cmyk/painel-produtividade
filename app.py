@@ -177,6 +177,66 @@ def carregar_env_local():
     return valores
 
 
+def arquivo_excel_integro(caminho):
+    if not os.path.exists(caminho):
+        return False
+
+    try:
+        with zipfile.ZipFile(caminho) as arquivo_zip:
+            return arquivo_zip.testzip() is None
+    except Exception:
+        return False
+
+
+def garantir_planilha_produtividade_integra():
+    principal_ok = arquivo_excel_integro(ARQUIVO_PRODUTIVIDADE)
+    backup_ok = arquivo_excel_integro(ARQUIVO_PRODUTIVIDADE_BACKUP)
+
+    if principal_ok:
+        if not backup_ok:
+            shutil.copyfile(ARQUIVO_PRODUTIVIDADE, ARQUIVO_PRODUTIVIDADE_BACKUP)
+        return
+
+    if backup_ok:
+        shutil.copyfile(ARQUIVO_PRODUTIVIDADE_BACKUP, ARQUIVO_PRODUTIVIDADE)
+        return
+
+    raise zipfile.BadZipFile(
+        "Nenhuma cópia íntegra da produtividade.xlsx foi encontrada."
+    )
+
+
+def ler_dataframe_produtividade():
+    garantir_planilha_produtividade_integra()
+    return pd.read_excel(ARQUIVO_PRODUTIVIDADE)
+
+
+def carregar_workbook_produtividade(**kwargs):
+    garantir_planilha_produtividade_integra()
+    return openpyxl.load_workbook(ARQUIVO_PRODUTIVIDADE, **kwargs)
+
+
+def salvar_workbook_produtividade(wb):
+    garantir_planilha_produtividade_integra()
+    diretorio = os.path.dirname(os.path.abspath(ARQUIVO_PRODUTIVIDADE)) or "."
+    descritor, caminho_temporario = tempfile.mkstemp(
+        prefix="produtividade_",
+        suffix=".xlsx",
+        dir=diretorio,
+    )
+    os.close(descritor)
+    try:
+        wb.save(caminho_temporario)
+        with zipfile.ZipFile(caminho_temporario) as arquivo_zip:
+            if arquivo_zip.testzip() is not None:
+                raise zipfile.BadZipFile("Arquivo temporário gerado com corrupção.")
+        os.replace(caminho_temporario, ARQUIVO_PRODUTIVIDADE)
+        shutil.copyfile(ARQUIVO_PRODUTIVIDADE, ARQUIVO_PRODUTIVIDADE_BACKUP)
+    finally:
+        if os.path.exists(caminho_temporario):
+            os.remove(caminho_temporario)
+
+
 def salvar_env_local(atualizacoes):
     valores = carregar_env_local()
     for chave, valor in atualizacoes.items():
@@ -1039,7 +1099,7 @@ def atualizar_planilha_com_bi(data_referencia):
         for registro in registros_bi
     }
 
-    wb = openpyxl.load_workbook(ARQUIVO_PRODUTIVIDADE)
+    wb = carregar_workbook_produtividade()
     ws = wb[ABA_PRODUTIVIDADE]
     colunas = cabecalhos(ws)
     col_data = coluna(colunas, "Data")
@@ -1085,7 +1145,7 @@ def atualizar_planilha_com_bi(data_referencia):
         atualizados.append(tecnico)
 
     zerar_colunas_sem_movimento_ws(ws)
-    wb.save(ARQUIVO_PRODUTIVIDADE)
+    salvar_workbook_produtividade(wb)
 
     return {
         "data": data_referencia.strftime("%d/%m/%Y"),
@@ -1257,7 +1317,7 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
         for registro in registros_sgd
     }
 
-    wb = openpyxl.load_workbook(ARQUIVO_PRODUTIVIDADE)
+    wb = carregar_workbook_produtividade()
     ws = wb[ABA_PRODUTIVIDADE]
     colunas = cabecalhos(ws)
     col_data = coluna(colunas, "Data")
@@ -1308,7 +1368,7 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
         atualizados.append(f"{tecnico} - {data_linha}")
 
     zerar_colunas_sem_movimento_ws(ws)
-    wb.save(ARQUIVO_PRODUTIVIDADE)
+    salvar_workbook_produtividade(wb)
 
     return {
         "data": data_referencia.strftime("%d/%m/%Y"),
@@ -1325,7 +1385,7 @@ def atualizar_planilha_com_ro(data_referencia):
     dados_ro = buscar_ro_forms(data_referencia)
     contagens = dados_ro["contagens"]
 
-    wb = openpyxl.load_workbook(ARQUIVO_PRODUTIVIDADE)
+    wb = carregar_workbook_produtividade()
     ws = wb[ABA_PRODUTIVIDADE]
     colunas = cabecalhos(ws)
     col_data = coluna(colunas, "Data")
@@ -1351,7 +1411,7 @@ def atualizar_planilha_com_ro(data_referencia):
         atualizados += 1
 
     zerar_colunas_sem_movimento_ws(ws)
-    wb.save(ARQUIVO_PRODUTIVIDADE)
+    salvar_workbook_produtividade(wb)
 
     return {
         "data": data_referencia.strftime("%d/%m/%Y"),
@@ -1462,7 +1522,7 @@ def atualizar_dados_automaticamente():
     senha_sgd = env_local.get("SGD_SENHA", os.getenv("SGD_SENHA", ""))
 
     try:
-        df_atual = pd.read_excel(ARQUIVO_PRODUTIVIDADE)
+        df_atual = ler_dataframe_produtividade()
         df_atual.columns = df_atual.columns.str.strip()
         df_atual["Data"] = pd.to_datetime(df_atual["Data"], dayfirst=True, errors="coerce")
         df_atual = df_atual.dropna(subset=["Data"])
@@ -1532,7 +1592,7 @@ st.markdown(
 
 st.title("📊 Painel de Produtividade")
 
-df = pd.read_excel(ARQUIVO_PRODUTIVIDADE)
+df = ler_dataframe_produtividade()
 usuarios = pd.read_excel(ARQUIVO_USUARIOS)
 
 df.columns = df.columns.str.strip()
