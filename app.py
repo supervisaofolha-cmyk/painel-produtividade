@@ -1696,6 +1696,22 @@ def recalcular_colunas_derivadas(df):
     return df
 
 
+def ultima_data_com_valor(dados, coluna, permitir_zero=False):
+    if coluna not in dados.columns or dados.empty:
+        return pd.NaT
+
+    serie = pd.to_numeric(dados[coluna], errors="coerce")
+    if permitir_zero:
+        filtro = serie.notna()
+    else:
+        filtro = serie.fillna(0) > 0
+
+    dados_validos = dados.loc[filtro]
+    if dados_validos.empty:
+        return pd.NaT
+    return dados_validos["Data"].max()
+
+
 def precisa_atualizar_colunas(dataframe, data_referencia, colunas_verificacao):
     dados_dia = dataframe[dataframe["Data"] == pd.Timestamp(data_referencia)]
     if dados_dia.empty:
@@ -2050,7 +2066,24 @@ dados_mes_atual = dados_tecnico[
 ]
 
 ultima_data_mes = dados_mes_atual["Data"].max()
-dados_ultimo_dia = dados_mes_atual[dados_mes_atual["Data"] == ultima_data_mes]
+ultima_data_produtividade = ultima_data_com_valor(dados_mes_atual, "Realizado")
+if pd.isna(ultima_data_produtividade):
+    ultima_data_produtividade = ultima_data_mes
+dados_ultimo_dia = dados_mes_atual[dados_mes_atual["Data"] == ultima_data_produtividade]
+
+ultima_data_satisfacao = ultima_data_com_valor(dados_mes_atual, "Satisfação")
+if pd.isna(ultima_data_satisfacao):
+    ultima_data_satisfacao = ultima_data_mes
+dados_ultimo_dia_satisfacao = dados_mes_atual[
+    dados_mes_atual["Data"] == ultima_data_satisfacao
+]
+
+ultima_data_votacao = ultima_data_com_valor(dados_mes_atual, "Votação")
+if pd.isna(ultima_data_votacao):
+    ultima_data_votacao = ultima_data_mes
+dados_ultimo_dia_votacao = dados_mes_atual[
+    dados_mes_atual["Data"] == ultima_data_votacao
+]
 
 
 def montar_grafico_ranking(ranking, titulo, eixo_x):
@@ -2203,7 +2236,7 @@ if modo_gestao:
         ]
 
     ranking_geral_diario = (
-        base_ranking_geral[base_ranking_geral["Data"] == ultima_data_mes]
+        base_ranking_geral[base_ranking_geral["Data"] == ultima_data_produtividade]
         .groupby("Técnico", as_index=False)["Realizado"]
         .sum()
         .sort_values(by="Realizado", ascending=False)
@@ -2268,11 +2301,11 @@ with col3:
     st.metric("RO Total", int(dados_mes_atual["RO"].sum()))
 
 with col4:
-    votacao_ultimo_dia = round(dados_ultimo_dia["Votação"].mean(), 2)
+    votacao_ultimo_dia = round(dados_ultimo_dia_votacao["Votação"].mean(), 2)
     st.metric("Votação Média", f"{votacao_ultimo_dia}%")
 
 with col5:
-    satisfacao_ultimo_dia = round(dados_ultimo_dia["Satisfação"].mean(), 2)
+    satisfacao_ultimo_dia = round(dados_ultimo_dia_satisfacao["Satisfação"].mean(), 2)
     st.metric("Satisfação", f"{satisfacao_ultimo_dia}%")
 
 with col6:
@@ -2378,7 +2411,7 @@ if not modo_gestao:
         ]
 
         ranking_nivel_diario = (
-            base_ranking_nivel[base_ranking_nivel["Data"] == ultima_data_mes]
+            base_ranking_nivel[base_ranking_nivel["Data"] == ultima_data_produtividade]
             .groupby("Técnico", as_index=False)["Realizado"]
             .sum()
             .sort_values(by="Realizado", ascending=False)
