@@ -1906,8 +1906,8 @@ if modo_gestao:
                 with st.spinner("Buscando abatimentos no PontoWeb e atualizando a planilha..."):
                     try:
                         resultado = atualizar_planilha_com_pontoweb_mes(
-                            ano_atual,
-                            mes_atual,
+                            data_referencia.year,
+                            data_referencia.month,
                             pontoweb_email,
                             pontoweb_senha,
                             pontoweb_banco_id,
@@ -2194,7 +2194,19 @@ if not modo_gestao:
     dias_meta_valor = float(dias_uteis_para_meta(ano_atual, mes_atual))
     fonte_dias_meta = "Calendário do mês"
     detalhe_dias_meta = "Sem abatimentos do PontoWeb."
-    if pontoweb_email and pontoweb_senha:
+    if COLUNA_DIAS_META in dados_tecnico.columns:
+        dias_meta_salvos = (
+            dados_tecnico[
+                (dados_tecnico["Data"].dt.month == mes_atual)
+                & (dados_tecnico["Data"].dt.year == ano_atual)
+            ][COLUNA_DIAS_META]
+            .dropna()
+        )
+        if not dias_meta_salvos.empty:
+            dias_meta_valor = float(dias_meta_salvos.iloc[-1])
+            fonte_dias_meta = "Planilha"
+            detalhe_dias_meta = "Valor atualizado pela gestão a partir do PontoWeb."
+    elif pontoweb_email and pontoweb_senha:
         try:
             resumo_meta_pontoweb = obter_resumo_meta_pontoweb(
                 tecnico,
