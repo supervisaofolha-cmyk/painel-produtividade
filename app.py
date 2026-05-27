@@ -729,27 +729,15 @@ def valor_linha_calculo(linha, indice):
     return linha[indice]
 
 
-def calcular_resumo_meta_pontoweb(
+def calcular_resumo_meta_pontoweb_contexto(
+    sessao,
+    access_token,
+    identificador_banco,
+    funcionarios,
     tecnico,
     ano,
     mes,
-    email,
-    senha,
-    banco_id="",
-    banco_identificador="",
 ):
-    login = login_pontoweb(email, senha)
-    sessao = login["sessao"]
-    access_token = login["access_token"]
-
-    toolbar = buscar_toolbar_pontoweb(sessao, access_token)
-    lista_bancos = localizar_lista_bancos(toolbar)
-    banco = selecionar_banco_pontoweb(lista_bancos, banco_id, banco_identificador)
-    identificador_banco = builtins.str(
-        banco.get("Identificador", banco.get("identificador", ""))
-    )
-
-    funcionarios = buscar_funcionarios_pontoweb(sessao, access_token, identificador_banco)
     alias_pontoweb = obter_alias_pontoweb(tecnico)
     nomes_funcionarios = [
         funcionario.get("Nome", "")
@@ -838,6 +826,37 @@ def calcular_resumo_meta_pontoweb(
         "abatimento": round(abatimento_total, 2),
         "dias_considerados": round(dias_considerados, 2),
     }
+
+
+def calcular_resumo_meta_pontoweb(
+    tecnico,
+    ano,
+    mes,
+    email,
+    senha,
+    banco_id="",
+    banco_identificador="",
+):
+    login = login_pontoweb(email, senha)
+    sessao = login["sessao"]
+    access_token = login["access_token"]
+
+    toolbar = buscar_toolbar_pontoweb(sessao, access_token)
+    lista_bancos = localizar_lista_bancos(toolbar)
+    banco = selecionar_banco_pontoweb(lista_bancos, banco_id, banco_identificador)
+    identificador_banco = builtins.str(
+        banco.get("Identificador", banco.get("identificador", ""))
+    )
+    funcionarios = buscar_funcionarios_pontoweb(sessao, access_token, identificador_banco)
+    return calcular_resumo_meta_pontoweb_contexto(
+        sessao,
+        access_token,
+        identificador_banco,
+        funcionarios,
+        tecnico,
+        ano,
+        mes,
+    )
 
 
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -1565,14 +1584,15 @@ def atualizar_planilha_com_pontoweb_mes(
     erros = {}
     for tecnico in tecnicos_mes:
         try:
-            resumo = calcular_resumo_meta_pontoweb(
-                aliases_pontoweb.get(normalizar_nome(tecnico), tecnico),
+            nome_referencia = aliases_pontoweb.get(normalizar_nome(tecnico), tecnico)
+            resumo = calcular_resumo_meta_pontoweb_contexto(
+                sessao,
+                access_token,
+                identificador_banco,
+                funcionarios,
+                nome_referencia,
                 ano,
                 mes,
-                email,
-                senha,
-                banco_id,
-                banco_identificador,
             )
             dias_por_tecnico[normalizar_nome(tecnico)] = resumo["dias_considerados"]
         except Exception as erro:
