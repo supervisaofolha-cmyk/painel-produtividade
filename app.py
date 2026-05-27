@@ -173,6 +173,16 @@ def carregar_env_local():
     return valores
 
 
+def salvar_env_local(atualizacoes):
+    valores = carregar_env_local()
+    for chave, valor in atualizacoes.items():
+        valores[chave] = builtins.str(valor or "").strip()
+
+    linhas = [f"{chave}={valor}" for chave, valor in sorted(valores.items())]
+    with open(".env", "w", encoding="utf-8") as arquivo:
+        arquivo.write("\n".join(linhas) + "\n")
+
+
 def normalizar_nome(valor):
     texto = builtins.str(valor or "").strip().lower()
     texto = unicodedata.normalize("NFKD", texto)
@@ -1702,6 +1712,24 @@ if modo_gestao:
             value=pontoweb_banco_identificador,
             key="pontoweb_banco_identificador_input",
         )
+        if st.button("Salvar credenciais do Ponto", key="salvar_pontoweb"):
+            try:
+                salvar_env_local(
+                    {
+                        "PONTOWEB_EMAIL": pontoweb_email,
+                        "PONTOWEB_SENHA": pontoweb_senha,
+                        "PONTOWEB_BANCO_ID": pontoweb_banco_id,
+                        "PONTOWEB_BANCO_IDENTIFICADOR": pontoweb_banco_identificador,
+                    }
+                )
+            except Exception as erro_salvar_pontoweb:
+                st.sidebar.error(
+                    f"Não foi possível salvar as credenciais do PontoWeb: {erro_salvar_pontoweb}"
+                )
+            else:
+                st.sidebar.success("Credenciais do PontoWeb salvas.")
+                st.cache_data.clear()
+                st.rerun()
 
     if not pontoweb_email or not pontoweb_senha:
         st.sidebar.caption(
