@@ -29,6 +29,7 @@ ARQUIVO_PRODUTIVIDADE_BACKUP = "produtividade_backup.xlsx"
 ARQUIVO_USUARIOS = "usuarios.xlsx"
 ABA_PRODUTIVIDADE = "Produtividade"
 ABA_ALIASES = "Aliases"
+COLUNA_DIAS_META = "Dias Meta"
 
 POWERBI_RESOURCE_KEY = "6b54dc9f-c2f8-4ee5-bbd2-e2ca5781ab06"
 POWERBI_API_BASE = "https://wabi-brazil-south-b-primary-api.analysis.windows.net"
@@ -268,6 +269,16 @@ def cabecalhos(ws):
     }
 
 
+def garantir_coluna(ws, nome_coluna):
+    colunas = cabecalhos(ws)
+    if nome_coluna in colunas:
+        return colunas[nome_coluna]
+
+    indice = ws.max_column + 1
+    ws.cell(row=1, column=indice).value = nome_coluna
+    return indice
+
+
 def normalizar_cabecalho(valor):
     texto = builtins.str(valor or "").strip().lower()
     texto = unicodedata.normalize("NFKD", texto)
@@ -367,25 +378,11 @@ def garantir_linhas_da_data(ws, colunas, data_referencia):
     for row_base in linhas_por_data[data_base]:
         tecnico = ws.cell(row=row_base, column=col_tecnico).value
         nivel = ws.cell(row=row_base, column=col_nivel).value
-        ws.append(
-            [
-                data_referencia,
-                tecnico,
-                nivel,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-            ]
-        )
+        nova_linha = [None] * ws.max_column
+        nova_linha[col_data - 1] = data_referencia
+        nova_linha[col_tecnico - 1] = tecnico
+        nova_linha[col_nivel - 1] = nivel
+        ws.append(nova_linha)
         criadas += 1
 
     return criadas
@@ -1446,6 +1443,86 @@ def atualizar_planilha_com_ro(data_referencia):
         "fonte": sum(contagens.values()),
         "linhas_criadas": linhas_criadas,
         "atualizados": atualizados,
+    }
+
+
+def atualizar_planilha_com_pontoweb_mes(
+    ano,
+    mes,
+    email,
+    senha,
+    banco_id="",
+    banco_identificador="",
+):
+    wb = carregar_workbook_produtividade()
+    ws = wb[ABA_PRODUTIVIDADE]
+    colunas = cabecalhos(ws)
+    col_data = coluna(colunas, "Data")
+    col_tecnico = coluna(colunas, "Técnico")
+    col_dias_meta = garantir_coluna(ws, COLUNA_DIAS_META)
+    colunas = cabecalhos(ws)
+
+    tecnicos_mes = sorted(
+        {
+            builtins.str(ws.cell(row=row, column=col_tecnico).value).strip()
+            for row in range(2, ws.max_row + 1)
+            if ws.cell(row=row, column=col_tecnico).value
+            and (
+                (
+                    ws.cell(row=row, column=col_data).value.date()
+                    if hasattr(ws.cell(row=row, column=col_data).value, "date")
+                    else ws.cell(row=row, column=col_data).value
+                ).year
+                == ano
+            )
+            and (
+                (
+                    ws.cell(row=row, column=col_data).value.date()
+                    if hasattr(ws.cell(row=row, column=col_data).value, "date")
+                    else ws.cell(row=row, column=col_data).value
+                ).month
+                == mes
+            )
+        }
+    )
+
+    dias_por_tecnico = {}
+    erros = {}
+    for tecnico in tecnicos_mes:
+        try:
+            resumo = calcular_resumo_meta_pontoweb(
+                tecnico,
+                ano,
+                mes,
+                email,
+                senha,
+                banco_id,
+                banco_identificador,
+            )
+            dias_por_tecnico[normalizar_nome(tecnico)] = resumo["dias_considerados"]
+        except Exception as erro:
+            erros[tecnico] = builtins.str(erro)
+
+    atualizados = 0
+    for row in range(2, ws.max_row + 1):
+        data_linha = ws.cell(row=row, column=col_data).value
+        if not data_linha:
+            continue
+        data_linha = data_linha.date() if hasattr(data_linha, "date") else data_linha
+        if data_linha.year != ano or data_linha.month != mes:
+            continue
+
+        tecnico = ws.cell(row=row, column=col_tecnico).value
+        chave = normalizar_nome(tecnico)
+        if chave in dias_por_tecnico:
+            ws.cell(row=row, column=col_dias_meta).value = dias_por_tecnico[chave]
+            atualizados += 1
+
+    salvar_workbook_produtividade(wb)
+    return {
+        "tecnicos_processados": len(dias_por_tecnico),
+        "linhas_atualizadas": atualizados,
+        "erros": erros,
     }
 
 
