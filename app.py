@@ -1889,7 +1889,12 @@ if usuario_digitado == "gestao" and senha_digitada == "30071997":
     if st.sidebar.button("Atualizar BI do dia anterior"):
         with st.spinner("Buscando dados no PowerBI e atualizando a planilha..."):
             try:
-                resultado = atualizar_planilha_com_bi(data_referencia)
+                origem_atualizacao = "painel"
+                try:
+                    resultado = atualizar_via_servico_local("bi", data_referencia)["bi"]
+                    origem_atualizacao = "planilha local"
+                except Exception:
+                    resultado = atualizar_planilha_com_bi(data_referencia)
             except PermissionError:
                 st.sidebar.error("Feche a produtividade.xlsx no Excel e tente novamente.")
             except Exception as erro:
@@ -1898,6 +1903,7 @@ if usuario_digitado == "gestao" and senha_digitada == "30071997":
                 st.sidebar.success(
                     f"{resultado['atualizados']} técnicos atualizados em {resultado['data']}."
                 )
+                st.sidebar.caption(f"Origem da gravação: {origem_atualizacao}.")
                 if resultado["linhas_criadas"]:
                     st.sidebar.info(
                         f"{resultado['linhas_criadas']} linhas foram criadas para essa data."
@@ -1913,7 +1919,12 @@ if usuario_digitado == "gestao" and senha_digitada == "30071997":
     if st.sidebar.button("Atualizar RO do dia anterior"):
         with st.spinner("Buscando dados do RO e atualizando a planilha..."):
             try:
-                resultado = atualizar_planilha_com_ro(data_referencia)
+                origem_atualizacao = "painel"
+                try:
+                    resultado = atualizar_via_servico_local("ro", data_referencia)["ro"]
+                    origem_atualizacao = "planilha local"
+                except Exception:
+                    resultado = atualizar_planilha_com_ro(data_referencia)
             except PermissionError:
                 st.sidebar.error("Feche a produtividade.xlsx no Excel e tente novamente.")
             except Exception as erro:
@@ -1922,6 +1933,7 @@ if usuario_digitado == "gestao" and senha_digitada == "30071997":
                 st.sidebar.success(
                     f"{resultado['atualizados']} técnicos atualizados em {resultado['data']}."
                 )
+                st.sidebar.caption(f"Origem da gravação: {origem_atualizacao}.")
                 st.sidebar.info(
                     f"Origem: {resultado['arquivo']}. Total de RO válidos: {resultado['fonte']}."
                 )
@@ -1945,11 +1957,16 @@ if usuario_digitado == "gestao" and senha_digitada == "30071997":
         else:
             with st.spinner("Gerando relatório no SGD e atualizando a planilha..."):
                 try:
-                    resultado = atualizar_planilha_com_sgd(
-                        data_referencia,
-                        usuario_sgd,
-                        senha_sgd,
-                    )
+                    origem_atualizacao = "painel"
+                    try:
+                        resultado = atualizar_via_servico_local("sgd", data_referencia)["sgd"]
+                        origem_atualizacao = "planilha local"
+                    except Exception:
+                        resultado = atualizar_planilha_com_sgd(
+                            data_referencia,
+                            usuario_sgd,
+                            senha_sgd,
+                        )
                 except PermissionError:
                     st.sidebar.error("Feche a produtividade.xlsx no Excel e tente novamente.")
                 except Exception as erro:
@@ -1960,6 +1977,7 @@ if usuario_digitado == "gestao" and senha_digitada == "30071997":
                         f"{resultado['dias_processados']} dias. "
                         f"Período: {resultado['periodo']}."
                     )
+                    st.sidebar.caption(f"Origem da gravação: {origem_atualizacao}.")
                     if resultado["linhas_criadas"]:
                         st.sidebar.info(
                             f"{resultado['linhas_criadas']} linhas foram criadas para essa data."
