@@ -51,6 +51,7 @@ PONTOWEB_AUTH_URL = (
     f"&redirect_uri={PONTOWEB_REDIRECT_URI}"
 )
 PONTOWEB_TOKEN_URL = "https://autenticador.secullum.com.br/Token"
+SERVICO_PLANILHA_LOCAL_URL = "http://127.0.0.1:8765"
 
 COR_LARANJA = "#F97316"
 COR_CINZA = "#6B7280"
@@ -884,6 +885,23 @@ def criar_sessao_http():
     sessao = requests.Session()
     sessao.trust_env = False
     return sessao
+
+
+def atualizar_via_servico_local(fonte, data_referencia):
+    sessao = criar_sessao_http()
+    resposta = sessao.post(
+        f"{SERVICO_PLANILHA_LOCAL_URL}/atualizar",
+        json={
+            "fonte": fonte,
+            "data": data_referencia.strftime("%d/%m/%Y"),
+        },
+        timeout=600,
+    )
+    resposta.raise_for_status()
+    payload = resposta.json()
+    if not payload.get("ok"):
+        raise RuntimeError(payload.get("erro", "Falha na atualização local."))
+    return payload.get("resultados", {})
 
 
 @st.cache_data(ttl=300, show_spinner=False)
