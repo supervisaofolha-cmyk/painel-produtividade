@@ -95,8 +95,8 @@ class Handler(BaseHTTPRequestHandler):
             bruto = self.rfile.read(tamanho) if tamanho else b"{}"
             dados = json.loads(bruto.decode("utf-8"))
             fonte = str(dados.get("fonte", "todas")).strip().lower()
-            if fonte not in {"bi", "sgd", "ro", "todas"}:
-                raise ValueError("Fonte inválida. Use bi, sgd, ro ou todas.")
+            if fonte not in {"bi", "sgd", "ro", "chat", "todas"}:
+                raise ValueError("Fonte inválida. Use bi, sgd, ro, chat ou todas.")
 
             data_referencia = parse_data(dados.get("data"))
             resultados = atualizar_fontes(fonte, data_referencia)

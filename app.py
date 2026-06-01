@@ -2604,6 +2604,32 @@ if (usuario_digitado == "gestao" and senha_digitada == "30071997") or usuario_ap
                 st.cache_data.clear()
                 st.rerun()
 
+    if st.sidebar.button("Atualizar CHAT do dia anterior"):
+        with st.spinner("Buscando chats fechados no PLUG e atualizando a planilha..."):
+            try:
+                resultado = atualizar_via_servico_local("chat", data_referencia)["chat"]
+                origem_atualizacao = "planilha local"
+            except PermissionError:
+                st.sidebar.error("Feche a produtividade.xlsx no Excel e tente novamente.")
+            except Exception as erro:
+                st.sidebar.error(f"Não foi possível atualizar o CHAT: {erro}")
+            else:
+                st.sidebar.success(
+                    f"{resultado['atualizados']} técnicos atualizados em {resultado['data']}."
+                )
+                st.sidebar.caption(f"Origem da gravação: {origem_atualizacao}.")
+                if resultado["linhas_criadas"]:
+                    st.sidebar.info(
+                        f"{resultado['linhas_criadas']} linhas foram criadas para essa data."
+                    )
+                if resultado["sem_alias"]:
+                    st.sidebar.warning(
+                        "Revise a coluna Agente Chat da aba Aliases para: "
+                        + ", ".join(resultado["sem_alias"][:8])
+                    )
+                st.cache_data.clear()
+                st.rerun()
+
     usuario_sgd = st.sidebar.text_input("Usuário SGD", value=usuario_sgd_padrao)
     senha_sgd = st.sidebar.text_input(
         "Senha SGD",
