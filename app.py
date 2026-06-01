@@ -2,6 +2,7 @@ import csv
 import json
 import locale
 import os
+import pathlib
 import re
 import shutil
 import tempfile
@@ -68,6 +69,10 @@ TOPICOS_LISTA_APOIO = [
 ]
 USUARIOS_APOIO = {"subbrenda", "subluma"}
 FUSO_HORARIO_APP = ZoneInfo("America/Araguaina")
+PLUG_CHATBOX_URL = "https://tr.plugsocial.com.br/#/app/chatbox"
+PLUG_PERFIL_DIR = pathlib.Path(".playwright-plug")
+PLUG_GRUPO_FOLHA = "Folha de Pagamento"
+PLUG_STATUS_FECHADO = "Fechado"
 
 POWERBI_RESOURCE_KEY = "6b54dc9f-c2f8-4ee5-bbd2-e2ca5781ab06"
 POWERBI_API_BASE = "https://wabi-brazil-south-b-primary-api.analysis.windows.net"
@@ -706,7 +711,13 @@ def melhor_alias(nome_tecnico, candidatos):
 
 
 def garantir_estrutura_aliases(ws_aliases):
-    headers = ["Técnico Planilha", "Agente BI", "Agente SGD", "Agente Ponto"]
+    headers = [
+        "Técnico Planilha",
+        "Agente BI",
+        "Agente SGD",
+        "Agente Ponto",
+        "Agente Chat",
+    ]
     for indice, header in enumerate(headers, start=1):
         if ws_aliases.cell(row=1, column=indice).value != header:
             ws_aliases.cell(row=1, column=indice).value = header
@@ -781,7 +792,7 @@ def garantir_aba_aliases(wb, tecnicos, candidatos, coluna_alias):
     for tecnico in tecnicos:
         tecnico_normalizado = normalizar_nome(tecnico)
         if tecnico_normalizado not in existentes:
-            ws_aliases.append([tecnico, "", "", ""])
+            ws_aliases.append([tecnico, "", "", "", ""])
             row = ws_aliases.max_row
             existentes[tecnico_normalizado] = row
         else:
