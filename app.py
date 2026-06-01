@@ -340,6 +340,12 @@ def salvar_lista_apoio(dataframe):
         if coluna_lista not in existente.columns:
             existente[coluna_lista] = ""
 
+    for indice, linha in dataframe.iterrows():
+        if indice not in existente.index:
+            continue
+        for coluna in colunas_editaveis:
+            existente.at[indice, coluna] = linha[coluna]
+
     edits_por_chave = {}
     for _, linha in dataframe.iterrows():
         chave = tuple(builtins.str(linha[coluna] or "") for coluna in colunas_chave)
