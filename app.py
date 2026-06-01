@@ -343,19 +343,24 @@ def garantir_lista_apoio():
     if os.path.exists(ARQUIVO_LISTA_APOIO):
         wb = openpyxl.load_workbook(ARQUIVO_LISTA_APOIO)
         ws = wb.active
+        alterou_estrutura = False
     else:
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Lista de Apoio"
+        alterou_estrutura = True
 
     for indice, cabecalho in enumerate(CABECALHOS_LISTA_APOIO, start=1):
         if ws.cell(row=1, column=indice).value != cabecalho:
             ws.cell(row=1, column=indice).value = cabecalho
+            alterou_estrutura = True
 
     while ws.max_column > len(CABECALHOS_LISTA_APOIO):
         ws.delete_cols(len(CABECALHOS_LISTA_APOIO) + 1)
+        alterou_estrutura = True
 
-    salvar_workbook_lista_apoio(wb)
+    if alterou_estrutura:
+        salvar_workbook_lista_apoio(wb)
     return wb, ws
 
 
@@ -446,6 +451,7 @@ def mostrar_lista_apoio_gestao():
     col_atualizar_apoio, col_status_apoio = st.columns([1, 3])
     with col_atualizar_apoio:
         if st.button("Atualizar lista de ajuda", key="atualizar_lista_apoio"):
+            st.session_state["versao_editor_lista_apoio"] = versao_lista_apoio()
             st.rerun()
     with col_status_apoio:
         st.caption("Atualização automática a cada 5 minutos.")
@@ -509,11 +515,14 @@ def mostrar_lista_apoio_gestao():
         )
         return
 
+    if "versao_editor_lista_apoio" not in st.session_state:
+        st.session_state["versao_editor_lista_apoio"] = versao_lista_apoio()
+
     chave_editor_apoio = (
         "editor_lista_apoio_"
         + re.sub(r"[^0-9a-zA-Z]+", "_", filtro_data_apoio or "todas")
         + "_"
-        + versao_lista_apoio()
+        + st.session_state["versao_editor_lista_apoio"]
     )
 
     lista_editada = st.data_editor(
@@ -551,6 +560,7 @@ def mostrar_lista_apoio_gestao():
                 st.error(f"Não foi possível salvar a lista: {erro_lista_apoio}")
             else:
                 st.success("Lista de apoio atualizada.")
+                st.session_state["versao_editor_lista_apoio"] = versao_lista_apoio()
                 st.rerun()
     with col_apoio_2:
         st.download_button(
