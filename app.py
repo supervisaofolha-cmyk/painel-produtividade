@@ -2696,6 +2696,47 @@ if not modo_gestao:
             else:
                 st.success("Dúvida registrada para apoio.")
 
+    try:
+        lista_apoio_tecnico = ler_lista_apoio()
+        lista_apoio_tecnico = lista_apoio_tecnico[
+            lista_apoio_tecnico["Nome do Técnico"].map(normalizar_nome) == normalizar_nome(tecnico)
+        ].copy()
+    except Exception as erro_lista_apoio:
+        st.caption(f"Não foi possível carregar suas ajudas registradas: {erro_lista_apoio}")
+        lista_apoio_tecnico = pd.DataFrame(columns=CABECALHOS_LISTA_APOIO)
+
+    if lista_apoio_tecnico.empty:
+        st.caption("Você ainda não possui ajudas registradas.")
+    else:
+        lista_apoio_tecnico["Data"] = pd.to_datetime(
+            lista_apoio_tecnico["Carimbo de data/hora"],
+            dayfirst=True,
+            errors="coerce",
+        )
+        lista_apoio_tecnico = lista_apoio_tecnico.sort_values(
+            by="Data",
+            ascending=False,
+            na_position="last",
+        )
+        lista_apoio_tecnico["Carimbo de data/hora"] = lista_apoio_tecnico[
+            "Carimbo de data/hora"
+        ].fillna("")
+
+        st.caption("Acompanhe abaixo a situação das ajudas que você registrou.")
+        st.dataframe(
+            lista_apoio_tecnico[
+                [
+                    "Carimbo de data/hora",
+                    "Selecione o tópico",
+                    "Descreva o problema/pedido em poucas palavras",
+                    "Situação",
+                    "Responsável/Apoio",
+                ]
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
+
 if not modo_gestao:
     if nivel_tecnico:
         base_ranking_nivel = df[
