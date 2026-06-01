@@ -43,6 +43,30 @@ CABECALHOS_LISTA_APOIO = [
     "Responsável Apoio",
     "Data Resposta",
 ]
+TOPICOS_LISTA_APOIO = [
+    "13° Salário",
+    "Integração",
+    "Provisão de Férias",
+    "Provisão de 13°",
+    "Crédito em conta",
+    "Fórmula",
+    "Configuração de Rubrica",
+    "Médias",
+    "Afastamentos",
+    "Rescisão",
+    "Férias",
+    "Folha Mensal",
+    "Folha Complementar",
+    "Alteração Cadastral",
+    "Alteração Salarial",
+    "DCTFWEB",
+    "FGTS Digital",
+    "Tranferencia",
+    "Informativos",
+    "Cadastro",
+    "e-Social",
+    "Outros",
+]
 
 POWERBI_RESOURCE_KEY = "6b54dc9f-c2f8-4ee5-bbd2-e2ca5781ab06"
 POWERBI_API_BASE = "https://wabi-brazil-south-b-primary-api.analysis.windows.net"
@@ -2570,7 +2594,7 @@ if not modo_gestao:
     st.divider()
     st.subheader("Lista de Apoio")
     with st.form("form_lista_apoio", clear_on_submit=True):
-        topico_apoio = st.text_input("Tópico do problema")
+        topico_apoio = st.selectbox("Tópico do problema", TOPICOS_LISTA_APOIO)
         resumo_apoio = st.text_area(
             "Descreva a dúvida de forma resumida",
             height=110,
@@ -2578,8 +2602,8 @@ if not modo_gestao:
         enviar_apoio = st.form_submit_button("Registrar dúvida")
 
     if enviar_apoio:
-        if not topico_apoio.strip() or not resumo_apoio.strip():
-            st.warning("Informe o tópico e descreva a dúvida antes de registrar.")
+        if not resumo_apoio.strip():
+            st.warning("Descreva a dúvida antes de registrar.")
         else:
             try:
                 protocolo = registrar_duvida_apoio(
