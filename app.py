@@ -1920,6 +1920,272 @@ def atualizar_planilha_com_ro(data_referencia):
     }
 
 
+def localizar_navegador_plug():
+    candidatos = [
+        os.getenv("PLUG_BROWSER_PATH", ""),
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    ]
+    for caminho in candidatos:
+        if caminho and os.path.exists(caminho):
+            return caminho
+    return None
+
+
+def periodo_chat_plug(data_referencia):
+    inicio = datetime.combine(data_referencia, datetime.min.time())
+    fim = datetime.combine(data_referencia, datetime.max.time()).replace(
+        hour=23,
+        minute=59,
+        second=0,
+        microsecond=0,
+    )
+    return (
+        inicio.strftime("%d/%m/%Y %H:%M"),
+        fim.strftime("%d/%m/%Y %H:%M"),
+        inicio.strftime("%d/%m/%Y %H:%M")
+        + " - "
+        + fim.strftime("%d/%m/%Y %H:%M"),
+    )
+
+
+def abrir_sessao_plug():
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError as exc:
+        raise RuntimeError(
+            "A biblioteca playwright não está instalada nesta máquina."
+        ) from exc
+
+    playwright = sync_playwright().start()
+    contexto = None
+    try:
+        kwargs = {
+            "user_data_dir": builtins.str(PLUG_PERFIL_DIR.resolve()),
+            "headless": False,
+        }
+        executable_path = localizar_navegador_plug()
+        if executable_path:
+            kwargs["executable_path"] = executable_path
+        contexto = playwright.chromium.launch_persistent_context(**kwargs)
+        pagina = contexto.pages[0] if contexto.pages else contexto.new_page()
+        pagina.goto(PLUG_CHATBOX_URL, wait_until="domcontentloaded", timeout=60000)
+
+        limite = time.time() + 180
+        while time.time() < limite:
+            url_atual = pagina.url
+            if "#/app/" in url_atual and "login" not in url_atual.lower():
+                pagina.goto(
+                    PLUG_CHATBOX_URL,
+                    wait_until="domcontentloaded",
+                    timeout=60000,
+                )
+                return playwright, contexto, pagina
+            pagina.wait_for_timeout(1000)
+
+        raise TimeoutError(
+            "Faça login no PLUG na janela aberta e tente novamente."
+        )
+    except Exception:
+        if contexto:
+            contexto.close()
+        playwright.stop()
+        raise
+
+
+def localizar_mes_no_calendario_plug(pagina, texto_mes_ano):
+    locator = pagina.locator(".daterangepicker .month")
+    textos = [texto.strip() for texto in locator.all_text_contents()]
+    if texto_mes_ano in textos:
+        return textos.index(texto_mes_ano)
+    return -1
+
+
+def ajustar_periodo_plug(pagina, data_referencia):
+    _, _, periodo_texto = periodo_chat_plug(data_referencia)
+    pagina.locator('input[name="datetimesCreated"]').click()
+    pagina.wait_for_selector(".daterangepicker", timeout=15000)
+
+    meses_pt = {
+        1: "Janeiro",
+        2: "Fevereiro",
+        3: "Março",
+        4: "Abril",
+        5: "Maio",
+        6: "Junho",
+        7: "Julho",
+        8: "Agosto",
+        9: "Setembro",
+        10: "Outubro",
+        11: "Novembro",
+        12: "Dezembro",
+    }
+    texto_mes_ano = f"{meses_pt[data_referencia.month]} {data_referencia.year}"
+
+    for _ in range(24):
+        indice_mes = localizar_mes_no_calendario_plug(pagina, texto_mes_ano)
+        if indice_mes >= 0:
+            break
+        pagina.locator(".daterangepicker .prev.available").click()
+        pagina.wait_for_timeout(200)
+    else:
+        raise RuntimeError("Não foi possível localizar o mês no calendário do PLUG.")
+
+    calendario_alvo = ".drp-calendar.left" if indice_mes == 0 else ".drp-calendar.right"
+    dia = builtins.str(data_referencia.day)
+    celulas = pagina.locator(
+        f"{calendario_alvo} td.available, {calendario_alvo} td.today.available"
+    )
+
+    encontrou = False
+    for indice in range(celulas.count()):
+        texto_celula = builtins.str(celulas.nth(indice).inner_text()).strip()
+        if texto_celula == dia:
+            celulas.nth(indice).click()
+            pagina.wait_for_timeout(150)
+            encontrou = True
+            break
+    if not encontrou:
+        raise RuntimeError("Não foi possível selecionar o dia no calendário do PLUG.")
+
+    pagina.locator(".drp-calendar.left .hourselect").select_option("0")
+    pagina.locator(".drp-calendar.left .minuteselect").select_option("0")
+    pagina.locator(".drp-calendar.right .hourselect").select_option("23")
+    pagina.locator(".drp-calendar.right .minuteselect").select_option("59")
+    pagina.locator(".daterangepicker .applyBtn").click()
+    pagina.wait_for_timeout(1200)
+
+    valor_atual = pagina.locator('input[name="datetimesCreated"]').input_value().strip()
+    if valor_atual != periodo_texto:
+        raise RuntimeError(
+            f"Período do PLUG não foi aplicado corretamente: {valor_atual}"
+        )
+
+
+def selecionar_status_plug(pagina, status):
+    pagina.locator("ng-select .ng-select-container").click()
+    pagina.wait_for_selector('ng-dropdown-panel[role="listbox"]', timeout=10000)
+    opcao = pagina.locator('ng-dropdown-panel [role="option"]', has_text=status)
+    if opcao.count() != 1:
+        raise RuntimeError(f"Status '{status}' não encontrado no PLUG.")
+    opcao.click()
+    pagina.wait_for_timeout(1200)
+
+
+def obter_atendentes_plug(pagina):
+    return pagina.evaluate(
+        """() => Array.from(document.querySelectorAll('select'))[2]
+            ? Array.from(document.querySelectorAll('select'))[2].options
+                .filter((opt) => opt.value)
+                .map((opt) => ({
+                    value: opt.value,
+                    text: opt.textContent.trim()
+                }))
+            : []"""
+    )
+
+
+def total_chat_plug_atendente(pagina, value_atendente):
+    selects = pagina.locator("select")
+    if selects.count() < 3:
+        raise RuntimeError("Filtro de atendente não encontrado no PLUG.")
+    selects.nth(2).select_option(value_atendente)
+    pagina.wait_for_timeout(1200)
+    total_texto = pagina.locator("text=Total:").first.inner_text(timeout=10000)
+    match = re.search(r"Total:\s*(\d+)", total_texto)
+    if not match:
+        raise RuntimeError("Não foi possível ler o total de chats no PLUG.")
+    return int(match.group(1))
+
+
+def buscar_chat_plug(data_referencia):
+    playwright, contexto, pagina = abrir_sessao_plug()
+    try:
+        pagina.goto(PLUG_CHATBOX_URL, wait_until="domcontentloaded", timeout=60000)
+        pagina.wait_for_selector('button[title="Filtros"]', timeout=30000)
+        pagina.locator('button[title="Filtros"]').click()
+        pagina.wait_for_selector('input[name="datetimesCreated"]', timeout=15000)
+        ajustar_periodo_plug(pagina, data_referencia)
+
+        selects = pagina.locator("select")
+        if selects.count() < 5:
+            raise RuntimeError("Filtros principais do PLUG não foram carregados.")
+        selects.nth(4).select_option(label=PLUG_GRUPO_FOLHA)
+        pagina.wait_for_timeout(1200)
+        selecionar_status_plug(pagina, PLUG_STATUS_FECHADO)
+
+        atendentes = obter_atendentes_plug(pagina)
+        contagens = {}
+        for atendente in atendentes:
+            contagens[normalizar_nome(atendente["text"])] = total_chat_plug_atendente(
+                pagina,
+                atendente["value"],
+            )
+
+        return {
+            "contagens": contagens,
+            "atendentes": [item["text"] for item in atendentes],
+        }
+    finally:
+        contexto.close()
+        playwright.stop()
+
+
+def atualizar_planilha_com_chat(data_referencia):
+    dados_chat = buscar_chat_plug(data_referencia)
+    contagens = dados_chat["contagens"]
+
+    wb = carregar_workbook_produtividade()
+    ws = wb[ABA_PRODUTIVIDADE]
+    colunas = cabecalhos(ws)
+    col_data = coluna(colunas, "Data")
+    col_tecnico = coluna(colunas, "Técnico")
+    col_chat = coluna(colunas, "CHAT")
+    linhas_criadas = garantir_linhas_da_data(ws, colunas, data_referencia)
+    tecnicos = tecnicos_da_planilha(ws, colunas)
+    ws_aliases = garantir_aba_aliases(
+        wb,
+        tecnicos,
+        dados_chat["atendentes"],
+        coluna_alias=5,
+    )
+    aliases = ler_aliases(ws_aliases, coluna_alias=5)
+
+    atualizados = 0
+    sem_alias = []
+
+    for row in range(2, ws.max_row + 1):
+        data_linha = ws.cell(row=row, column=col_data).value
+        if not data_linha:
+            continue
+        data_linha = data_linha.date() if hasattr(data_linha, "date") else data_linha
+        if data_linha != data_referencia:
+            continue
+
+        tecnico = ws.cell(row=row, column=col_tecnico).value
+        chave_chat = aliases.get(normalizar_nome(tecnico), normalizar_nome(tecnico))
+        if chave_chat not in contagens:
+            ws.cell(row=row, column=col_chat).value = 0
+            sem_alias.append(tecnico)
+            continue
+
+        ws.cell(row=row, column=col_chat).value = contagens[chave_chat]
+        atualizados += 1
+
+    zerar_colunas_sem_movimento_ws(ws)
+    salvar_workbook_produtividade(wb)
+
+    return {
+        "data": data_referencia.strftime("%d/%m/%Y"),
+        "fonte": len(contagens),
+        "linhas_criadas": linhas_criadas,
+        "atualizados": atualizados,
+        "sem_alias": sorted(set(sem_alias)),
+    }
+
+
 def atualizar_planilha_com_pontoweb_mes(
     ano,
     mes,
