@@ -2402,6 +2402,8 @@ if modo_gestao:
                 unsafe_allow_html=True,
             )
 
+    mostrar_lista_apoio_gestao()
+
     st.divider()
     st.subheader("Ranking Geral de Todos os Níveis")
 
@@ -2459,9 +2461,6 @@ if modo_gestao:
             ),
             use_container_width=True,
         )
-
-if modo_gestao:
-    mostrar_lista_apoio_gestao()
 
 if modo_gestao:
     tecnico = st.selectbox(
