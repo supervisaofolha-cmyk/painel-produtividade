@@ -1290,6 +1290,20 @@ def atualizar_via_servico_local(fonte, data_referencia):
     return payload.get("resultados", {})
 
 
+def servico_local_disponivel():
+    try:
+        sessao = criar_sessao_http()
+        resposta = sessao.get(
+            f"{SERVICO_PLANILHA_LOCAL_URL}/health",
+            timeout=5,
+        )
+        resposta.raise_for_status()
+        payload = resposta.json()
+        return bool(payload.get("ok"))
+    except Exception:
+        return False
+
+
 @st.cache_data(ttl=300, show_spinner=False)
 def listar_arquivos_ro():
     sessao = criar_sessao_http()
@@ -2545,6 +2559,7 @@ if (usuario_digitado == "gestao" and senha_digitada == "30071997") or usuario_ap
 
     st.sidebar.divider()
     st.sidebar.caption(f"Atualização para {data_referencia.strftime('%d/%m/%Y')}")
+    chat_local_disponivel = servico_local_disponivel()
 
     if st.sidebar.button("Atualizar BI do dia anterior"):
         with st.spinner("Buscando dados no PowerBI e atualizando a planilha..."):
@@ -2604,7 +2619,17 @@ if (usuario_digitado == "gestao" and senha_digitada == "30071997") or usuario_ap
                 st.cache_data.clear()
                 st.rerun()
 
-    if st.sidebar.button("Atualizar CHAT do dia anterior"):
+    if not chat_local_disponivel:
+        st.sidebar.info(
+            "O CHAT só pode ser atualizado no painel local "
+            "(http://localhost:8501) com o serviço local ativo, "
+            "porque ele depende do navegador desta máquina logado no PLUG."
+        )
+
+    if st.sidebar.button(
+        "Atualizar CHAT do dia anterior",
+        disabled=not chat_local_disponivel,
+    ):
         with st.spinner("Buscando chats fechados no PLUG e atualizando a planilha..."):
             try:
                 resultado = atualizar_via_servico_local("chat", data_referencia)["chat"]
