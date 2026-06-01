@@ -2767,7 +2767,13 @@ if not modo_gestao:
 
     st.divider()
     st.subheader("Lista de Apoio")
-    st.caption("Acompanhamento atualizado automaticamente a cada 5 minutos.")
+    col_atualizar_apoio_tecnico, col_status_apoio_tecnico = st.columns([1, 3])
+    with col_atualizar_apoio_tecnico:
+        if st.button("Atualizar minhas ajudas", key="atualizar_lista_apoio_tecnico"):
+            st.rerun()
+    with col_status_apoio_tecnico:
+        st.caption("Acompanhamento atualizado automaticamente a cada 5 minutos.")
+
     components.html(
         """
         <script>
