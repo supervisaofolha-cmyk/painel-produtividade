@@ -63,6 +63,7 @@ TOPICOS_LISTA_APOIO = [
     "e-Social",
     "Outros",
 ]
+USUARIOS_APOIO = {"subbrenda", "subluma"}
 
 POWERBI_RESOURCE_KEY = "6b54dc9f-c2f8-4ee5-bbd2-e2ca5781ab06"
 POWERBI_API_BASE = "https://wabi-brazil-south-b-primary-api.analysis.windows.net"
@@ -332,6 +333,60 @@ def bytes_lista_apoio():
     garantir_lista_apoio()
     with open(ARQUIVO_LISTA_APOIO, "rb") as arquivo:
         return arquivo.read()
+
+
+def mostrar_lista_apoio_gestao():
+    st.divider()
+    st.subheader("Lista de Apoio")
+    try:
+        lista_apoio = ler_lista_apoio()
+    except Exception as erro_lista_apoio:
+        st.error(f"Não foi possível carregar a lista de apoio: {erro_lista_apoio}")
+        lista_apoio = pd.DataFrame(columns=CABECALHOS_LISTA_APOIO)
+
+    if lista_apoio.empty:
+        st.info("Ainda não há dúvidas registradas pelos técnicos.")
+        return
+
+    lista_editada = st.data_editor(
+        lista_apoio,
+        use_container_width=True,
+        hide_index=True,
+        disabled=[
+            "Carimbo de data/hora",
+            "Nome do Técnico",
+            "Selecione o tópico",
+            "Descreva o problema/pedido em poucas palavras",
+        ],
+        column_config={
+            "Situação": st.column_config.SelectboxColumn(
+                "Situação",
+                options=["Aberto", "Em análise", "Respondido", "Finalizado"],
+            )
+        },
+        key="editor_lista_apoio",
+    )
+
+    col_apoio_1, col_apoio_2 = st.columns([1, 1])
+    with col_apoio_1:
+        if st.button("Salvar lista de apoio", key="salvar_lista_apoio"):
+            try:
+                salvar_lista_apoio(lista_editada)
+            except PermissionError:
+                st.error("Feche a lista_apoio.xlsx e tente salvar novamente.")
+            except Exception as erro_lista_apoio:
+                st.error(f"Não foi possível salvar a lista: {erro_lista_apoio}")
+            else:
+                st.success("Lista de apoio atualizada.")
+                st.rerun()
+    with col_apoio_2:
+        st.download_button(
+            "Baixar lista em Excel",
+            data=bytes_lista_apoio(),
+            file_name=ARQUIVO_LISTA_APOIO,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="baixar_lista_apoio",
+        )
 
 
 def salvar_env_local(atualizacoes):
@@ -1965,6 +2020,7 @@ usuario_digitado = builtins.str(usuario_input).lower().strip()
 senha_digitada = builtins.str(senha_input).replace(".0", "").strip()
 
 modo_gestao = False
+modo_apoio = False
 
 if usuario_digitado == "gestao" and senha_digitada == "30071997":
     modo_gestao = True
@@ -2093,7 +2149,13 @@ else:
         st.stop()
 
     tecnico = login.iloc[0]["tecnico"]
-    st.sidebar.success(f"Bem-vindo(a), {tecnico.title()}")
+    modo_apoio = usuario_digitado in USUARIOS_APOIO
+    if modo_apoio:
+        st.sidebar.success(f"Bem-vindo(a), {usuario_digitado.title()}")
+        mostrar_lista_apoio_gestao()
+        st.stop()
+    else:
+        st.sidebar.success(f"Bem-vindo(a), {tecnico.title()}")
 
 if modo_gestao:
     st.sidebar.divider()
