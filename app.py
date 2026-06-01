@@ -2020,11 +2020,18 @@ usuario_digitado = builtins.str(usuario_input).lower().strip()
 senha_digitada = builtins.str(senha_input).replace(".0", "").strip()
 
 modo_gestao = False
-modo_apoio = False
+login_usuario = usuarios[
+    (usuarios["usuario"] == usuario_digitado)
+    & (usuarios["senha"] == senha_digitada)
+]
+usuario_apoio_valido = usuario_digitado in USUARIOS_APOIO and not login_usuario.empty
 
-if usuario_digitado == "gestao" and senha_digitada == "30071997":
+if (usuario_digitado == "gestao" and senha_digitada == "30071997") or usuario_apoio_valido:
     modo_gestao = True
-    st.sidebar.success("Bem-vinda Gestão")
+    if usuario_apoio_valido:
+        st.sidebar.success(f"Bem-vinda {usuario_digitado.title()}")
+    else:
+        st.sidebar.success("Bem-vinda Gestão")
 
     data_referencia = data_dia_anterior()
     env_local = carregar_env_local()
@@ -2139,23 +2146,14 @@ if usuario_digitado == "gestao" and senha_digitada == "30071997":
                     st.rerun()
 
 else:
-    login = usuarios[
-        (usuarios["usuario"] == usuario_digitado)
-        & (usuarios["senha"] == senha_digitada)
-    ]
+    login = login_usuario
 
     if login.empty:
         st.error("Usuário ou senha inválidos.")
         st.stop()
 
     tecnico = login.iloc[0]["tecnico"]
-    modo_apoio = usuario_digitado in USUARIOS_APOIO
-    if modo_apoio:
-        st.sidebar.success(f"Bem-vindo(a), {usuario_digitado.title()}")
-        mostrar_lista_apoio_gestao()
-        st.stop()
-    else:
-        st.sidebar.success(f"Bem-vindo(a), {tecnico.title()}")
+    st.sidebar.success(f"Bem-vindo(a), {tecnico.title()}")
 
 if modo_gestao:
     st.sidebar.divider()
