@@ -277,7 +277,68 @@ def salvar_workbook_produtividade(wb):
             os.remove(caminho_temporario)
 
 
+def garantir_planilha_lista_apoio_integra():
+    principal_existe = os.path.exists(ARQUIVO_LISTA_APOIO)
+    principal_ok = arquivo_excel_integro(ARQUIVO_LISTA_APOIO)
+    backup_ok = arquivo_excel_integro(ARQUIVO_LISTA_APOIO_BACKUP)
+
+    if principal_ok:
+        if not backup_ok:
+            shutil.copyfile(ARQUIVO_LISTA_APOIO, ARQUIVO_LISTA_APOIO_BACKUP)
+        return
+
+    if backup_ok:
+        shutil.copyfile(ARQUIVO_LISTA_APOIO_BACKUP, ARQUIVO_LISTA_APOIO)
+        return
+
+    if principal_existe:
+        raise zipfile.BadZipFile(
+            "Nenhuma cópia íntegra da lista_apoio.xlsx foi encontrada."
+        )
+
+
+def salvar_workbook_lista_apoio(wb):
+    diretorio = os.path.dirname(os.path.abspath(ARQUIVO_LISTA_APOIO)) or "."
+    descritor, caminho_temporario = tempfile.mkstemp(
+        prefix="lista_apoio_",
+        suffix=".xlsx",
+        dir=diretorio,
+    )
+    os.close(descritor)
+    try:
+        wb.save(caminho_temporario)
+        with zipfile.ZipFile(caminho_temporario) as arquivo_zip:
+            if arquivo_zip.testzip() is not None:
+                raise zipfile.BadZipFile("Arquivo temporário gerado com corrupção.")
+        os.replace(caminho_temporario, ARQUIVO_LISTA_APOIO)
+        shutil.copyfile(ARQUIVO_LISTA_APOIO, ARQUIVO_LISTA_APOIO_BACKUP)
+    finally:
+        if os.path.exists(caminho_temporario):
+            os.remove(caminho_temporario)
+
+
+def salvar_dataframe_lista_apoio(dataframe):
+    diretorio = os.path.dirname(os.path.abspath(ARQUIVO_LISTA_APOIO)) or "."
+    descritor, caminho_temporario = tempfile.mkstemp(
+        prefix="lista_apoio_",
+        suffix=".xlsx",
+        dir=diretorio,
+    )
+    os.close(descritor)
+    try:
+        dataframe.to_excel(caminho_temporario, index=False)
+        with zipfile.ZipFile(caminho_temporario) as arquivo_zip:
+            if arquivo_zip.testzip() is not None:
+                raise zipfile.BadZipFile("Arquivo temporário gerado com corrupção.")
+        os.replace(caminho_temporario, ARQUIVO_LISTA_APOIO)
+        shutil.copyfile(ARQUIVO_LISTA_APOIO, ARQUIVO_LISTA_APOIO_BACKUP)
+    finally:
+        if os.path.exists(caminho_temporario):
+            os.remove(caminho_temporario)
+
+
 def garantir_lista_apoio():
+    garantir_planilha_lista_apoio_integra()
     if os.path.exists(ARQUIVO_LISTA_APOIO):
         wb = openpyxl.load_workbook(ARQUIVO_LISTA_APOIO)
         ws = wb.active
@@ -293,7 +354,7 @@ def garantir_lista_apoio():
     while ws.max_column > len(CABECALHOS_LISTA_APOIO):
         ws.delete_cols(len(CABECALHOS_LISTA_APOIO) + 1)
 
-    wb.save(ARQUIVO_LISTA_APOIO)
+    salvar_workbook_lista_apoio(wb)
     return wb, ws
 
 
@@ -309,7 +370,7 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
             "",
         ]
     )
-    wb.save(ARQUIVO_LISTA_APOIO)
+    salvar_workbook_lista_apoio(wb)
 
 
 def ler_lista_apoio():
@@ -362,7 +423,7 @@ def salvar_lista_apoio(dataframe):
         for coluna in colunas_editaveis:
             existente.at[indice, coluna] = edits_por_chave[chave][coluna]
 
-    existente[CABECALHOS_LISTA_APOIO].to_excel(ARQUIVO_LISTA_APOIO, index=False)
+    salvar_dataframe_lista_apoio(existente[CABECALHOS_LISTA_APOIO])
 
 
 def bytes_lista_apoio():
