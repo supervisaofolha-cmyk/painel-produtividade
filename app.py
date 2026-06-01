@@ -16,6 +16,7 @@ from html import unescape
 from html.parser import HTMLParser
 from io import BytesIO, StringIO
 import calendar
+from zoneinfo import ZoneInfo
 
 import openpyxl
 import pandas as pd
@@ -66,6 +67,7 @@ TOPICOS_LISTA_APOIO = [
     "Outros",
 ]
 USUARIOS_APOIO = {"subbrenda", "subluma"}
+FUSO_HORARIO_APP = ZoneInfo("America/Araguaina")
 
 POWERBI_RESOURCE_KEY = "6b54dc9f-c2f8-4ee5-bbd2-e2ca5781ab06"
 POWERBI_API_BASE = "https://wabi-brazil-south-b-primary-api.analysis.windows.net"
@@ -368,7 +370,7 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
     wb, ws = garantir_lista_apoio()
     ws.append(
         [
-            datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+            datetime.now(FUSO_HORARIO_APP).strftime("%d/%m/%Y %H:%M:%S"),
             builtins.str(tecnico or "").title(),
             builtins.str(topico or "").strip(),
             builtins.str(resumo or "").strip(),
