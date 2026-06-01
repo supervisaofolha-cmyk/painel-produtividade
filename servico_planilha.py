@@ -36,6 +36,9 @@ def atualizar_fontes(fonte, data_referencia):
     if fonte in {"ro", "todas"}:
         resultados["ro"] = NS["atualizar_planilha_com_ro"](data_referencia)
 
+    if fonte in {"chat", "todas"}:
+        resultados["chat"] = NS["atualizar_planilha_com_chat"](data_referencia)
+
     if fonte in {"sgd", "todas"}:
         env_local = NS["carregar_env_local"]()
         usuario_sgd = env_local.get("SGD_USUARIO") or NS["os"].getenv("SGD_USUARIO")
