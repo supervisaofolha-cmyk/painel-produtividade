@@ -433,6 +433,13 @@ def bytes_lista_apoio():
         return arquivo.read()
 
 
+def versao_lista_apoio():
+    garantir_lista_apoio()
+    if not os.path.exists(ARQUIVO_LISTA_APOIO):
+        return "sem_arquivo"
+    return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO)))
+
+
 def mostrar_lista_apoio_gestao():
     st.divider()
     st.subheader("Lista de Apoio")
@@ -506,6 +513,8 @@ def mostrar_lista_apoio_gestao():
     chave_editor_apoio = (
         "editor_lista_apoio_"
         + re.sub(r"[^0-9a-zA-Z]+", "_", filtro_data_apoio or "todas")
+        + "_"
+        + versao_lista_apoio()
     )
 
     lista_editada = st.data_editor(
