@@ -255,6 +255,68 @@ def salvar_workbook_produtividade(wb):
             os.remove(caminho_temporario)
 
 
+def garantir_lista_apoio():
+    if os.path.exists(ARQUIVO_LISTA_APOIO):
+        wb = openpyxl.load_workbook(ARQUIVO_LISTA_APOIO)
+        ws = wb.active
+    else:
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Lista de Apoio"
+
+    for indice, cabecalho in enumerate(CABECALHOS_LISTA_APOIO, start=1):
+        if ws.cell(row=1, column=indice).value != cabecalho:
+            ws.cell(row=1, column=indice).value = cabecalho
+
+    wb.save(ARQUIVO_LISTA_APOIO)
+    return wb, ws
+
+
+def registrar_duvida_apoio(tecnico, nivel, topico, resumo):
+    wb, ws = garantir_lista_apoio()
+    protocolo = uuid.uuid4().hex[:8].upper()
+    ws.append(
+        [
+            protocolo,
+            datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+            builtins.str(tecnico or "").title(),
+            builtins.str(nivel or ""),
+            builtins.str(topico or "").strip(),
+            builtins.str(resumo or "").strip(),
+            "Aberto",
+            "",
+            "",
+            "",
+        ]
+    )
+    wb.save(ARQUIVO_LISTA_APOIO)
+    return protocolo
+
+
+def ler_lista_apoio():
+    garantir_lista_apoio()
+    dataframe = pd.read_excel(ARQUIVO_LISTA_APOIO)
+    for coluna_lista in CABECALHOS_LISTA_APOIO:
+        if coluna_lista not in dataframe.columns:
+            dataframe[coluna_lista] = ""
+    return dataframe[CABECALHOS_LISTA_APOIO]
+
+
+def salvar_lista_apoio(dataframe):
+    dataframe = dataframe.copy()
+    for coluna_lista in CABECALHOS_LISTA_APOIO:
+        if coluna_lista not in dataframe.columns:
+            dataframe[coluna_lista] = ""
+    dataframe = dataframe[CABECALHOS_LISTA_APOIO]
+    dataframe.to_excel(ARQUIVO_LISTA_APOIO, index=False)
+
+
+def bytes_lista_apoio():
+    garantir_lista_apoio()
+    with open(ARQUIVO_LISTA_APOIO, "rb") as arquivo:
+        return arquivo.read()
+
+
 def salvar_env_local(atualizacoes):
     valores = carregar_env_local()
     for chave, valor in atualizacoes.items():
