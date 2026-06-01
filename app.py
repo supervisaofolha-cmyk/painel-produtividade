@@ -2384,6 +2384,60 @@ if modo_gestao:
         )
 
 if modo_gestao:
+    st.divider()
+    st.subheader("Lista de Apoio")
+    try:
+        lista_apoio = ler_lista_apoio()
+    except Exception as erro_lista_apoio:
+        st.error(f"Não foi possível carregar a lista de apoio: {erro_lista_apoio}")
+        lista_apoio = pd.DataFrame(columns=CABECALHOS_LISTA_APOIO)
+
+    if lista_apoio.empty:
+        st.info("Ainda não há dúvidas registradas pelos técnicos.")
+    else:
+        lista_editada = st.data_editor(
+            lista_apoio,
+            use_container_width=True,
+            hide_index=True,
+            disabled=[
+                "ID",
+                "Data/Hora",
+                "Técnico",
+                "Nível",
+                "Tópico",
+                "Resumo da Dúvida",
+            ],
+            column_config={
+                "Status": st.column_config.SelectboxColumn(
+                    "Status",
+                    options=["Aberto", "Em análise", "Respondido", "Finalizado"],
+                )
+            },
+            key="editor_lista_apoio",
+        )
+
+        col_apoio_1, col_apoio_2 = st.columns([1, 1])
+        with col_apoio_1:
+            if st.button("Salvar lista de apoio", key="salvar_lista_apoio"):
+                try:
+                    salvar_lista_apoio(lista_editada)
+                except PermissionError:
+                    st.error("Feche a lista_apoio.xlsx e tente salvar novamente.")
+                except Exception as erro_lista_apoio:
+                    st.error(f"Não foi possível salvar a lista: {erro_lista_apoio}")
+                else:
+                    st.success("Lista de apoio atualizada.")
+                    st.rerun()
+        with col_apoio_2:
+            st.download_button(
+                "Baixar lista em Excel",
+                data=bytes_lista_apoio(),
+                file_name=ARQUIVO_LISTA_APOIO,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="baixar_lista_apoio",
+            )
+
+if modo_gestao:
     tecnico = st.selectbox(
         "Selecione o Técnico",
         tecnicos_disponiveis,
@@ -2512,6 +2566,34 @@ if not modo_gestao:
                 """,
                 unsafe_allow_html=True,
             )
+
+    st.divider()
+    st.subheader("Lista de Apoio")
+    with st.form("form_lista_apoio", clear_on_submit=True):
+        topico_apoio = st.text_input("Tópico do problema")
+        resumo_apoio = st.text_area(
+            "Descreva a dúvida de forma resumida",
+            height=110,
+        )
+        enviar_apoio = st.form_submit_button("Registrar dúvida")
+
+    if enviar_apoio:
+        if not topico_apoio.strip() or not resumo_apoio.strip():
+            st.warning("Informe o tópico e descreva a dúvida antes de registrar.")
+        else:
+            try:
+                protocolo = registrar_duvida_apoio(
+                    tecnico,
+                    nivel_tecnico,
+                    topico_apoio,
+                    resumo_apoio,
+                )
+            except PermissionError:
+                st.error("Feche a lista_apoio.xlsx e tente registrar novamente.")
+            except Exception as erro_lista_apoio:
+                st.error(f"Não foi possível registrar a dúvida: {erro_lista_apoio}")
+            else:
+                st.success(f"Dúvida registrada para apoio. Protocolo: {protocolo}.")
 
 if not modo_gestao:
     if nivel_tecnico:
