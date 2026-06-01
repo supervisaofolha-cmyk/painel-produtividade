@@ -402,7 +402,12 @@ def normalizar_valor_lista_apoio(coluna, valor, valor_atual=""):
     texto_atual = texto_lista_apoio(valor_atual)
 
     if coluna == "Situação":
-        opcoes = ["Aberto", "Em análise", "Respondido", "Finalizado"]
+        if texto == "Respondido":
+            texto = "Resolvido pelo técnico"
+        if texto_atual == "Respondido":
+            texto_atual = "Resolvido pelo técnico"
+
+        opcoes = ["Aberto", "Em análise", "Resolvido pelo técnico", "Finalizado"]
         if texto in opcoes:
             return texto
         if texto_atual in opcoes:
@@ -579,7 +584,7 @@ def mostrar_lista_apoio_gestao():
         column_config={
             "Situação": st.column_config.SelectboxColumn(
                 "Situação",
-                options=["Aberto", "Em análise", "Respondido", "Finalizado"],
+                options=["Aberto", "Em análise", "Resolvido pelo técnico", "Finalizado"],
             ),
             "Responsável/Apoio": st.column_config.SelectboxColumn(
                 "Responsável/Apoio",
