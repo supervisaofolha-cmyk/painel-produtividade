@@ -435,6 +435,10 @@ def mostrar_lista_apoio_gestao():
             "Situação": st.column_config.SelectboxColumn(
                 "Situação",
                 options=["Aberto", "Em análise", "Respondido", "Finalizado"],
+            ),
+            "Responsável/Apoio": st.column_config.SelectboxColumn(
+                "Responsável/Apoio",
+                options=["Brenda", "Luma"],
             )
         },
         key=chave_editor_apoio,
