@@ -22,6 +22,7 @@ import pandas as pd
 import plotly.express as px
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 
 
 ARQUIVO_PRODUTIVIDADE = "produtividade.xlsx"
@@ -435,6 +436,25 @@ def bytes_lista_apoio():
 def mostrar_lista_apoio_gestao():
     st.divider()
     st.subheader("Lista de Apoio")
+
+    col_atualizar_apoio, col_status_apoio = st.columns([1, 3])
+    with col_atualizar_apoio:
+        if st.button("Atualizar lista de ajuda", key="atualizar_lista_apoio"):
+            st.rerun()
+    with col_status_apoio:
+        st.caption("Atualização automática a cada 5 minutos.")
+
+    components.html(
+        """
+        <script>
+            setTimeout(function() {
+                window.parent.location.reload();
+            }, 300000);
+        </script>
+        """,
+        height=0,
+    )
+
     try:
         lista_apoio = ler_lista_apoio()
     except Exception as erro_lista_apoio:
@@ -2739,6 +2759,18 @@ if not modo_gestao:
 
     st.divider()
     st.subheader("Lista de Apoio")
+    st.caption("Acompanhamento atualizado automaticamente a cada 5 minutos.")
+    components.html(
+        """
+        <script>
+            setTimeout(function() {
+                window.parent.location.reload();
+            }, 300000);
+        </script>
+        """,
+        height=0,
+    )
+
     with st.form("form_lista_apoio", clear_on_submit=True):
         topico_apoio = st.selectbox("Tópico do problema", TOPICOS_LISTA_APOIO)
         resumo_apoio = st.text_area(
