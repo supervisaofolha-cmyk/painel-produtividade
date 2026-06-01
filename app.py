@@ -32,16 +32,12 @@ ABA_PRODUTIVIDADE = "Produtividade"
 ABA_ALIASES = "Aliases"
 COLUNA_DIAS_META = "Dias Meta"
 CABECALHOS_LISTA_APOIO = [
-    "ID",
-    "Data/Hora",
-    "Técnico",
-    "Nível",
-    "Tópico",
-    "Resumo da Dúvida",
-    "Status",
-    "Resposta Apoio",
-    "Responsável Apoio",
-    "Data Resposta",
+    "Carimbo de data/hora",
+    "Nome do Técnico",
+    "Selecione o tópico",
+    "Descreva o problema/pedido em poucas palavras",
+    "Situação",
+    "Responsável/Apoio",
 ]
 TOPICOS_LISTA_APOIO = [
     "13° Salário",
@@ -292,29 +288,26 @@ def garantir_lista_apoio():
         if ws.cell(row=1, column=indice).value != cabecalho:
             ws.cell(row=1, column=indice).value = cabecalho
 
+    while ws.max_column > len(CABECALHOS_LISTA_APOIO):
+        ws.delete_cols(len(CABECALHOS_LISTA_APOIO) + 1)
+
     wb.save(ARQUIVO_LISTA_APOIO)
     return wb, ws
 
 
-def registrar_duvida_apoio(tecnico, nivel, topico, resumo):
+def registrar_duvida_apoio(tecnico, topico, resumo):
     wb, ws = garantir_lista_apoio()
-    protocolo = uuid.uuid4().hex[:8].upper()
     ws.append(
         [
-            protocolo,
             datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
             builtins.str(tecnico or "").title(),
-            builtins.str(nivel or ""),
             builtins.str(topico or "").strip(),
             builtins.str(resumo or "").strip(),
             "Aberto",
             "",
-            "",
-            "",
         ]
     )
     wb.save(ARQUIVO_LISTA_APOIO)
-    return protocolo
 
 
 def ler_lista_apoio():
