@@ -321,12 +321,41 @@ def ler_lista_apoio():
 
 
 def salvar_lista_apoio(dataframe):
+    existente = ler_lista_apoio()
     dataframe = dataframe.copy()
     for coluna_lista in CABECALHOS_LISTA_APOIO:
         if coluna_lista not in dataframe.columns:
             dataframe[coluna_lista] = ""
     dataframe = dataframe[CABECALHOS_LISTA_APOIO]
-    dataframe.to_excel(ARQUIVO_LISTA_APOIO, index=False)
+
+    colunas_editaveis = ["Situação", "Responsável/Apoio"]
+    colunas_chave = [
+        "Carimbo de data/hora",
+        "Nome do Técnico",
+        "Selecione o tópico",
+        "Descreva o problema/pedido em poucas palavras",
+    ]
+
+    for coluna_lista in colunas_editaveis:
+        if coluna_lista not in existente.columns:
+            existente[coluna_lista] = ""
+
+    edits_por_chave = {}
+    for _, linha in dataframe.iterrows():
+        chave = tuple(builtins.str(linha[coluna] or "") for coluna in colunas_chave)
+        edits_por_chave[chave] = {
+            coluna: linha[coluna]
+            for coluna in colunas_editaveis
+        }
+
+    for indice, linha in existente.iterrows():
+        chave = tuple(builtins.str(linha[coluna] or "") for coluna in colunas_chave)
+        if chave not in edits_por_chave:
+            continue
+        for coluna in colunas_editaveis:
+            existente.at[indice, coluna] = edits_por_chave[chave][coluna]
+
+    existente[CABECALHOS_LISTA_APOIO].to_excel(ARQUIVO_LISTA_APOIO, index=False)
 
 
 def bytes_lista_apoio():
@@ -352,6 +381,7 @@ def mostrar_lista_apoio_gestao():
         lista_apoio,
         use_container_width=True,
         hide_index=True,
+        num_rows="fixed",
         disabled=[
             "Carimbo de data/hora",
             "Nome do Técnico",
