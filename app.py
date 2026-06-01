@@ -2417,16 +2417,14 @@ if modo_gestao:
             use_container_width=True,
             hide_index=True,
             disabled=[
-                "ID",
-                "Data/Hora",
-                "Técnico",
-                "Nível",
-                "Tópico",
-                "Resumo da Dúvida",
+                "Carimbo de data/hora",
+                "Nome do Técnico",
+                "Selecione o tópico",
+                "Descreva o problema/pedido em poucas palavras",
             ],
             column_config={
-                "Status": st.column_config.SelectboxColumn(
-                    "Status",
+                "Situação": st.column_config.SelectboxColumn(
+                    "Situação",
                     options=["Aberto", "Em análise", "Respondido", "Finalizado"],
                 )
             },
@@ -2599,9 +2597,8 @@ if not modo_gestao:
             st.warning("Descreva a dúvida antes de registrar.")
         else:
             try:
-                protocolo = registrar_duvida_apoio(
+                registrar_duvida_apoio(
                     tecnico,
-                    nivel_tecnico,
                     topico_apoio,
                     resumo_apoio,
                 )
@@ -2610,7 +2607,7 @@ if not modo_gestao:
             except Exception as erro_lista_apoio:
                 st.error(f"Não foi possível registrar a dúvida: {erro_lista_apoio}")
             else:
-                st.success(f"Dúvida registrada para apoio. Protocolo: {protocolo}.")
+                st.success("Dúvida registrada para apoio.")
 
 if not modo_gestao:
     if nivel_tecnico:
