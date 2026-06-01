@@ -434,7 +434,6 @@ def bytes_lista_apoio():
 
 
 def versao_lista_apoio():
-    garantir_lista_apoio()
     if not os.path.exists(ARQUIVO_LISTA_APOIO):
         return "sem_arquivo"
     return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO)))
