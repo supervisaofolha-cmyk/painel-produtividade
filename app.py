@@ -377,8 +377,51 @@ def mostrar_lista_apoio_gestao():
         st.info("Ainda não há dúvidas registradas pelos técnicos.")
         return
 
+    filtro_data_apoio = st.text_input(
+        "Filtrar ajudas por data",
+        value="",
+        placeholder="dd/mm/aaaa",
+        key="filtro_data_lista_apoio",
+    ).strip()
+
+    lista_exibida = lista_apoio.copy()
+    if filtro_data_apoio:
+        try:
+            data_filtro_apoio = datetime.strptime(
+                filtro_data_apoio,
+                "%d/%m/%Y",
+            ).date()
+        except ValueError:
+            st.warning("Informe a data no formato dd/mm/aaaa.")
+            lista_exibida = lista_apoio.iloc[0:0].copy()
+        else:
+            datas_apoio = pd.to_datetime(
+                lista_exibida["Carimbo de data/hora"],
+                dayfirst=True,
+                errors="coerce",
+            ).dt.date
+            lista_exibida = lista_exibida[datas_apoio == data_filtro_apoio]
+
+    st.caption(f"{len(lista_exibida)} registro(s) exibido(s).")
+
+    if lista_exibida.empty:
+        st.info("Nenhuma ajuda registrada para a data informada.")
+        st.download_button(
+            "Baixar lista em Excel",
+            data=bytes_lista_apoio(),
+            file_name=ARQUIVO_LISTA_APOIO,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="baixar_lista_apoio_vazia",
+        )
+        return
+
+    chave_editor_apoio = (
+        "editor_lista_apoio_"
+        + re.sub(r"[^0-9a-zA-Z]+", "_", filtro_data_apoio or "todas")
+    )
+
     lista_editada = st.data_editor(
-        lista_apoio,
+        lista_exibida,
         use_container_width=True,
         hide_index=True,
         num_rows="fixed",
@@ -394,7 +437,7 @@ def mostrar_lista_apoio_gestao():
                 options=["Aberto", "Em análise", "Respondido", "Finalizado"],
             )
         },
-        key="editor_lista_apoio",
+        key=chave_editor_apoio,
     )
 
     col_apoio_1, col_apoio_2 = st.columns([1, 1])
