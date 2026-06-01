@@ -388,6 +388,30 @@ def ler_lista_apoio():
     return dataframe[CABECALHOS_LISTA_APOIO]
 
 
+def normalizar_valor_lista_apoio(coluna, valor, valor_atual=""):
+    if pd.isna(valor):
+        valor = ""
+
+    texto = builtins.str(valor or "").strip()
+    texto_atual = builtins.str(valor_atual or "").strip()
+
+    if coluna == "Situação":
+        opcoes = ["Aberto", "Em análise", "Respondido", "Finalizado"]
+        if texto in opcoes:
+            return texto
+        if texto_atual in opcoes:
+            return texto_atual
+        return "Aberto"
+
+    if coluna == "Responsável/Apoio":
+        opcoes = ["Brenda", "Luma"]
+        if texto in opcoes:
+            return texto
+        return texto_atual
+
+    return texto or texto_atual
+
+
 def salvar_lista_apoio(dataframe):
     existente = ler_lista_apoio()
     dataframe = dataframe.copy()
@@ -412,7 +436,11 @@ def salvar_lista_apoio(dataframe):
         if indice not in existente.index:
             continue
         for coluna in colunas_editaveis:
-            existente.at[indice, coluna] = linha[coluna]
+            existente.at[indice, coluna] = normalizar_valor_lista_apoio(
+                coluna,
+                linha[coluna],
+                existente.at[indice, coluna],
+            )
 
     edits_por_chave = {}
     for _, linha in dataframe.iterrows():
@@ -427,7 +455,11 @@ def salvar_lista_apoio(dataframe):
         if chave not in edits_por_chave:
             continue
         for coluna in colunas_editaveis:
-            existente.at[indice, coluna] = edits_por_chave[chave][coluna]
+            existente.at[indice, coluna] = normalizar_valor_lista_apoio(
+                coluna,
+                edits_por_chave[chave][coluna],
+                existente.at[indice, coluna],
+            )
 
     salvar_dataframe_lista_apoio(existente[CABECALHOS_LISTA_APOIO])
 
