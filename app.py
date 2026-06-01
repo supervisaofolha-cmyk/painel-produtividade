@@ -385,15 +385,19 @@ def ler_lista_apoio():
     for coluna_lista in CABECALHOS_LISTA_APOIO:
         if coluna_lista not in dataframe.columns:
             dataframe[coluna_lista] = ""
+        dataframe[coluna_lista] = dataframe[coluna_lista].astype("object")
     return dataframe[CABECALHOS_LISTA_APOIO]
 
 
-def normalizar_valor_lista_apoio(coluna, valor, valor_atual=""):
+def texto_lista_apoio(valor):
     if pd.isna(valor):
-        valor = ""
+        return ""
+    return builtins.str(valor or "").strip()
 
-    texto = builtins.str(valor or "").strip()
-    texto_atual = builtins.str(valor_atual or "").strip()
+
+def normalizar_valor_lista_apoio(coluna, valor, valor_atual=""):
+    texto = texto_lista_apoio(valor)
+    texto_atual = texto_lista_apoio(valor_atual)
 
     if coluna == "Situação":
         opcoes = ["Aberto", "Em análise", "Respondido", "Finalizado"]
@@ -418,6 +422,8 @@ def salvar_lista_apoio(dataframe):
     for coluna_lista in CABECALHOS_LISTA_APOIO:
         if coluna_lista not in dataframe.columns:
             dataframe[coluna_lista] = ""
+        dataframe[coluna_lista] = dataframe[coluna_lista].astype("object")
+        existente[coluna_lista] = existente[coluna_lista].astype("object")
     dataframe = dataframe[CABECALHOS_LISTA_APOIO]
 
     colunas_editaveis = ["Situação", "Responsável/Apoio"]
@@ -444,14 +450,14 @@ def salvar_lista_apoio(dataframe):
 
     edits_por_chave = {}
     for _, linha in dataframe.iterrows():
-        chave = tuple(builtins.str(linha[coluna] or "") for coluna in colunas_chave)
+        chave = tuple(texto_lista_apoio(linha[coluna]) for coluna in colunas_chave)
         edits_por_chave[chave] = {
             coluna: linha[coluna]
             for coluna in colunas_editaveis
         }
 
     for indice, linha in existente.iterrows():
-        chave = tuple(builtins.str(linha[coluna] or "") for coluna in colunas_chave)
+        chave = tuple(texto_lista_apoio(linha[coluna]) for coluna in colunas_chave)
         if chave not in edits_por_chave:
             continue
         for coluna in colunas_editaveis:
