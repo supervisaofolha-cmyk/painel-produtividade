@@ -27,9 +27,22 @@ import streamlit as st
 ARQUIVO_PRODUTIVIDADE = "produtividade.xlsx"
 ARQUIVO_PRODUTIVIDADE_BACKUP = "produtividade_backup.xlsx"
 ARQUIVO_USUARIOS = "usuarios.xlsx"
+ARQUIVO_LISTA_APOIO = "lista_apoio.xlsx"
 ABA_PRODUTIVIDADE = "Produtividade"
 ABA_ALIASES = "Aliases"
 COLUNA_DIAS_META = "Dias Meta"
+CABECALHOS_LISTA_APOIO = [
+    "ID",
+    "Data/Hora",
+    "Técnico",
+    "Nível",
+    "Tópico",
+    "Resumo da Dúvida",
+    "Status",
+    "Resposta Apoio",
+    "Responsável Apoio",
+    "Data Resposta",
+]
 
 POWERBI_RESOURCE_KEY = "6b54dc9f-c2f8-4ee5-bbd2-e2ca5781ab06"
 POWERBI_API_BASE = "https://wabi-brazil-south-b-primary-api.analysis.windows.net"
