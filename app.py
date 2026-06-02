@@ -2516,26 +2516,76 @@ pontoweb_banco_identificador = env_local.get(
 )
 
 st.sidebar.title("🔐 Login")
-usuario_input = st.sidebar.text_input("Usuário")
-senha_input = st.sidebar.text_input("Senha", type="password")
+for chave, valor_padrao in {
+    "auth_ok": False,
+    "auth_modo_gestao": False,
+    "auth_usuario": "",
+    "auth_tecnico": "",
+}.items():
+    if chave not in st.session_state:
+        st.session_state[chave] = valor_padrao
 
-if usuario_input == "" or senha_input == "":
+if not st.session_state["auth_ok"]:
+    with st.sidebar.form("form_login"):
+        usuario_input = st.text_input("Usuário", key="login_usuario_input")
+        senha_input = st.text_input("Senha", type="password", key="login_senha_input")
+        entrar = st.form_submit_button("Entrar")
+
+    if entrar:
+        usuario_digitado = builtins.str(usuario_input).lower().strip()
+        senha_digitada = builtins.str(senha_input).replace(".0", "").strip()
+        login_usuario = usuarios[
+            (usuarios["usuario"] == usuario_digitado)
+            & (usuarios["senha"] == senha_digitada)
+        ]
+        usuario_apoio_valido = (
+            usuario_digitado in USUARIOS_APOIO and not login_usuario.empty
+        )
+
+        if usuario_digitado == "gestao" and senha_digitada == "30071997":
+            st.session_state["auth_ok"] = True
+            st.session_state["auth_modo_gestao"] = True
+            st.session_state["auth_usuario"] = "gestao"
+            st.session_state["auth_tecnico"] = ""
+            st.rerun()
+        elif usuario_apoio_valido:
+            st.session_state["auth_ok"] = True
+            st.session_state["auth_modo_gestao"] = True
+            st.session_state["auth_usuario"] = usuario_digitado
+            st.session_state["auth_tecnico"] = ""
+            st.rerun()
+        elif not login_usuario.empty:
+            st.session_state["auth_ok"] = True
+            st.session_state["auth_modo_gestao"] = False
+            st.session_state["auth_usuario"] = usuario_digitado
+            st.session_state["auth_tecnico"] = builtins.str(
+                login_usuario.iloc[0]["tecnico"]
+            ).lower().strip()
+            st.rerun()
+        else:
+            st.sidebar.error("Usuário ou senha inválidos.")
+
     st.warning("Digite usuário e senha.")
     st.stop()
 
-usuario_digitado = builtins.str(usuario_input).lower().strip()
-senha_digitada = builtins.str(senha_input).replace(".0", "").strip()
+modo_gestao = st.session_state["auth_modo_gestao"]
+usuario_digitado = st.session_state["auth_usuario"]
+tecnico = st.session_state["auth_tecnico"]
 
-modo_gestao = False
-login_usuario = usuarios[
-    (usuarios["usuario"] == usuario_digitado)
-    & (usuarios["senha"] == senha_digitada)
-]
-usuario_apoio_valido = usuario_digitado in USUARIOS_APOIO and not login_usuario.empty
+if st.sidebar.button("Sair", key="logout_painel"):
+    for chave, valor_padrao in {
+        "auth_ok": False,
+        "auth_modo_gestao": False,
+        "auth_usuario": "",
+        "auth_tecnico": "",
+        "login_usuario_input": "",
+        "login_senha_input": "",
+    }.items():
+        st.session_state[chave] = valor_padrao
+    st.rerun()
 
-if (usuario_digitado == "gestao" and senha_digitada == "30071997") or usuario_apoio_valido:
-    modo_gestao = True
-    if usuario_apoio_valido:
+if modo_gestao:
+    if usuario_digitado in USUARIOS_APOIO:
         st.sidebar.success(f"Bem-vinda {usuario_digitado.title()}")
     else:
         st.sidebar.success("Bem-vinda Gestão")
@@ -2690,13 +2740,6 @@ if (usuario_digitado == "gestao" and senha_digitada == "30071997") or usuario_ap
                     st.rerun()
 
 else:
-    login = login_usuario
-
-    if login.empty:
-        st.error("Usuário ou senha inválidos.")
-        st.stop()
-
-    tecnico = login.iloc[0]["tecnico"]
     st.sidebar.success(f"Bem-vindo(a), {tecnico.title()}")
 
 if modo_gestao:
