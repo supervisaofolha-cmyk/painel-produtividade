@@ -24,7 +24,6 @@ import pandas as pd
 import plotly.express as px
 import requests
 import streamlit as st
-import streamlit.components.v1 as components
 
 
 ARQUIVO_PRODUTIVIDADE = "produtividade.xlsx"
@@ -504,18 +503,7 @@ def mostrar_lista_apoio_gestao():
             st.session_state["versao_editor_lista_apoio"] = versao_lista_apoio()
             st.rerun()
     with col_status_apoio:
-        st.caption("Atualização automática a cada 5 minutos.")
-
-    components.html(
-        """
-        <script>
-            setTimeout(function() {
-                window.parent.location.reload();
-            }, 300000);
-        </script>
-        """,
-        height=0,
-    )
+        st.caption("Use o botão para atualizar a lista sem derrubar o login.")
 
     try:
         lista_apoio = ler_lista_apoio()
@@ -3155,18 +3143,7 @@ if not modo_gestao:
         if st.button("Atualizar minhas ajudas", key="atualizar_lista_apoio_tecnico"):
             st.rerun()
     with col_status_apoio_tecnico:
-        st.caption("Acompanhamento atualizado automaticamente a cada 5 minutos.")
-
-    components.html(
-        """
-        <script>
-            setTimeout(function() {
-                window.parent.location.reload();
-            }, 300000);
-        </script>
-        """,
-        height=0,
-    )
+        st.caption("Use o botão para atualizar suas ajudas sem sair do painel.")
 
     with st.form("form_lista_apoio", clear_on_submit=True):
         topico_apoio = st.selectbox("Tópico do problema", TOPICOS_LISTA_APOIO)
