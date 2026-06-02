@@ -306,6 +306,79 @@ def garantir_planilha_lista_apoio_integra():
         )
 
 
+def chave_registro_lista_apoio(registro):
+    return "||".join(
+        [
+            texto_lista_apoio(registro.get("Carimbo de data/hora", "")),
+            texto_lista_apoio(registro.get("Nome do Técnico", "")),
+            texto_lista_apoio(registro.get("Selecione o tópico", "")),
+            texto_lista_apoio(
+                registro.get("Descreva o problema/pedido em poucas palavras", "")
+            ),
+        ]
+    )
+
+
+def dataframe_lista_apoio_vazio():
+    return pd.DataFrame(columns=CABECALHOS_LISTA_APOIO)
+
+
+def registrar_historico_lista_apoio(acao, registro):
+    os.makedirs(PASTA_BACKUP_LISTA_APOIO, exist_ok=True)
+    payload = {
+        "timestamp": datetime.now(FUSO_HORARIO_APP).strftime("%Y-%m-%d %H:%M:%S"),
+        "acao": acao,
+        "registro": {
+            coluna: texto_lista_apoio(registro.get(coluna, ""))
+            for coluna in CABECALHOS_LISTA_APOIO
+        },
+    }
+    with open(ARQUIVO_LISTA_APOIO_HISTORICO, "a", encoding="utf-8") as arquivo:
+        arquivo.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+
+def restaurar_lista_apoio_do_historico():
+    if not os.path.exists(ARQUIVO_LISTA_APOIO_HISTORICO):
+        return dataframe_lista_apoio_vazio()
+
+    registros = {}
+    with open(ARQUIVO_LISTA_APOIO_HISTORICO, "r", encoding="utf-8") as arquivo:
+        for linha in arquivo:
+            linha = linha.strip()
+            if not linha:
+                continue
+            try:
+                evento = json.loads(linha)
+            except Exception:
+                continue
+            registro = evento.get("registro") or {}
+            chave = chave_registro_lista_apoio(registro)
+            if not chave:
+                continue
+            registros[chave] = {
+                coluna: texto_lista_apoio(registro.get(coluna, ""))
+                for coluna in CABECALHOS_LISTA_APOIO
+            }
+
+    if not registros:
+        return dataframe_lista_apoio_vazio()
+
+    dataframe = pd.DataFrame(list(registros.values()))
+    return dataframe[CABECALHOS_LISTA_APOIO]
+
+
+def salvar_snapshot_lista_apoio(caminho_origem):
+    if not os.path.exists(caminho_origem):
+        return
+    os.makedirs(PASTA_BACKUP_LISTA_APOIO, exist_ok=True)
+    timestamp = datetime.now(FUSO_HORARIO_APP).strftime("%Y%m%d_%H%M%S")
+    destino = os.path.join(
+        PASTA_BACKUP_LISTA_APOIO,
+        f"lista_apoio_{timestamp}.xlsx",
+    )
+    shutil.copyfile(caminho_origem, destino)
+
+
 def salvar_workbook_lista_apoio(wb):
     diretorio = os.path.dirname(os.path.abspath(ARQUIVO_LISTA_APOIO)) or "."
     descritor, caminho_temporario = tempfile.mkstemp(
@@ -321,6 +394,7 @@ def salvar_workbook_lista_apoio(wb):
                 raise zipfile.BadZipFile("Arquivo temporário gerado com corrupção.")
         os.replace(caminho_temporario, ARQUIVO_LISTA_APOIO)
         shutil.copyfile(ARQUIVO_LISTA_APOIO, ARQUIVO_LISTA_APOIO_BACKUP)
+        salvar_snapshot_lista_apoio(ARQUIVO_LISTA_APOIO)
     finally:
         if os.path.exists(caminho_temporario):
             os.remove(caminho_temporario)
@@ -341,6 +415,7 @@ def salvar_dataframe_lista_apoio(dataframe):
                 raise zipfile.BadZipFile("Arquivo temporário gerado com corrupção.")
         os.replace(caminho_temporario, ARQUIVO_LISTA_APOIO)
         shutil.copyfile(ARQUIVO_LISTA_APOIO, ARQUIVO_LISTA_APOIO_BACKUP)
+        salvar_snapshot_lista_apoio(ARQUIVO_LISTA_APOIO)
     finally:
         if os.path.exists(caminho_temporario):
             os.remove(caminho_temporario)
@@ -374,17 +449,19 @@ def garantir_lista_apoio():
 
 def registrar_duvida_apoio(tecnico, topico, resumo):
     wb, ws = garantir_lista_apoio()
-    ws.append(
-        [
-            datetime.now(FUSO_HORARIO_APP).strftime("%d/%m/%Y %H:%M:%S"),
-            builtins.str(tecnico or "").title(),
-            builtins.str(topico or "").strip(),
-            builtins.str(resumo or "").strip(),
-            "Aberto",
-            "",
-        ]
-    )
+    registro = {
+        "Carimbo de data/hora": datetime.now(FUSO_HORARIO_APP).strftime(
+            "%d/%m/%Y %H:%M:%S"
+        ),
+        "Nome do Técnico": builtins.str(tecnico or "").title(),
+        "Selecione o tópico": builtins.str(topico or "").strip(),
+        "Descreva o problema/pedido em poucas palavras": builtins.str(resumo or "").strip(),
+        "Situação": "Aberto",
+        "Responsável/Apoio": "",
+    }
+    ws.append([registro[coluna] for coluna in CABECALHOS_LISTA_APOIO])
     salvar_workbook_lista_apoio(wb)
+    registrar_historico_lista_apoio("create", registro)
 
 
 def ler_lista_apoio():
@@ -394,7 +471,15 @@ def ler_lista_apoio():
         if coluna_lista not in dataframe.columns:
             dataframe[coluna_lista] = ""
         dataframe[coluna_lista] = dataframe[coluna_lista].astype("object")
-    return dataframe[CABECALHOS_LISTA_APOIO]
+    dataframe = dataframe[CABECALHOS_LISTA_APOIO]
+
+    if dataframe.empty:
+        restaurado = restaurar_lista_apoio_do_historico()
+        if not restaurado.empty:
+            salvar_dataframe_lista_apoio(restaurado)
+            dataframe = restaurado
+
+    return dataframe
 
 
 def texto_lista_apoio(valor):
@@ -431,6 +516,7 @@ def normalizar_valor_lista_apoio(coluna, valor, valor_atual=""):
 
 def salvar_lista_apoio(dataframe):
     existente = ler_lista_apoio()
+    existente_antes = existente.copy()
     dataframe = dataframe.copy()
     for coluna_lista in CABECALHOS_LISTA_APOIO:
         if coluna_lista not in dataframe.columns:
@@ -479,6 +565,20 @@ def salvar_lista_apoio(dataframe):
                 edits_por_chave[chave][coluna],
                 existente.at[indice, coluna],
             )
+
+    for indice, linha in existente.iterrows():
+        if indice >= len(existente_antes):
+            continue
+        registro_antes = {
+            coluna: texto_lista_apoio(existente_antes.iloc[indice][coluna])
+            for coluna in CABECALHOS_LISTA_APOIO
+        }
+        registro_depois = {
+            coluna: texto_lista_apoio(linha[coluna])
+            for coluna in CABECALHOS_LISTA_APOIO
+        }
+        if registro_antes != registro_depois:
+            registrar_historico_lista_apoio("update", registro_depois)
 
     salvar_dataframe_lista_apoio(existente[CABECALHOS_LISTA_APOIO])
 
