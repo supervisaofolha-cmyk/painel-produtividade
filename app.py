@@ -32,6 +32,7 @@ ARQUIVO_USUARIOS = "usuarios.xlsx"
 ARQUIVO_LISTA_APOIO = "lista_apoio.xlsx"
 ARQUIVO_LISTA_APOIO_BACKUP = "lista_apoio_backup.xlsx"
 ARQUIVO_LISTA_APOIO_HISTORICO = "lista_apoio_historico.jsonl"
+ARQUIVO_META_BACKUP_LISTA_APOIO = "lista_apoio_backup_meta.json"
 PASTA_BACKUP_LISTA_APOIO = "backups_lista_apoio"
 ABA_PRODUTIVIDADE = "Produtividade"
 ABA_ALIASES = "Aliases"
@@ -370,16 +371,54 @@ def restaurar_lista_apoio_do_historico():
     return dataframe[CABECALHOS_LISTA_APOIO]
 
 
-def salvar_snapshot_lista_apoio(caminho_origem):
+def salvar_snapshot_lista_apoio(caminho_origem, prefixo="lista_apoio"):
     if not os.path.exists(caminho_origem):
         return
     os.makedirs(PASTA_BACKUP_LISTA_APOIO, exist_ok=True)
     timestamp = datetime.now(FUSO_HORARIO_APP).strftime("%Y%m%d_%H%M%S")
     destino = os.path.join(
         PASTA_BACKUP_LISTA_APOIO,
-        f"lista_apoio_{timestamp}.xlsx",
+        f"{prefixo}_{timestamp}.xlsx",
     )
     shutil.copyfile(caminho_origem, destino)
+
+
+def garantir_backup_lista_apoio_por_versao_app():
+    if not os.path.exists(ARQUIVO_LISTA_APOIO):
+        return
+
+    os.makedirs(PASTA_BACKUP_LISTA_APOIO, exist_ok=True)
+    caminho_app = os.path.abspath("app.py")
+    assinatura_atual = builtins.str(int(os.path.getmtime(caminho_app)))
+    caminho_meta = os.path.join(PASTA_BACKUP_LISTA_APOIO, ARQUIVO_META_BACKUP_LISTA_APOIO)
+
+    assinatura_registrada = ""
+    if os.path.exists(caminho_meta):
+        try:
+            with open(caminho_meta, "r", encoding="utf-8") as arquivo_meta:
+                assinatura_registrada = builtins.str(
+                    json.load(arquivo_meta).get("assinatura_app", "")
+                ).strip()
+        except Exception:
+            assinatura_registrada = ""
+
+    if assinatura_atual == assinatura_registrada:
+        return
+
+    salvar_snapshot_lista_apoio(ARQUIVO_LISTA_APOIO, prefixo="lista_apoio_pre_alteracao_app")
+
+    with open(caminho_meta, "w", encoding="utf-8") as arquivo_meta:
+        json.dump(
+            {
+                "assinatura_app": assinatura_atual,
+                "atualizado_em": datetime.now(FUSO_HORARIO_APP).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+            },
+            arquivo_meta,
+            ensure_ascii=False,
+            indent=2,
+        )
 
 
 def salvar_workbook_lista_apoio(wb):
@@ -426,6 +465,7 @@ def salvar_dataframe_lista_apoio(dataframe):
 
 def garantir_lista_apoio():
     garantir_planilha_lista_apoio_integra()
+    garantir_backup_lista_apoio_por_versao_app()
     if os.path.exists(ARQUIVO_LISTA_APOIO):
         wb = openpyxl.load_workbook(ARQUIVO_LISTA_APOIO)
         ws = wb.active
