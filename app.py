@@ -3190,7 +3190,6 @@ if modo_gestao:
                 unsafe_allow_html=True,
             )
 
-    mostrar_lista_apoio_gestao()
 
     st.divider()
     st.subheader("Ranking Geral de Todos os Níveis")
