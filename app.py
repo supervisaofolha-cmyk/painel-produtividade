@@ -635,12 +635,14 @@ def mostrar_lista_apoio_gestao():
             st.warning("Informe a data no formato dd/mm/aaaa.")
             lista_exibida = lista_apoio.iloc[0:0].copy()
         else:
-            datas_apoio = pd.to_datetime(
-                lista_exibida["Carimbo de data/hora"],
-                dayfirst=True,
-                errors="coerce",
-            ).dt.date
-            lista_exibida = lista_exibida[datas_apoio == data_filtro_apoio]
+            data_filtro_texto = data_filtro_apoio.strftime("%d/%m/%Y")
+            datas_apoio = (
+                lista_exibida["Carimbo de data/hora"]
+                .astype(str)
+                .str.strip()
+                .str.slice(0, 10)
+            )
+            lista_exibida = lista_exibida[datas_apoio == data_filtro_texto]
 
     st.caption(f"{len(lista_exibida)} registro(s) exibido(s).")
 
