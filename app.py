@@ -617,32 +617,31 @@ def mostrar_lista_apoio_gestao():
         st.info("Ainda não há dúvidas registradas pelos técnicos.")
         return
 
-    filtro_data_apoio = st.text_input(
-        "Filtrar ajudas por data",
-        value="",
-        placeholder="dd/mm/aaaa",
-        key="filtro_data_lista_apoio",
-    ).strip()
+    col_filtro_data, col_limpar_filtro = st.columns([3, 1])
+    with col_filtro_data:
+        filtro_data_apoio = st.date_input(
+            "Filtrar ajudas por data",
+            value=None,
+            format="DD/MM/YYYY",
+            key="filtro_data_lista_apoio",
+        )
+    with col_limpar_filtro:
+        st.write("")
+        st.write("")
+        if st.button("Limpar filtro", key="limpar_filtro_lista_apoio"):
+            st.session_state["filtro_data_lista_apoio"] = None
+            st.rerun()
 
     lista_exibida = lista_apoio.copy()
     if filtro_data_apoio:
-        try:
-            data_filtro_apoio = datetime.strptime(
-                filtro_data_apoio,
-                "%d/%m/%Y",
-            ).date()
-        except ValueError:
-            st.warning("Informe a data no formato dd/mm/aaaa.")
-            lista_exibida = lista_apoio.iloc[0:0].copy()
-        else:
-            data_filtro_texto = data_filtro_apoio.strftime("%d/%m/%Y")
-            datas_apoio = (
-                lista_exibida["Carimbo de data/hora"]
-                .astype(str)
-                .str.strip()
-                .str.slice(0, 10)
-            )
-            lista_exibida = lista_exibida[datas_apoio == data_filtro_texto]
+        data_filtro_texto = filtro_data_apoio.strftime("%d/%m/%Y")
+        datas_apoio = (
+            lista_exibida["Carimbo de data/hora"]
+            .astype(str)
+            .str.strip()
+            .str.slice(0, 10)
+        )
+        lista_exibida = lista_exibida[datas_apoio == data_filtro_texto]
 
     st.caption(f"{len(lista_exibida)} registro(s) exibido(s).")
 
@@ -662,7 +661,11 @@ def mostrar_lista_apoio_gestao():
 
     chave_editor_apoio = (
         "editor_lista_apoio_"
-        + re.sub(r"[^0-9a-zA-Z]+", "_", filtro_data_apoio or "todas")
+        + re.sub(
+            r"[^0-9a-zA-Z]+",
+            "_",
+            filtro_data_apoio.strftime("%d_%m_%Y") if filtro_data_apoio else "todas",
+        )
         + "_"
         + st.session_state["versao_editor_lista_apoio"]
     )
