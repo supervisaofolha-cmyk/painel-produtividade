@@ -1428,13 +1428,29 @@ def listar_arquivos_ro():
 
 
 def planilha_ro_do_mes(data_referencia):
+    chave_mes = (data_referencia.year, data_referencia.month)
+    link_fixo = RO_PLANILHAS_FIXAS.get(chave_mes)
+    if link_fixo:
+        correspondencia = re.search(r"/spreadsheets/d/([a-zA-Z0-9-_]+)", link_fixo)
+        if correspondencia:
+            return {
+                "id": correspondencia.group(1),
+                "titulo": f"RO {MESES_RO[data_referencia.month]} {data_referencia.year} (respostas)",
+                "origem": "link_fixo",
+                "url": link_fixo,
+            }
+
     esperado = normalizar_cabecalho(
         f"RO {MESES_RO[data_referencia.month]} {data_referencia.year} (respostas)"
     )
 
     for arquivo in listar_arquivos_ro():
         if esperado in normalizar_cabecalho(arquivo["titulo"]):
-            return arquivo
+            return {
+                **arquivo,
+                "origem": "drive",
+                "url": f"https://docs.google.com/spreadsheets/d/{arquivo['id']}/edit",
+            }
 
     raise ValueError("Não encontrei a planilha de respostas do RO para esse mês.")
 
