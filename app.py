@@ -145,6 +145,7 @@ MESES_RO = {
 
 MOTIVOS_RO_CONTAM = {
     "Ligação com duração inferior a 2 minutos/Retorno solicitado pela supervisão",
+    "Retorno solicitado pela Supervisão",
     "Ligação transferida para outro técnico ou setor (Transferência)",
 }
 
@@ -862,11 +863,12 @@ def melhor_alias(nome_tecnico, candidatos):
 
 def garantir_estrutura_aliases(ws_aliases):
     headers = [
-        "Técnico Planilha",
+        "T??cnico Planilha",
         "Agente BI",
         "Agente SGD",
         "Agente Ponto",
         "Agente Chat",
+        "Agente RO",
     ]
     for indice, header in enumerate(headers, start=1):
         if ws_aliases.cell(row=1, column=indice).value != header:
@@ -942,7 +944,7 @@ def garantir_aba_aliases(wb, tecnicos, candidatos, coluna_alias):
     for tecnico in tecnicos:
         tecnico_normalizado = normalizar_nome(tecnico)
         if tecnico_normalizado not in existentes:
-            ws_aliases.append([tecnico, "", "", "", ""])
+            ws_aliases.append([tecnico, "", "", "", "", ""])
             row = ws_aliases.max_row
             existentes[tecnico_normalizado] = row
         else:
@@ -1519,6 +1521,7 @@ def buscar_ro_forms(data_referencia):
     texto_csv = resposta.content.decode("utf-8-sig", errors="replace")
     leitor = csv.DictReader(StringIO(texto_csv))
     contagens = {}
+    tecnicos_origem = []
     motivos_validos = {
         normalizar_cabecalho(motivo) for motivo in MOTIVOS_RO_CONTAM
     }
@@ -1547,10 +1550,12 @@ def buscar_ro_forms(data_referencia):
 
         chave = normalizar_nome(tecnico)
         contagens[chave] = contagens.get(chave, 0) + 1
+        tecnicos_origem.append(tecnico)
 
     return {
         "arquivo": arquivo["titulo"],
         "contagens": contagens,
+        "tecnicos_origem": tecnicos_origem,
     }
 
 
@@ -2067,11 +2072,20 @@ def atualizar_planilha_com_ro(data_referencia):
     ws = wb[ABA_PRODUTIVIDADE]
     colunas = cabecalhos(ws)
     col_data = coluna(colunas, "Data")
-    col_tecnico = coluna(colunas, "Técnico")
+    col_tecnico = coluna(colunas, "Tecnico", "T?cnico", "T??cnico")
     col_ro = coluna(colunas, "RO")
     linhas_criadas = garantir_linhas_da_data(ws, colunas, data_referencia)
+    tecnicos = tecnicos_da_planilha(ws, colunas)
+    ws_aliases = garantir_aba_aliases(
+        wb,
+        tecnicos,
+        dados_ro.get("tecnicos_origem", list(contagens.keys())),
+        coluna_alias=6,
+    )
+    aliases = ler_aliases(ws_aliases, coluna_alias=6)
 
     atualizados = 0
+    sem_alias = []
 
     for row in range(2, ws.max_row + 1):
         data_linha = ws.cell(row=row, column=col_data).value
@@ -2082,10 +2096,11 @@ def atualizar_planilha_com_ro(data_referencia):
             continue
 
         tecnico = ws.cell(row=row, column=col_tecnico).value
-        ws.cell(row=row, column=col_ro).value = contagens.get(
-            normalizar_nome(tecnico),
-            0,
-        )
+        chave_ro = aliases.get(normalizar_nome(tecnico), normalizar_nome(tecnico))
+        valor_ro = contagens.get(chave_ro, 0)
+        ws.cell(row=row, column=col_ro).value = valor_ro
+        if not valor_ro and chave_ro not in contagens:
+            sem_alias.append(tecnico)
         atualizados += 1
 
     zerar_colunas_sem_movimento_ws(ws)
@@ -2097,8 +2112,8 @@ def atualizar_planilha_com_ro(data_referencia):
         "fonte": sum(contagens.values()),
         "linhas_criadas": linhas_criadas,
         "atualizados": atualizados,
+        "sem_alias": sorted(set(sem_alias)),
     }
-
 
 def localizar_navegador_plug():
     candidatos = [
@@ -2475,11 +2490,12 @@ def zerar_colunas_sem_movimento_ws(ws):
     colunas = cabecalhos(ws)
     col_atendidas = coluna(colunas, "Atendidas")
     col_chat = coluna(colunas, "CHAT")
+    col_ro = coluna(colunas, "RO")
     colunas_zeradas = [
         col_atendidas,
         coluna(colunas, " > 2min", "> 2min", ">2min"),
         coluna(colunas, "TMA"),
-        coluna(colunas, "RO"),
+        col_ro,
         col_chat,
         coluna(colunas, "Realizado"),
         coluna(colunas, "Esperado"),
@@ -2489,6 +2505,7 @@ def zerar_colunas_sem_movimento_ws(ws):
     for row in range(2, ws.max_row + 1):
         atendidas = ws.cell(row=row, column=col_atendidas).value or 0
         chat = ws.cell(row=row, column=col_chat).value or 0
+        ro = ws.cell(row=row, column=col_ro).value or 0
         try:
             atendidas = float(atendidas)
         except Exception:
@@ -2497,8 +2514,12 @@ def zerar_colunas_sem_movimento_ws(ws):
             chat = float(chat)
         except Exception:
             chat = 0
+        try:
+            ro = float(ro)
+        except Exception:
+            ro = 0
 
-        if atendidas == 0 and chat == 0:
+        if atendidas == 0 and chat == 0 and ro == 0:
             for indice_coluna in colunas_zeradas:
                 ws.cell(row=row, column=indice_coluna).value = 0
 
@@ -2522,7 +2543,7 @@ def recalcular_colunas_derivadas(df):
     if "TMA" in df.columns:
         df["TMA"] = pd.to_numeric(df["TMA"], errors="coerce").fillna(0)
 
-    linhas_sem_movimento = (df["Atendidas"] == 0) & (df["CHAT"] == 0)
+    linhas_sem_movimento = (df["Atendidas"] == 0) & (df["CHAT"] == 0) & (df["RO"] == 0)
     colunas_para_zerar = [coluna_2min, "RO", "CHAT"]
     if "TMA" in df.columns:
         colunas_para_zerar.append("TMA")

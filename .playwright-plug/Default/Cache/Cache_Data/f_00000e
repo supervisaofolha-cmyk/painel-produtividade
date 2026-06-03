@@ -1,0 +1,1724 @@
+//-------------------------------------- NAVEGA√á√ÉO --------------------------------------//
+function novaJanela(pagina,nome,width,height) {
+  var x = (screen.availWidth - width) / 2;
+  var y = ((screen.availHeight - height) / 2) - 32;
+  var win = window.open(pagina,nome,'dependent,status,scrollbars,top='+y+',left='+x+',width='+width+',height='+height);
+  if (win.opener!=window) {
+    win.opener = window;
+  }
+  win.focus();
+  return win;
+}
+
+function novaJanelaAjustadaDireita(pagina,nome,width,height) {
+  var x = (screen.availWidth - (screen.availWidth * 0.3));
+  var y = ((screen.availHeight - height) / 2) - 32;
+  var win = window.open(pagina,nome,'dependent,status,scrollbars,top='+y+',left='+x+',width='+width+',height='+height);
+  if (win.opener!=window) {
+    win.opener = window;
+  }
+  win.focus();
+  return win;
+}
+
+function novaJanelaAjustavel(pagina,nome,width,height) {
+  var x = (screen.availWidth - width) / 2;
+  var y = ((screen.availHeight - height) / 2) - 32;
+  var win = window.open(pagina,nome,'dependent,status,resizable,top='+y+',left='+x+',width='+width+',height='+height);
+  if (win.opener!=window) {
+    win.opener = window;
+  }
+  win.focus();
+  return win;
+}
+
+function novaJanelaMaximizada(pagina,nome) {
+  var width = screen.availWidth - 30;
+  var height = screen.availHeight - 80;
+  var x = 6;
+  var y = 6;
+  var win = window.open(pagina,nome,'dependent,status,scrollbars,resizable,maximized,top='+y+',left='+x+',width='+width+',height='+height);
+  if (win.opener!=window) {
+    win.opener = window;
+  }
+  win.focus();
+  return win;
+}
+
+function novaJanelaRolagem(pagina,nome,width,height) {
+  var x = (screen.availWidth - width) / 2;
+  var y = ((screen.availHeight - height) / 2) - 32;
+  var win = window.open(pagina,nome,'dependent,status,scrollbars,top='+y+',left='+x+',width='+width+',height='+height);
+  if (win.opener!=window) {
+    win.opener = window;
+  }
+  win.focus();
+  return win;
+}
+
+function novaJanelaRelatorio(pagina,nome) {
+  var x = (screen.availWidth - 670) / 2;
+  var y = ((screen.availHeight - 480) / 2) - 32;
+  var win = window.open(pagina,nome,'dependent,status,menubar,scrollbars,top='+y+',left='+x+',width=670,height=480');
+  if (win.opener!=window) {
+    win.opener = window;
+  }
+  win.focus();
+  return win;
+}
+
+function novaJanelaRelatorioHtml(nome,html) {
+  var x = (screen.availWidth - 670) / 2;
+  var y = ((screen.availHeight - 480) / 2) - 32;
+  var win = window.open('',nome,'dependent,status,menubar,scrollbars,top='+y+',left='+x+',width=670,height=480');
+  if (win.opener!=window) {
+    win.opener = window;
+  }
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  return win;
+}
+
+function novaJanelaRelatorioAjustavel(pagina,nome) {
+  var x = (screen.availWidth - 670) / 2;
+  var y = ((screen.availHeight - 480) / 2) - 32;
+  var win = window.open(pagina,nome,'dependent,status,menubar,scrollbars,resizable,top='+y+',left='+x+',width=670,height=480');
+  if (win.opener!=window) {
+    win.opener = window;
+  }
+  win.focus();
+  return win;
+}
+
+function novaAba(pagina) {
+  var win = window.open(pagina,'_blank');
+  if (win.opener!=window) {
+    win.opener = window;
+  }
+  win.focus();
+  return win;
+}
+
+function navigateWindow(win,url) {
+  win.location.href = new String(url);
+}
+
+function navigate(url) {
+  window.location.href = new String(url);
+}
+
+function pausar(millis) {
+  millis += new Date().getTime();
+  while (new Date().getTime() < millis) { }
+}
+
+var mapaOrigem;
+var mapaDestino;
+function mapa(origem, destino) {
+  mapa(origem,destino,null);
+}
+var mapaOrigens;
+function mapa(origem, destino, origens) {
+  mapaOrigem = origem;
+  mapaDestino = destino;
+  mapaOrigens = origens; //esperado exemplo: [['origem', 'endereco1'],['origem2', 'endereco2'],['origem3', 'endereco3'],...])
+  novaJanela('/comum/faces/mapa.html','googlemaps',screen.width-50,610);
+}
+
+function storeMainScroll() {
+  storeMainScroll(0);
+}
+
+function storeMainScroll(index) {
+  var mainScroll = document.getElementById('mainScroll');
+
+  if (mainScroll==null) {
+    mainScroll = document.getElementsByName('mainScroll');
+    if ((mainScroll!=null) && (mainScroll.length>index))
+      mainScroll = mainScroll.item(index);
+  }
+
+  if (mainScroll!=null)
+    mainScroll.value = getCurrentScroll();
+}
+
+function getCurrentScroll() {
+  var mainContent = document.documentElement;
+  if (mainContent!=null)
+    return String(Math.max(mainContent.scrollTop,document.body.scrollTop));
+  else
+    return String(document.body.scrollTop);
+}
+
+function atualizarGrupo(check,nomeGrupo) {
+  if (check==null)
+    return;
+
+  var items = document.getElementsByName(nomeGrupo);
+  if (items!=null) {
+    for (var i=0; i<items.length; i++) {
+      if (items[i].type!="checkbox")
+        continue;
+
+      if (!items[i].checked) {
+        check.checked = null;
+        return;
+      }
+
+      if (i+1==items.length)
+        check.checked = "checked";
+    }
+  }
+}
+
+function marcarGrupo(check,nomeGrupo) {
+  if (check==null)
+    return;
+
+  var items = document.getElementsByName(nomeGrupo);
+  if (items!=null) {
+    for (var i=0; i<items.length; i++) {
+      if (items[i].type!="checkbox")
+        continue;
+
+      items[i].checked = check.checked;
+    }
+  }
+}
+
+
+function enterClickMonitor(e,button) {
+  if (e.keyCode==13) {
+    button.click();
+    return false;
+  }
+  return true;
+}
+
+//-------------------------------------- AJAX --------------------------------------//
+var xmlHttp = null;
+var callHttpQueue = [];
+var callHttpQueueCount = 0;
+function callHttpRun() {
+  var values = callHttpQueue[callHttpQueueCount];
+
+  xmlHttp.open("POST",values[0],true);
+  xmlHttp.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+  xmlHttp.onreadystatechange = function() {
+                                 if (xmlHttp.readyState==4) {
+                                   var values = callHttpQueue[callHttpQueueCount];
+
+                                   // IMPLEMENTAR TRATAMENTO DE EXCEPTIONS
+
+                                   if (values[1]!=null) {
+                                     try {values[1](xmlHttp.responseXML,values[3]);} catch(e) { }
+                                   }
+
+                                   callHttpQueueCount++;
+                                   if (callHttpQueueCount<callHttpQueue.length)
+                                     setTimeout(callHttpRun,50);
+                                 }
+                               };
+  var params = "";
+  if (values[2]!=null) {
+    for (var i=0; i<values[2].length; i++) {
+      if (values[3][i]!=null) {
+        if (i>0) params = params + "&";
+        params = params + values[2][i] + "=" + values[3][i];
+      }
+    }
+  }
+
+  xmlHttp.send(params);
+}
+
+function callHttp(uri,callback,params,values) {
+  if (xmlHttp==null) {
+    try {
+      xmlHttp = new XMLHttpRequest();
+    } catch(ee) {
+      try {
+        xmlHttp = new ActiveXObject("Msxml2.XMLHTTP");
+      } catch(e) {
+        try {
+          xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
+        } catch(E) {
+          xmlHttp = null;
+          alert("Seu navegador n√£o suporta a leitura de dados remotos.");
+        }
+      }
+    }
+  }
+
+  if (xmlHttp!=null) {
+    callHttpQueue[callHttpQueue.length] = [uri,callback,params,values];
+
+    if ((callHttpQueueCount + 1)==callHttpQueue.length)
+      callHttpRun();
+  }
+}
+
+function decodeHtmlEntities(value) {
+  if (value == null) {
+    return value;
+  }
+  var div = document.createElement("div");
+  div.innerHTML = value;
+  return div.textContent || div.innerText || "";
+}
+
+function jsfRefreshSelectItems(value, valueEL, fieldID, itemsEL) {
+  jsfRefreshSelectItems(value, valueEL, fieldID, itemsEL, null);
+}
+
+function jsfRefreshSelectItems(value, valueEL, fieldID, itemsEL, functionCallback) {
+    jsfRefreshSelectItems(value, valueEL, fieldID, itemsEL, functionCallback, null);
+}
+
+function jsfRefreshSelectItems(value, valueEL, fieldID, itemsEL, functionCallback, type) {
+    jsfRefreshSelectItems(value, valueEL, fieldID, itemsEL, functionCallback, type, null);
+}
+
+function jsfRefreshSelectItems(value, valueEL, fieldID, itemsEL, functionCallback, type, outros, paramsFunctionCallback) {
+  var jsfSelectItemsField = document.getElementById(fieldID);
+
+  if (jsfSelectItemsField==null) {
+    return;
+  }
+
+  var selectedItem = jsfSelectItemsField.selectedIndex;
+  var selectedItemValue = null;
+  
+  if (selectedItem != null && selectedItem >= 0) {
+    selectedItemValue = jsfSelectItemsField.options[selectedItem].value;
+  }
+
+  if (type == null || type == "undefined") {
+    type = "checkbox";
+  }
+
+  if (outros == null || outros == "undefined") {
+    outros = "";
+  }
+
+  var params = ["value","valueEL","itemsEL"];
+  var values = [value,valueEL,itemsEL,fieldID,functionCallback, paramsFunctionCallback];
+
+  var callback = function(responseXML,values) {
+                   var selectItems = responseXML.getElementsByTagName("selectItems")[0];
+                   var items = selectItems.getElementsByTagName("item");
+
+                   var options;
+                   var option;
+                   var i;
+                   var item;
+                   var label;
+                   var value;
+                   var disabled;
+                   var description;
+                   var tr;
+                   var td;
+
+                   var jsfSelectItemsField = document.getElementById(values[3]);
+                   if (jsfSelectItemsField!=null) {
+                     if (selectedItem!=null) {
+                       options = jsfSelectItemsField.options;
+                       options.length = 0;
+                       for (i=0; i<items.length; i++) {
+                         item = items[i];
+                        label = decodeHtmlEntities(item.getElementsByTagName("label")[0].firstChild.nodeValue);
+                        value = decodeHtmlEntities(item.getElementsByTagName("value")[0].firstChild.nodeValue);
+                         disabled = item.getElementsByTagName("disabled")[0].firstChild.nodeValue;
+                         option = new Option(label,value);
+                         if (disabled == 'true') {
+                           option.setAttribute("disabled","disabled");
+                         }
+                         if (selectedItemValue != null && selectedItemValue == value) {
+                           option.setAttribute("selected", "selected");
+                         }
+                         options[options.length] = option;
+                       }
+                     }
+                     else {
+                       while (jsfSelectItemsField.rows.length>0)
+                         jsfSelectItemsField.deleteRow(0);
+
+                       for (i=items.length - 1; i>=0; i--) {
+                         item = items[i];
+                         label = item.getElementsByTagName("label")[0].firstChild.nodeValue;
+                         value = item.getElementsByTagName("value")[0].firstChild.nodeValue;
+                         disabled = item.getElementsByTagName("disabled")[0].firstChild.nodeValue;
+                         description = item.getElementsByTagName("description")[0].firstChild.nodeValue;
+                         tr = jsfSelectItemsField.insertRow(jsfSelectItemsField.rows);
+                         td = tr.insertCell(0);
+                           td.innerHTML = "<label><input type='" + type + "' " + description + " " + outros + " name='"+values[3]+"' value='"+value+"' " + ((disabled == 'true') ? "disabled='disabled'" : "") + " class='inputDefault'/>&#160;"+label+"</label>";
+                         }
+                       }
+                     }
+   
+                   if (values[4] != null) {
+                       if (values[5] == null) {
+                           values[4]();
+                       } else {
+                           values[4](values[5]);
+                       }
+                   }
+                 };
+
+  if (jsfSelectItemsField.selectedIndex!=null) {
+    jsfSelectItemsField.selectedIndex = 0;
+    jsfSelectItemsField.options.length = 0;
+    jsfSelectItemsField.options[0] = new Option("Aguarde...","0");
+  }
+  else {
+    while (jsfSelectItemsField.rows.length>0)
+      jsfSelectItemsField.deleteRow(0);
+
+    var tr = jsfSelectItemsField.insertRow(0);
+    var td = tr.insertCell(0);
+    td.align = "center";
+    td.innerHTML = "Aguarde...";
+  }
+
+  callHttp("/comum/faces/JSFRefreshSelectItems.html",callback,params,values);
+}
+
+function jsfRefreshSelectItemsGroup(value, valueEL, fieldID, itemsEL, functionCallback, type, outros, isRefreshParaCadChainIAChat) {
+  var jsfSelectItemsField = document.getElementById(fieldID);
+
+  if (jsfSelectItemsField==null) {
+    return;
+  }
+
+  if (type == null || type == "undefined") {
+    type = "checkbox";
+  }
+
+  if (outros == null || outros == "undefined") {
+    outros = "";
+  }
+  
+  if (isRefreshParaCadChainIAChat == null || isRefreshParaCadChainIAChat == "undefined") {
+    isRefreshParaCadChainIAChat = false;
+  }
+
+  var params = ["value","valueEL","itemsEL"];
+  var values = [value,valueEL,itemsEL,fieldID,functionCallback];
+
+  var callback = function(responseXML,values) {
+                   var jsfSelectItemsField = document.getElementById(values[3]);
+                   if (jsfSelectItemsField!=null) {
+                     while (jsfSelectItemsField.rows.length>0) {
+                       jsfSelectItemsField.deleteRow(0);
+                     }
+        
+                     var selectItemsGroup = responseXML.getElementsByTagName("selectGroups")[0];
+                     var group = selectItemsGroup.getElementsByTagName("group");
+                     var j;
+                     var tr;
+                     var td;
+
+                     for (j=group.length - 1; j>=0; j--) {
+                       var selectItems = responseXML.getElementsByTagName("selectItems")[j];
+                       var items = selectItems.getElementsByTagName("item");
+                       var i;
+                       var item;
+                       var label;
+                       var value;
+                       var disabled;
+     
+                       for (i=items.length - 1; i>=0; i--) {
+                         item = items[i];
+                         label = item.getElementsByTagName("label")[0].firstChild.nodeValue;
+                         value = item.getElementsByTagName("value")[0].firstChild.nodeValue;
+                         disabled = item.getElementsByTagName("disabled")[0].firstChild.nodeValue;
+                         tr = jsfSelectItemsField.insertRow(jsfSelectItemsField.rows);
+                         td = tr.insertCell(0);
+                         
+                         if (isRefreshParaCadChainIAChat) {
+                            td.innerHTML = "<input type='" + type + "' " + outros + " id='" + values[3] + ":" + i + "' name='" + values[3] + "' value='" + value + "' " + ((disabled == 'true') ? "disabled='disabled'" : "") + " class='inputDefault'/> <label for='" + values[3] + ":" + i + "'>&#160;" + label + "</label>";
+                         } else {
+                            td.innerHTML = "<label><input type='" + type + "' " + outros + " name='"+values[3]+"' value='"+value+"' " + ((disabled == 'true') ? "disabled='disabled'" : "") + " class='inputDefault'/>&#160;"+label+"</label>";
+                         }
+                       }
+                       
+                       tr = jsfSelectItemsField.insertRow(jsfSelectItemsField.rows);
+                       td = tr.insertCell(0);
+                       td.innerHTML = "<span>" + group[j].getElementsByTagName("label")[0].firstChild.nodeValue + "</span>";
+                     }
+                   }
+   
+                   if (values[4] != null) {
+                     values[4]();
+                   }
+                 };
+
+  while (jsfSelectItemsField.rows.length>0) {
+    jsfSelectItemsField.deleteRow(0);
+  }
+  
+  var tr = jsfSelectItemsField.insertRow(0);
+  var td = tr.insertCell(0);
+  td.align = "center";
+  td.innerHTML = "Aguarde...";
+
+  callHttp("/comum/faces/JSFRefreshSelectItemsGroup.html",callback,params,values);
+}
+
+function jsfRefreshSelectManyCheckbox(filtro, idCampo, itensExibicao, itensControle) {
+  var jsfSelectManyCheckboxField = document.getElementById(idCampo);
+
+  if (jsfSelectManyCheckboxField==null) {
+    return;
+  }
+
+  var params = ["filtro", "idCampo", "itensExibicao","itensControle"];
+  var values = [filtro, idCampo, itensExibicao, itensControle];
+
+  if (xmlHttp==null) {
+    xmlHttp = new XMLHttpRequest();
+  }
+  
+  xmlHttp.onreadystatechange = function() {
+                                 if (xmlHttp.readyState==4) {
+				   document.getElementById(idCampo).innerHTML = this.responseText;
+				 }
+                               };
+
+  var parameters = "";
+  for (var i=0; i<values.length; i++) {
+    if (values[i]!=null) {
+      if (i>0) parameters = parameters + "&";
+      parameters = parameters + params[i] + "=" + values[i];
+    }
+  }
+  xmlHttp.open("POST","/comum/faces/JSFRefreshSelectManyCheckbox.html",true);
+  xmlHttp.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+  xmlHttp.send(parameters);  
+}
+
+function atualizarCampoMultiSelecao(campoID) {
+  var div = document.getElementById(campoID).getElementsByTagName("div")[1];
+  var itemSelecionadoBtn = div.getElementsByTagName("button")[0];
+  var itemSelecionadoSpan = itemSelecionadoBtn.getElementsByTagName("span")[0];
+  var options = div.getElementsByTagName("div")[0].getElementsByTagName("ul")[0];
+  var items = div.getElementsByTagName("select")[0].options;
+  
+  options.innerHTML = "";
+  let newHTML = "";
+  for (var i = 0; i < items.length; i++) {
+      if (i == 0) {
+          itemSelecionadoBtn.title = items[i].innerHTML;
+          itemSelecionadoSpan.innerHTML = items[i].innerHTML;
+      }
+      newHTML += '<li data-original-index="' + i + '" '+ (i == 0 ? 'class="selected"' : '') +'>'
+                         + '<a tabindex="0" class="" data-tokens="null" role="option" aria-disabled="false" aria-selected="' + items[i].selected + '">'
+                         + '<span class="text">' + items[i].innerHTML + '</span><span class="glyphicon glyphicon-ok check-mark"></span></a></li>';
+  }
+  options.innerHTML = newHTML;
+}
+
+function jsfGet(valueEL,functionCallback) {
+  if (functionCallback==null)
+    return;
+
+  var params = ["valueEL"];
+  var values = [valueEL,functionCallback];
+  var callback = function(responseXML,values) {
+                   var value = responseXML.getElementsByTagName("value")[0].firstChild.nodeValue;
+                   values[1](value);
+                 };
+
+  callHttp("/comum/faces/JSFGet.html",callback,params,values);
+}
+
+function jsfSet(valueEL,value) {
+  if (value==null) value = "null";
+
+  var params = ["valueEL","value"];
+  var values = [valueEL,value];
+
+  callHttp("/comum/faces/JSFSet.html",null,params,values);
+}
+
+function jsfInvoke(valueEL,value,functionCallback) {
+  var params = ["valueEL","value"];
+  var values = [valueEL,value,functionCallback];
+  var callback = function(responseXML,values) {
+                   var value = responseXML.getElementsByTagName("value")[0].firstChild.nodeValue;
+                   if (values[2]!=null)
+                     values[2](value);
+                 };
+
+  callHttp("/comum/faces/JSFInvoke.html",callback,params,values);
+}
+
+
+
+//-------------------------------------- UTILIT√ÅRIOS --------------------------------------//
+function formatarNumero(_numero,_formato) {
+  var resultado = _numero.toString();
+  var tamanho = _formato.length;
+  for (var i=resultado.length; i<tamanho; i++)
+    resultado = "0" + resultado;
+  return resultado;
+}
+
+var dias_semana = ['Dom','Seg','Ter','Qua','Qui','Sex','S√°b'];
+var data_cliente = new Date();
+function ajustarTempo(_entrada,_corrente,_formato) {
+  var resultado = new Date(_entrada + (data_cliente.getTime() - _corrente));
+
+  var fullYear = resultado.getFullYear();
+  var year = resultado.getYear() % 100;
+
+  if (_formato=="dd/MM/yy")
+    return formatarNumero(resultado.getDate(),"00")+"/"+formatarNumero(resultado.getMonth()+1,"00")+"/"+formatarNumero(year,"00");
+  else if (_formato=="dd/MM/yy HH:mm")
+    return formatarNumero(resultado.getDate(),"00")+"/"+formatarNumero(resultado.getMonth()+1,"00")+"/"+formatarNumero(year,"00")+" "+formatarNumero(resultado.getHours(),"00")+":"+formatarNumero(resultado.getMinutes(),"00");
+  else if (_formato=="dd/MM/yyyy HH:mm")
+    return formatarNumero(resultado.getDate(),"00")+"/"+formatarNumero(resultado.getMonth()+1,"00")+"/"+formatarNumero(fullYear,"0000")+" "+formatarNumero(resultado.getHours(),"00")+":"+formatarNumero(resultado.getMinutes(),"00");
+  if (_formato=="dd/MM/yy EEE")
+    return formatarNumero(resultado.getDate(),"00")+"/"+formatarNumero(resultado.getMonth()+1,"00")+"/"+formatarNumero(year,"00")+" "+dias_semana[resultado.getDay()];
+  if (_formato=="dd/MM/yyyy EEE")
+    return formatarNumero(resultado.getDate(),"00")+"/"+formatarNumero(resultado.getMonth()+1,"00")+"/"+formatarNumero(fullYear,"0000")+" "+dias_semana[resultado.getDay()];
+  else if (_formato=="dd/MM/yy HH:mm EEE")
+    return formatarNumero(resultado.getDate(),"00")+"/"+formatarNumero(resultado.getMonth()+1,"00")+"/"+formatarNumero(year,"00")+" "+formatarNumero(resultado.getHours(),"00")+":"+formatarNumero(resultado.getMinutes(),"00")+" "+dias_semana[resultado.getDay()];
+  else if (_formato=="dd/MM/yyyy HH:mm EEE")
+    return formatarNumero(resultado.getDate(),"00")+"/"+formatarNumero(resultado.getMonth()+1,"00")+"/"+formatarNumero(fullYear,"0000")+" "+formatarNumero(resultado.getHours(),"00")+":"+formatarNumero(resultado.getMinutes(),"00")+" "+dias_semana[resultado.getDay()];
+  else
+    return formatarNumero(resultado.getDate(),"00")+"/"+formatarNumero(resultado.getMonth()+1,"00")+"/"+formatarNumero(fullYear,"0000");
+}
+
+function dateTimeMask(campo) {
+  if (campo==null) return;
+
+  jQuery(function($){
+    jQuery(campo).mask("99/99/99 99:99");
+  });
+}
+
+function dateTimeFullMask(campo) {
+  if (campo==null) return;
+
+  jQuery(function($){
+    jQuery(campo).mask("99/99/9999 99:99");
+  });
+}
+
+function dateMask(campo) {
+  if (campo==null) return;
+
+  jQuery(function($){
+    jQuery(campo).mask("99/99/99");
+  });
+}
+
+function yearMask(campo) {
+  if (campo==null) return;
+
+  jQuery(function($){
+    jQuery(campo).mask("9999");
+  });
+}
+
+function competenceMask(campo) {
+  if (campo==null) return;
+
+  jQuery(function($){
+    jQuery(campo).mask("99/9999");
+  });
+}
+
+function dateFullMask(campo) {
+  if (campo==null) return;
+
+  jQuery(function($){
+    jQuery(campo).mask("99/99/9999");
+  });
+}
+
+function timeMask(campo) {
+  if (campo==null) return;
+
+  jQuery(function($){
+    jQuery(campo).mask("99:99");
+  });
+}
+
+function timeHundredMask(campo) {
+    if (campo==null) return;
+
+    jQuery(function($){
+      jQuery(campo).mask("999:99");
+    });
+}
+
+function phoneMask(campo) {
+  if (campo==null) return;
+
+  if((campo.value.length==0) || (campo.value.length==14) || (campo.value.length==15)) {
+    jQuery(function($){
+      jQuery(campo).mask("(99) 99?999-9999");
+    });
+  }
+}
+
+function phoneResidencialMask(campo) {
+  if (campo==null) return;
+
+  if((campo.value.length==0) || (campo.value.length==14) || (campo.value.length==15)) {
+    jQuery(function($){
+      jQuery(campo).mask("(99) 99?99-9999");
+    });
+  }
+}
+
+function formatCurrency(campo) {   
+    jQuery(campo).val(jQuery(campo).val().toLocaleString('pt-br', {minimumFractionDigits: 2}));
+}
+
+function forcaMaxlengthValoresComMascara(campo) {
+    jQuery(function($) {
+        var input = $(campo);
+        var maxLength = parseInt(input.attr('maxlength') || 0);
+        
+        if (maxLength <= 0) return;
+        
+        input.on('keydown keypress', function(e) {
+            //Permitir teclas de funÁ„o que usamos para atalhos: (F1-F12)
+            if (e.key.startsWith('F') 
+                    && !isNaN(parseInt(e.key.substr(1)))) {
+                return true;
+            }
+            
+            //Permitir tecla ESC
+            if (e.key === 'Escape' 
+                    || e.keyCode === 27) {
+                return true;
+            }
+            
+            //ObtÈm o valor sem formataÁ„o (apenas n˙meros):
+            var rawValue = input.val().replace(/[^\d]/g, '');
+            
+            //Se o usu·rio estiver digitando um n˙mero e j· atingiu o limite:
+            if (e.key.match(/[0-9]/) && rawValue.length >= maxLength) {
+                e.preventDefault();
+                return false;
+            }
+            
+            return true;
+        });
+    });
+}
+
+function moveCursorToEnd(el) {
+    if (el !== null
+            && el !== undefined) {
+        if (typeof el.selectionStart == "number") {
+            el.selectionStart = el.selectionEnd = el.value.length;
+        } else if (typeof el.createTextRange != "undefined") {
+            let range = el.createTextRange();
+            range.collapse(false);
+            range.select();
+        }
+    }
+}
+
+function currencyMask(campo,casas) {
+  if (campo==null) return;
+
+  if ((casas==undefined) || (casas==null))
+    casas = 2;
+
+  jQuery(function($){
+    if (casas>0)
+      jQuery(campo).maskMoney({symbol:"R$",decimal:",",thousands:".",precision:casas,showSymbol:false});
+    else
+      jQuery(campo).keypress(function (e){
+        return onlyNumber(e);
+      });
+  });
+}
+
+function cepMask(campo) {
+  if (campo==null) return;
+
+  jQuery(function($){
+    jQuery(campo).mask("99.999-999");
+  });
+}
+
+function cpfMask(campo) {
+  if (campo==null) return;
+
+  jQuery(function($){
+    jQuery(campo).mask("999.999.999-99");
+  });
+}
+
+function cnpjMask(campo) {
+  if (campo==null) return;
+
+  jQuery(function($){
+    jQuery(campo).mask("99.999.999/9999-99");
+  });
+}
+
+function serieMask(campo) {
+  if (campo==null) return;
+  
+    jQuery(function($){
+        var serieOptions = { placeholder: " " };
+        var serieMasks = ["?999.9999.99999-999", "?999.9999.9999999-9"];
+        
+        if (jQuery(campo).val().replace(/\D/g, '').length > 13) {
+            jQuery(campo).mask(serieMasks[1], serieOptions );
+        } else {
+            jQuery(campo).mask(serieMasks[0], serieOptions );
+        }
+        
+        jQuery(campo).keyup(function (event) {
+            var serie, element;
+            element = jQuery(this);
+            serie = element.val().replace(/\D/g, '');
+            var maskSerie = (serie.length > 13) ? serieMasks[1] : serieMasks[0];
+            element.unmask();
+            element.mask(maskSerie, serieOptions);
+        });
+    });
+}
+
+function apenasNumeros(campo) {
+  jQuery(campo).keypress(function (e) { return onlyNumber(e); });
+}
+
+function onlyNumber(e){
+  var keycode = (e.keyCode ? e.keyCode : e.which);
+  //   Backspace        Enter             Tab              Del                      Del                                ctrl+c                          ctrl+v                          Arrows                         Numbers
+  if ((keycode==8)|| (keycode==13) || (keycode==9) || (keycode==127) || (e.keyCode==46 && e.which==0) || (e.keyCode==0 && e.which==99) || (e.keyCode==0 && e.which==118) || (keycode>=37 && keycode<=40) || (keycode>=48 && keycode<=57))
+    return true;
+  return false;
+}
+
+ function apenasNumerosPositivos(id) {
+    jQuery('#' + id).on('input', function () {
+        const value = jQuery(this).val();
+        // Remove qualquer caractere que n„o seja um dÌgito ou ponto decimal
+        const sanitizedValue = value.replace(/[^0-9.]/g, '');
+        jQuery(this).val(sanitizedValue);
+
+        // Verifica se o valor È maior que 0
+        if (parseFloat(sanitizedValue) <= 0) {
+            jQuery(this).val(''); // Limpa o campo se o valor n„o for maior que 0
+        }
+    });
+}
+
+function trim(str) {
+  return str && str.replace ? str.replace(/(^\s*)|(\s*$)/g, "") : str;
+}
+
+function isPopup(win) {
+  return (win.opener!=null);
+}
+
+function $(element) {
+  if (typeof element == 'string')
+    element = document.getElementById(element);
+  return element;
+}
+
+function moeda2float(moeda){
+  moeda = moeda.replace(".","");
+  moeda = moeda.replace(",",".");
+
+  if (moeda=='')
+    moeda = 0;
+
+  return parseFloat(moeda);
+}
+
+function float2moeda(num) {
+  x = 0;
+
+  if (num < 0) {
+    num = Math.abs(num);
+    x = 1;
+  }
+
+  if (isNaN(num)) {
+    num = "0";
+  }
+  cents = Math.floor((num*100+0.5)%100);
+  num = Math.floor((num*100+0.5)/100).toString();
+
+  if(cents < 10) {
+    cents = "0" + cents;
+  }
+
+  for (var i = 0; i < Math.floor((num.length-(1+i))/3); i++) {
+    num = num.substring(0, num.length - (4 * i + 3)) + '.'
+    + num.substring(num.length - ( 4 * i + 3));
+  }
+
+  ret = num + ',' + cents;
+
+  if (x == 1) {
+    ret = ' - ' + ret;
+  }
+
+  return ret;
+}
+
+function limiterRows(campo, amountRows) {
+  if (campo === null)
+    return;
+
+  jQuery(function($) {
+    jQuery(campo).keypress(function(e) {
+      if (e.keyCode === 13) {
+        var quantidade = jQuery(campo).val().split('\n').length;
+        if (quantidade >= amountRows) {
+          alert('Campo limitado no maximo de ' + amountRows + ' linhas.');
+          return false;
+        }
+      }
+    });
+  });
+}
+
+//-------------------------------------- AGENDA --------------------------------------//
+var agendaCompromissoWindow = null;
+var agendaDiaWindow = null;
+
+function agendaMostrarCompromisso(codigo,confirmarAgendaTiposPreAgendado,responsavel,atividade,status,codigoCliente,cliente,cidade,bairro,dataIni,dataFim,horaIni,horaFim,descricao,clientesAgendamentoMultiplo,externosAgendamentoMultiplo,conclusao,visivel,externo,externoTipo,prospect,posVenda, um, dois, motivo, agendado, programacao, localizarClientesProximos, exibirVisualizar, exibirHistorico) {
+  var html = '';
+  
+  var TIPO_IMPLANTACAO = 1;
+  var TIPO_ATENDIMENTO = 2;
+  
+  exibirVisualizar = (exibirVisualizar == null ? "true" : exibirVisualizar);
+  
+  html += '<html>';
+  html += '<head>';
+  html += '  <title>' + atividade + '</title>';
+  html += '  <link rel="stylesheet" href="/lib/estilos.css" type="text/css"/>';
+  html += '  <script type="text/javascript" src="/lib/jquery.js"></script>';
+  html += '  <script type="text/javascript" src="/lib/utils.js?versao=11"></script>';
+  html += '</head>';
+  html += '<body>';
+  html += '<div id="headerContent" width="100%" style="margin:0px; padding:0px; position:fixed; left:0px; right:0px; top:0px; overflow:fixed; z-index:10;">';
+  html += '  <table width="100%" cellpadding="0" cellspacing="0" border="0">';
+  html += '    <tr><td class="firstHeader"></td></tr>';
+  html += '    <tr><td class="secondHeader"></td></tr>';
+  html += '  </table>';
+  html += '</div>';
+  html += '<div id="mainContent" width="100%" style="margin:0px; padding:0px; position:fixed; left:0px; right:0px; top:23px; bottom:23px; overflow:auto;">';
+  html += '  <table width="100%" border="0" cellspacing="0" cellpadding="0">';
+  html += '    <tr><td height="6"></td></tr>';
+  html += '    <tr>';
+  html += '      <td width="100%" style="padding-left: 16px; padding-right: 16px;">';
+  html += '        <table width="100%" cellpadding="0" cellspacing="0" border="0">';
+  html += '          <tr><td class="titulo">' + atividade + '</td></tr>';
+  html += '          <tr><td style="height:2px"></td></tr>';
+  html += '          <tr>';
+  html += '            <td>';
+
+  html += '<table width="100%" cellpadding="1" cellspacing="1" border="0">';
+  html += '  <tr>';
+  html += '    <td>';
+  html += '      <table width="100%" cellpadding="2" cellspacing="1" class="tableVisualizacao">';
+  html += '        <tr>';
+  html += '          <td class="tableVisualizacaoLabel" style="width:100px"><b>Respons√°vel:</b></td>';
+  html += '          <td class="tableVisualizacaoField" colspan="3">' + responsavel + '</td>';
+  html += '        </tr>';
+  html += '        <tr>';
+  html += '          <td class="tableVisualizacaoLabel" style="width:100px"><b>Atividade:</b></td>';
+  html += '          <td class="tableVisualizacaoField" colspan="3">' + atividade + '</td>';
+  html += '        </tr>';
+  html += '        <tr>';
+  html += '          <td class="tableVisualizacaoLabel" style="width:100px"><b>Status:</b></td>';
+  html += '          <td class="tableVisualizacaoField" colspan="3">' + status + '</td>';
+  html += '        </tr>';
+  if (cliente!=null) {
+    html += '        <tr>';
+    html += '          <td class="tableVisualizacaoLabel" style="width:100px"><b>Cliente:</b></td>';
+    html += '          <td class="tableVisualizacaoField" colspan="3">' + cliente + '</td>';
+    html += '        </tr>';
+
+    html += '        <tr>';
+    html += '          <td class="tableVisualizacaoLabel" style="width:100px"><b>Cidade:</b></td>';
+    html += '          <td class="tableVisualizacaoField" colspan="3">' + cidade + '</td>';
+    html += '        </tr>';
+
+    html += '        <tr>';
+    html += '          <td class="tableVisualizacaoLabel" style="width:100px"><b>Bairro:</b></td>';
+    html += '          <td class="tableVisualizacaoField" colspan="3">' + bairro + '</td>';
+    html += '        </tr>';
+  }
+  html += '        <tr>';
+  html += '          <td class="tableVisualizacaoLabel" style="width:100px"><b>Data In√≠cio:</b></td>';
+  html += '          <td class="tableVisualizacaoField" style="width:150px">' + dataIni + '</td>';
+  html += '          <td class="tableVisualizacaoLabel" style="width:100px"><b>Data Fim:</b></td>';
+  html += '          <td class="tableVisualizacaoField">' + dataFim + '</td>';
+  html += '        </tr>';
+
+  if (prospect == null) {
+    html += '        <tr>';
+    html += '          <td class="tableVisualizacaoLabel" style="width:100px"><b>Hora In√≠cio:</b></td>';
+    html += '          <td class="tableVisualizacaoField" style="width:150px">' + horaIni + '</td>';
+    html += '          <td class="tableVisualizacaoLabel" style="width:100px"><b>Hora Fim:</b></td>';
+    html += '          <td class="tableVisualizacaoField">' + horaFim + '</td>';
+    html += '        </tr>';
+  }
+
+  if (motivo!=null) {
+    html += '      <tr>';
+    html += '        <td class="tableVisualizacaoLabel" style="width:100px;vertical-align:top"><b>Motivo:</b></td>';
+    html += '        <td class="tableVisualizacaoField" colspan="3">' + motivo + '</td>';
+    html += '      </tr>';
+  }
+  
+  if (descricao!=null) {
+    var htmlDescricao = descricao;
+    if (clientesAgendamentoMultiplo!=null) {
+      clientesAgendamentoMultiplo = clientesAgendamentoMultiplo.split(',');
+      externosAgendamentoMultiplo = externosAgendamentoMultiplo.split(',');        
+      for (var i = 0; i < clientesAgendamentoMultiplo.length; i++) {        
+        var codigoRazaoSocialCliente = clientesAgendamentoMultiplo[i];
+        var codigoExterno = externosAgendamentoMultiplo[i];      
+        
+        if (programacao == null) {
+            htmlDescricao += '  <input type="button" value="Visualizar" onclick="window.opener.navigate(\'/sgsc/faces/externo.html?externo=' + codigoExterno + '\');  window.close(); return false;" class="commandButton">  '; 
+        } else {
+            htmlDescricao += '  <input type="button" value="Visualizar" onclick="window.opener.navigate(\'/sgsc/faces/externo.html?externo=' + codigoExterno + '&tab=3#programacao_' + programacao + '\');  window.close(); return false;" class="commandButton">  '; 
+            html += '  <input type="button" value="Visualizar" onclick="window.opener.navigate(\'/sgsc/faces/externo.html?externo=' + externo + '&tab=3#programacao_' + programacao + '\');  window.close(); return false;" class="commandButton">';
+        }
+        
+        htmlDescricao += codigoRazaoSocialCliente;
+        htmlDescricao += "<br/>";        
+      }            
+    }
+      
+    html += '      <tr>';
+    html += '        <td class="tableVisualizacaoLabel" style="width:100px;vertical-align:top"><b>Descri√ß√£o:</b></td>';        
+    html += '        <td class="tableVisualizacaoField" colspan="3">' + htmlDescricao + '</td>';        
+    html += '      </tr>';
+  }
+
+  if (conclusao!=null) {
+    html += '      <tr>';
+    html += '        <td class="tableVisualizacaoLabel" style="width:100px;vertical-align:top"><b>Conclus√£o:</b></td>';
+    html += '        <td class="tableVisualizacaoField" colspan="3">' + conclusao + '</td>';
+    html += '      </tr>';
+  }
+
+  if ((descricao!=null) && (visivel)) {
+    html += '<tr>';
+    html += '  <td class="tableCadastroControl" colspan="4" style="text-align:right">';
+    console.log('confirmarAgendaTiposPreAgendado: ' + confirmarAgendaTiposPreAgendado);
+    if (confirmarAgendaTiposPreAgendado) {
+        html += '<input type="button" value="Confirmar" onclick="jsfInvoke(\'agenda.gravarCadastroAgendado\',' + codigo + ', function(){ window.opener.document.getElementById(\'verCalendario:calendarioForm:atualizarBtn\').click(); window.close(); });" class="commandButton">';     
+    }
+     if (exibirHistorico) {
+      if (programacao != null) {
+        html += '  <input type="button" value="Hist√≥rico" onclick="novaJanelaRolagem(\'/sgsc/faces/externos-programacoes-hist-alteracoes.html?programacao=' + programacao + '\',\'historicosAlteracaoProgramacao\',840,540); return false;" class="commandButton">';
+      } else {
+        html += '  <input type="button" value="Hist√≥rico" onclick="novaJanelaRolagem(\'/sgsc/faces/agenda-hist-alteracoes.html?agenda=' + codigo + '\',\'agendaHistorico\',700,400); return false;" class="commandButton">';
+      }
+    }
+    if (externo!=null) {
+      if (!agendado) {
+        html += '<input type="button" value="Confirmar" onclick="jsfInvoke(\'externo.gravarExternoProgramacaoCadastroAgendado\',' + programacao + ', function(){ window.opener.document.getElementById(\'verCalendario:calendarioForm:atualizarBtn\').click(); window.close(); });" class="commandButton">';     
+      }      
+      if (exibirVisualizar) {
+        if (externoTipo === TIPO_IMPLANTACAO) {
+            html += '  <input type="button" value="Editar" onclick="novaJanelaRolagem(\'/sgsc/faces/externo-programacao-treinamento.html?externo=' + externo + '&programacao=' + programacao + '\&redirect-agenda=1\', \'agendar\',900,550);  return false;" class="commandButton">';
+        } else if (externoTipo === TIPO_ATENDIMENTO) {
+            html += '  <input type="button" value="Editar" onclick="novaJanelaRolagem(\'/sgsc/faces/externo-programacao-atendimento.html?externo=' + externo + '&programacao=' + programacao + '\&redirect-agenda=1\', \'agendar\',650,550);  return false;" class="commandButton">';
+        }
+        
+        if (programacao == null) {
+            html += '  <input type="button" value="Visualizar" onclick="window.opener.navigate(\'/sgsc/faces/externo.html?externo=' + externo + '\');  window.close(); return false;" class="commandButton">';
+        } else {
+            html += '  <input type="button" value="Visualizar" onclick="window.opener.navigate(\'/sgsc/faces/externo.html?externo=' + externo + '&tab=3#programacao_' + programacao + '\');  window.close(); return false;" class="commandButton">';
+        }
+      }
+      if (localizarClientesProximos) {
+        html += '  <input type="button" value="Localizar cliente pr√≥ximo" onclick="window.opener.navigate(\'/sgsc/faces/externos-programacoes-proximas.html?cliente=' + codigoCliente + '\');  window.close(); return false;" class="commandButton">';
+      }
+    } else if (prospect!=null)
+      html += '  <input type="button" value="Visualizar" onclick="window.opener.navigate(\'/sgcon/faces/prospect.html?prospect=' + prospect + '\');  window.close(); return false;" class="commandButton">';
+    else if (posVenda!=null)
+      html += '  <input type="button" value="Visualizar" onclick="window.opener.navigate(\'/sgsc/faces/pos-venda.html?posVenda=' + posVenda + '\');  window.close(); return false;" class="commandButton">';
+    else
+      html += '  <input type="button" value="Editar" onclick="window.opener.novaJanelaRolagem(\'/comum/faces/cad-agenda.html?agenda=' + codigo + '\',\'agenda\',650,550); window.close(); return false;" class="commandButton">';
+    html += '  </td>';
+    html += '</tr>';
+  }
+  html += '      </table>';
+  html += '    </td>';
+  html += '  </tr>';
+  html += '</table>';
+
+  html += '            </td>';
+  html += '          </tr>';
+  html += '        </table>';
+  html += '      </td>';
+  html += '    </tr>';
+  html += '    <tr><td style="height:4px"></td></tr>';
+  html += '  </table>';
+  html += '</div>';
+  html += '<div id="footerContent" style="margin:0px; padding:0px; position:fixed; left:0px; right:0px; bottom:0px; overflow:fixed; z-index:10;">';
+  html += '  <table width="100%" cellpadding="0" cellspacing="0" border="0">';
+  html += '    <tr><td class="secondHeader"></td></tr>';
+  html += '    <tr><td class="firstHeader"></td></tr>';
+  html += '  </table>';
+  html += '</div>';
+  html += '</body>';
+  html += '</html>';
+
+  if (agendaDiaWindow!=null) {
+    try {agendaDiaWindow.close();} catch (e) { }
+    agendaDiaWindow = null;
+  }
+
+  agendaCompromissoWindow = novaJanelaRolagem('/comum/faces/wait.html','agendaMostrarCompromisso',700,500);
+  try {
+    setTimeout(function() {
+      agendaCompromissoWindow.document.open("text/html","replace");
+      agendaCompromissoWindow.document.write(html);
+      agendaCompromissoWindow.document.close();
+    },500);
+  } catch (e) {
+    try {agendaCompromissoWindow.close();} catch (e) { }
+    agendaCompromissoWindow = null;
+  }
+}
+
+function agendaMostrarDia(titulo) {
+  var html = '';
+  html += '<html>';
+  html += '<head>';
+  html += '  <title>' + titulo + '</title>';
+  html += '  <link rel="stylesheet" href="/lib/estilos.css" type="text/css"/>';
+  html += '  <style type="text/css">';
+  html += '   .outros {width:100%;height:14px;line-height:14px;max-height:14px;margin-bottom:2px;padding:1px;background: url("/imagens/fundo_5.jpg") repeat-x;-moz-border-radius: 5px;}';
+  html += '   .implantacao {width:100%;height:14px;line-height:14px;max-height:14px;margin-bottom:2px;padding:1px;background: url("/imagens/fundo_3.jpg") repeat-x;-moz-border-radius: 5px;}';
+  html += '   .atendimento {width:100%;height:14px;line-height:14px;max-height:14px;margin-bottom:2px;padding:1px;background: url("/imagens/fundo_1.jpg") repeat-x;-moz-border-radius: 5px;}';
+  html += '   .compromisso {width:100%;height:14px;line-height:14px;max-height:14px;margin-bottom:2px;padding:1px;background: url("/imagens/fundo_2.jpg") repeat-x;-moz-border-radius: 5px;}';
+  html += '   .demonstracao {width:100%;height:14px;line-height:14px;max-height:14px;margin-bottom:2px;padding:1px;background: url("/imagens/fundo_4.jpg") repeat-x;-moz-border-radius: 5px;}';
+  html += '   .posVenda {width:100%;height:14px;line-height:14px;max-height:14px;margin-bottom:2px;padding:1px;background: url("/imagens/fundo_9.jpg") repeat-x;-moz-border-radius: 5px;}';
+  html += '   .ausencia {height:14px;line-height:14px;max-height:14px;margin-bottom:2px;padding:1px;background: url("/imagens/fundo_10.jpg") repeat-x;-moz-border-radius: 5px;} ';
+  html += '   .concluido {text-decoration:line-through; color:#5A7C85;}';
+  html += '  </style>';
+  html += '</head>';
+  html += '<body>';
+  html += '<div id="headerContent" width="100%" style="margin:0px; padding:0px; position:fixed; left:0px; right:0px; top:0px; overflow:fixed; z-index:10;">';
+  html += '  <table width="100%" cellpadding="0" cellspacing="0" border="0">';
+  html += '    <tr><td class="firstHeader"></td></tr>';
+  html += '    <tr><td class="secondHeader"></td></tr>';
+  html += '  </table>';
+  html += '</div>';
+  html += '<div id="mainContent" width="100%" style="margin:0px; padding:0px; position:fixed; left:0px; right:0px; top:23px; bottom:23px; overflow:auto;">';
+  html += '  <table width="100%" border="0" cellspacing="0" cellpadding="0">';
+  html += '    <tr><td style="height:6px"></td></tr>';
+  html += '    <tr>';
+  html += '      <td style="padding-left: 16px; padding-right: 16px;">';
+  html += '        <table width="100%" cellpadding="0" cellspacing="0" border="0">';
+  html += '          <tr><td class="titulo">' + titulo + '</td></tr>';
+  html += '          <tr><td style="height:4px"></td></tr>';
+  html += '          <tr>';
+  html += '            <td>';
+  html += '              <table width="100%" cellspacing="1" cellpadding="0" border="0">';
+  for (var i=1; i<arguments.length; i+=5) {
+    if (i>1)
+      html += '<tr><td colspan="3"><hr width="100%" size="1"/></td></tr>';
+    html += '<tr>';
+    html += '<td style="width:120px;">';
+    html += '<div style="text-align:center;" class="' + arguments[i] + '">';
+    html += '<a href="#" onclick=\'' + arguments[i+1] + ' return false;\'>';
+
+    if (arguments[i+3] == null) {
+      html += arguments[i+2];
+    } else {
+      html += arguments[i+2] + ' - ' + arguments[i+3];
+    }
+
+    html += '</a>';
+    html += '</div>';
+    html += '</td>';
+    html += '<td style="width:20px"></td>';
+    html += '<td style="text-align:left">' + arguments[i+4] + '</td>';
+    html += '</tr>';
+  }
+  html += '            </td>';
+  html += '          </tr>';
+  html += '        </table>';
+  html += '      </td>';
+  html += '    </tr>';
+  html += '    <tr><td height="4"></td></tr>';
+  html += '  </table>';
+  html += '</div>';
+  html += '<div id="footerContent" style="margin:0px; padding:0px; position:fixed; left:0px; right:0px; bottom:0px; overflow:fixed; z-index:10;">';
+  html += '  <table width="100%" cellpadding="0" cellspacing="0" border="0">';
+  html += '    <tr><td class="secondHeader"></td></tr>';
+  html += '    <tr><td class="firstHeader"></td></tr>';
+  html += '  </table>';
+  html += '</div>';
+  html += '</body>';
+  html += '</html>';
+
+  if (agendaCompromissoWindow!=null) {
+    try {agendaCompromissoWindow.close();} catch (e) { }
+    agendaCompromissoWindow = null;
+  }
+
+  agendaDiaWindow = novaJanelaRolagem('/comum/faces/wait.html','agendaMostrarDia',600,400);
+  try {
+    setTimeout(function() {
+      agendaDiaWindow.document.open("text/html","replace");
+      agendaDiaWindow.document.write(html);
+      agendaDiaWindow.document.close();
+    },500);
+  } catch (e) {
+    try {agendaDiaWindow.close();} catch (e) { }
+    agendaDiaWindow = null;
+  }
+}
+
+/* Javascript para as p√°ginas de relat√≥rios */
+var reportWindow = null;
+function showReportWindow(caminho) {
+  var html = new String('');
+  html += '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">';
+  html += '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="pt-br" lang="pt-br">';
+  html += '<head>';
+  html += '  <title>Visualizador de Relat√≥rios</title>';
+  html += '  <link rel="stylesheet" href="/lib/estilos.css" type="text/css"/>';
+  html += '</head>';
+  html += '<body>';
+  html += '<div id="mainContent" width="100%" style="margin:0px; padding:0px; position:fixed; left:0px; right:0px; top:23px; bottom:23px; overflow:auto;">';
+  html += '  <iframe width="100%" height="100%" src="'+caminho+'" style="border:none;margin:0px; padding:0px; position:fixed; left:0px; right:0px; top:0px; bottom:0px;"/>';
+  html += '</div>';
+  html += '</body>';
+  html += '</html>';
+
+  reportWindow = novaJanelaAjustavel('/comum/faces/wait.html','relatorioWindow',780,590);
+  reportWindow.document.open("text/html","replace");
+  reportWindow.document.write(html);
+  reportWindow.document.close();
+}
+
+function ajustarUnidadeFiltro(target, newValues) {
+  jQuery(target).prop("checked", false);
+
+  jQuery(target).each(function() {
+    if (newValues != null) {
+      for (var i = 0; i < newValues.length; i++) {
+        if (jQuery(this).val() == newValues[i]) {
+          jQuery(this).prop("checked", true);
+          break;
+        }
+      }
+    } else {
+      jQuery(this).prop("checked", true);
+    }
+  });
+}
+
+function addReportFilterChangeEvent(id) {
+  const clearContent = () => {
+    const el = document.querySelector(id);
+    if (el) {
+      while (el.firstChild) {
+        el.removeChild(el.firstChild);
+      }
+    }
+  };
+
+  jQuery("input:radio").on("click", clearContent);
+  jQuery("input:checkbox").on("click", clearContent);
+  jQuery("select").on("change", clearContent);
+  jQuery("input").on("keypress", clearContent);
+  jQuery(".PopcalTrigger").on("click", clearContent);
+}
+
+/* Javascript para a classe "PrintAttachTag" */
+function attachTagModify(id) {
+  $('attachTag_' + id + '_value').value = '';
+  attachTagRefresh(id);
+  //Retira Dados de validaÁ„o Plug:
+  attachTagRemovePlugValidation(id);  
+}
+
+function attachTagRemovePlugValidation(id) {
+  let attachTagInfo = document.getElementById(`attachTag_${id}_info`);
+  let attachTagImg = document.getElementById(`attachTag_${id}_img`);
+  let attachTagImgString = document.getElementById(`attachTag_${id}_imagemValidacaoPlugStr`);
+  let attachTagDocumentMessage = document.getElementById(`attachTag_${id}_authenticDocumentMessage`);
+  let attachTagMessage = document.getElementById(`attachTag_${id}_info_message`);
+  let attachTagScore = document.getElementById(`attachTag_${id}_scoreDocument`);
+  let attachTagScoreMessage = document.getElementById(`attachTag_${id}_score_message`);
+  
+  if (attachTagInfo) attachTagInfo.style.display = 'none';
+  if (attachTagImg) attachTagImg.src = '';
+  if (attachTagImgString) attachTagImgString.value = '';
+  if (attachTagDocumentMessage) attachTagImgString.value = '';
+  if (attachTagMessage) attachTagMessage.innerText = '';
+  if (attachTagScore) attachTagScore.value = '';
+  if (attachTagScoreMessage) attachTagScoreMessage.innerText = '';
+}
+
+function attachTagRefresh(id) {
+  var value = trim($('attachTag_' + id + '_value').value);
+  if (value.length>0)
+    return;
+
+  var html = '<table width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td width="1%" style="white-space: nowrap;">';
+  var size = $('attachTag_' + id + '_size').value;  
+  var typeNotPermitted = $('attachTag_' + id + '_typeNotPermitted').value;
+  var typePermitted = $('attachTag_' + id + '_typePermitted').value;
+  var multi = ($('attachTag_' + id + '_multi').value=='true');
+  var names = $('attachTag_' + id + '_names').value;
+  var textLabel = $('attachTag_' + id + '_textLabel').value;
+  var hrefs = $('attachTag_' + id + '_hrefs').value;
+  var array = names.split(';');
+  var hrefArray = '';
+  
+  if (hrefs !== 'undefined' && hrefs !== '') {
+    hrefArray = hrefs.split(';');
+  }
+  
+  var empty = true;
+  for (var i=0; i<array.length; i++) {
+    value = trim(array[i]);
+    var hrefValue='';
+    
+    if (hrefArray[i]) {
+     hrefValue =  trim(hrefArray[i]);
+    }
+    if (value.length>0) {
+      if (!empty) html += '<br/>';
+      html += '<a href="#" name="attachTagRemove" onclick="attachTagRemove(\'' + id + '\',\'' + value + '\'); return false;"><img src="/imagens/ico_deletar.gif" title="Remover anexo" alt="Remover" border="0"/></a>&nbsp;';
+      
+    if (hrefValue !== 'undefined' && hrefValue !== '' && hrefValue.includes(value)) {
+        html += '<a id="' + value + '" href="' + hrefValue + '" target="_blank">' + value + '</a>';
+    } else {
+        html += value;
+    }      
+    empty = false;
+    }
+  }
+
+  if ((names.length==0) || (multi)) {
+    if (!empty)
+      html += '</td><td width="20"></td><td>';
+    html += '<input type="button" name='+ id +' value="' + textLabel + '" onclick="novaJanela(\'/comum/faces/AttachTagPopup.html?id=' + id + '&fieldId=' + id + '&uriOrigem=' + encodeURIComponent(window.location.pathname) + '&size=' + size + '&typeNotPermitted=' + typeNotPermitted + '&typePermitted=' + typePermitted + '\',\'attachTag_' + id + '\',500,210);" class="commandButton"/>';
+  }
+
+  html += '</td></tr></table>';
+
+  $('attachTag_' + id + '_span').innerHTML = html;
+}
+
+function attachTagAdd(id,name) {
+  var multi = ($('attachTag_' + id + '_multi').value=='true');
+  if (multi)
+    $('attachTag_' + id + '_names').value += name + ';';
+  else
+    $('attachTag_' + id + '_names').value = name;
+
+  attachTagRefresh(id);
+  validateAuthenticityDocument(id);
+}
+
+function attachTagRemove(id,name) {
+  var array = $('attachTag_' + id + '_names').value.split(';');
+  var names = '';
+  var value;
+  for (var i=0; i<array.length; i++) {
+    value = trim(array[i]);
+    if ((value.length>0) && (value!=name))
+      names += value + ';';
+  }
+  $('attachTag_' + id + '_names').value = names;
+
+  attachTagRefresh(id);
+  attachFileInputTagRemove(id);
+}
+
+function attachFileInputTagRemove(id) {
+  document.getElementById('attachTag_' + id + '_names').value = '';
+
+  let authenticDocument = document.getElementById(`attachTag_${id}_authenticDocument`);
+  if (authenticDocument !== null
+          && authenticDocument !== undefined) {
+    authenticDocument.value = 'false';
+  }
+
+  let authenticDocumentInfo = document.getElementById(`attachTag_${id}_info`);
+  if (authenticDocumentInfo !== null
+          && authenticDocumentInfo !== undefined) {
+    setInfoAttachTag(id, '', '', '');
+    authenticDocumentInfo.style.display = 'none';        
+  }      
+}
+
+function validateAuthenticityDocument(id) {
+  let authenticDocument = document.getElementById(`attachTag_${id}_validateAuthenticity`);
+
+  let isValidadeAuthenticity = authenticDocument !== null && authenticDocument !== undefined && authenticDocument.value === 'true';
+
+  if(isValidadeAuthenticity) {
+    let authenticDocument = document.getElementById(`attachTag_${id}_authenticDocument`);
+    let authenticDocumentMessage = document.getElementById(`attachTag_${id}_authenticDocumentMessage`);        
+    let validatingDocument = document.getElementById(`attachTag_${id}_validatingDocument`);        
+        
+    authenticDocument.value = 'false';
+    validatingDocument.value = 'true';
+    authenticDocumentMessage.value = 'Por favor, aguarde a validaÁ„o terminar.';
+            
+    setInfoAttachTag(id, '/imagens/busy.gif', 'Validando autenticidade do documento. Por favor aguarde!', '');
+      
+    let names = document.getElementById(`attachTag_${id}_names`).value;
+    let documentType = document.getElementById(`attachTag_${id}_documentType`).value;
+        
+    let param = {
+          id: id,
+          names: names,
+          documentType: documentType
+      };
+        
+    let json = JSON.stringify(param);
+                      
+    jsfInvoke('autenticidadeDocumentoBean.setValidarAnexo', json, new Function('param','setStatusAutenticidadeDocumento(param)'));                
+  }    
+}
+
+function setStatusAutenticidadeDocumento(param) {
+  let response = JSON.parse(param);
+  let authenticDocument = document.getElementById(`attachTag_${response.id}_authenticDocument`);
+  let validatingDocument = document.getElementById(`attachTag_${response.id}_validatingDocument`); 
+   
+  let authenticDocumentMessage = document.getElementById(`attachTag_${response.id}_authenticDocumentMessage`);
+  authenticDocumentMessage.value = '';
+  validatingDocument.value = 'false';
+    
+  if (response.error === true) {
+    img = '/imagens/warning.png';
+    setInfoAttachTag(response.id, img, 'Falha inesperada ao v·lidar arquivo.');
+    authenticDocument.value = 'false';
+  } else {        
+    let img;                
+        
+    if(response.authenticated === true) {
+      img = '/imagens/check.png';
+      authenticDocument.value = 'true';
+    } else {
+      img = '/imagens/warning_triangle.png';
+      authenticDocument.value = 'false';
+    }
+                
+    let result = response.files.reduce((acc, file) => {
+      return acc + `${file.reason} `;
+    }, '');   
+    
+    let validScores = response.files
+        .map(file => file.score)
+        .filter(score => score !== null && score !== undefined);
+
+    let minScore = validScores.length > 0 ? Math.min(...validScores) : 0;
+                    
+    setInfoAttachTag(response.id, img, result, minScore);
+  }
+}
+
+function setInfoAttachTag(id, img, message, score) {
+  let attachTagInfo = document.getElementById(`attachTag_${id}_info`);
+  let attachTagImg = document.getElementById(`attachTag_${id}_img`);
+  let attachTagImgString = document.getElementById(`attachTag_${id}_imagemValidacaoPlugStr`);
+  let attachTagDocumentMessage = document.getElementById(`attachTag_${id}_authenticDocumentMessage`);
+  let attachTagInfoMessage = document.getElementById(`attachTag_${id}_info_message`);
+  let attachTagScore = document.getElementById(`attachTag_${id}_scoreDocument`);
+  let attachTagScoreMessage = document.getElementById(`attachTag_${id}_score_message`);
+
+  if(attachTagInfo !== null 
+          && attachTagInfo !== undefined
+          && attachTagImg !== null 
+          && attachTagImg !== undefined
+          && attachTagImgString !== null 
+          && attachTagImgString !== undefined  
+          && attachTagDocumentMessage !== null 
+          && attachTagDocumentMessage !== undefined  
+          && attachTagInfoMessage !== null 
+          && attachTagInfoMessage !== undefined  
+          && attachTagScore !== null
+          && attachTagScore !== undefined
+          && attachTagScoreMessage !== null
+          && attachTagScoreMessage !== undefined) {
+    attachTagImg.src = img;
+    attachTagImgString.value = img;
+    attachTagDocumentMessage.value = message;
+    attachTagInfoMessage.innerText = message;
+    attachTagInfo.style.display = 'block';
+    attachTagScore.value = score;
+    if(score !== null
+            && score !== undefined
+            && score != 0) {
+        attachTagScoreMessage.innerText = "Score: " + score;
+    } else {
+        attachTagScoreMessage.innerText = "";
+    }
+  }
+}
+
+/* Javascript com utilidades em geral */
+function isSistemaSBS(sistema) {
+  return ((sistema==13) || (sistema==16) || (sistema==17) || (sistema==18) || (sistema==19));
+}
+
+function configurarPaginaAposLogin() {
+    var valorCookie = buscarValorCookiePorNome('redirecionadoPeloLogin');
+    if (valorCookie === 'true') {
+        alterarValorCookie('redirecionadoPeloLogin', false);
+        bloquarPagina();
+        jQuery('.submit-first-login').click();
+    }
+}
+function bloquarPagina(width, left, top) {
+    jQuery.blockUI({message: jQuery('#waitingMessage'), css: {width: width, left: left, top: top}});
+}
+
+function buscarValorCookiePorNome(nome) {
+    var valor = "; " + document.cookie;
+    var parts = valor.split("; " + nome + "=");
+    if (parts.length >= 2) {
+        return parts.pop().split(";").shift();
+    }
+}
+
+function alterarValorCookie(nomeCookie, valor) {
+    document.cookie = nomeCookie + '=' + valor + ";path=/";
+}
+
+function autocomplete(inp, arr, functionCallBack) {
+    var currentFocus;
+    inp.addEventListener("input", function (e) {
+        var a, b, i, val = this.value;
+        closeAllLists();
+        if (!val) {
+            return false;
+        }
+        currentFocus = -1;
+        a = document.createElement("DIV");
+        a.setAttribute("id", this.id + "autocomplete-list");
+        a.setAttribute("class", "autocomplete-items");
+        this.parentNode.appendChild(a);
+
+        for (i = 0; i < arr.length; i++) {
+            if (arr[i].label.toUpperCase().includes(val.toUpperCase())) {
+                b = document.createElement("DIV");
+                b.innerHTML = arr[i].label;
+                b.innerHTML += "<input type='hidden' value='" + arr[i].label + "'>";
+                b.innerHTML += "<input type='hidden' value='" + arr[i].value + "'>";
+                b.addEventListener("click", function (e) {
+                    inp.value = this.getElementsByTagName("input")[0].value;
+                    arr.value = this.getElementsByTagName("input")[1].value;                                        
+                    window[functionCallBack]();
+                    closeAllLists();
+                });
+                a.appendChild(b);
+            }
+        }
+    });
+
+    inp.addEventListener("keydown", function (e) {
+        var x = document.getElementById(this.id + "autocomplete-list");
+        if (x)
+            x = x.getElementsByTagName("div");
+        if (e.keyCode == 40) {
+            currentFocus++;
+            addActive(x);
+        } else if (e.keyCode == 38) {
+            currentFocus--;
+            addActive(x);
+        } else if (e.keyCode == 13) {
+            e.preventDefault();
+            if (currentFocus > -1) {
+                if (x)
+                    x[currentFocus].click();
+            }
+        }
+    });
+
+    function addActive(x) {
+        if (!x)
+            return false;
+        removeActive(x);
+        if (currentFocus >= x.length)
+            currentFocus = 0;
+        if (currentFocus < 0)
+            currentFocus = (x.length - 1);
+        x[currentFocus].classList.add("autocomplete-active");
+    }
+
+    function removeActive(x) {
+        for (var i = 0; i < x.length; i++) {
+            x[i].classList.remove("autocomplete-active");
+        }
+    }
+
+    function closeAllLists(elmnt) {
+        var x = document.getElementsByClassName("autocomplete-items");
+        for (var i = 0; i < x.length; i++) {
+            if (elmnt != x[i] && elmnt != inp) {
+                x[i].parentNode.removeChild(x[i]);
+            }
+        }
+    }
+
+    document.addEventListener("click", function (e) {
+        closeAllLists(e.target);
+    });
+}
+
+function corrigirTag(campo, campoGrupo, selecionados) {
+  var campoGrupoChecked = $(campoGrupo).checked;
+  var html = $(campo).innerHTML;
+  html = html.replace(/--begin-DIV-agrupador--/g, '<div style="text-align: center;" class="tableListaRowRealce"><b>');
+  html = html.replace(/--end-DIV-agrupador--/g, '</b></div>');
+  $(campo).innerHTML = html;
+  $(campoGrupo).checked = campoGrupoChecked;
+
+  if (campoGrupoChecked) {
+    marcarGrupo($(campoGrupo), campo);
+  }
+
+  if (!campoGrupoChecked) {
+    var itensTagCorrigida = jQuery("input:checkbox[name='" + campo + "']");
+    for (var i = 0; i < selecionados.size(); i++) {
+      var selecionado = selecionados[i].value;
+      for (var j = 0; j < itensTagCorrigida.size(); j++) {
+        var item = itensTagCorrigida[j];
+        if (item.value == selecionado) {
+          item.checked = true;
+        }
+      }
+    }
+  }
+}
+
+function fixarDivNoTopo(divID) {
+    var porcentagemRolada = window.pageYOffset;
+
+    var divFixa = document.getElementById(divID);
+
+    if (porcentagemRolada >= 145) {
+        divFixa.classList.add("div-fixed-top");
+    } else {
+        divFixa.classList.remove("div-fixed-top");
+    }
+}
+
+
+function tornarCheckboxReadOnly(name) {
+    var oportunidadesTipos = document.getElementsByName(name);
+    for (var i = 0; i < oportunidadesTipos.length; i++) {
+      oportunidadesTipos[i].classList.add('readonly');  
+      oportunidadesTipos[i].addEventListener('click', function(event) {
+            event.preventDefault();
+      });
+    }    
+}
+
+function tornarCheckboxReadOnly() {
+    var oportunidadesTipos = document.querySelectorAll('input[type="checkbox"].readonly');
+    for (var i = 0; i < oportunidadesTipos.length; i++) {
+        oportunidadesTipos[i].addEventListener('click', function(event) {
+            event.preventDefault();
+        });
+    }
+}
+
+function showLoading() {
+    jQuery.blockUI({ message: jQuery('#waitingMessage'), css: { width:'25%', left:'35%', top: '33%'} });
+}
+
+function hideLoading() {
+    $.unblockUI();
+}
+
+ function definirMaxlength(id, quantidade) {
+    const textarea = document.getElementById(id);
+    
+    if (textarea) {
+        textarea.setAttribute('maxlength', quantidade);
+    } 
+}
+
+jQuery(document).ready(function () {
+    jQuery('form').submit(function () {
+        if (jQuery("form").attr('action') == window.location.pathname && !jQuery("form").hasClass('unsave-scroll')) {
+            if (typeof(Storage) !== "undefined") {
+                sessionStorage.setItem('scrollPage_' + window.location.pathname, jQuery(window).scrollTop());
+            }
+        }
+    });
+
+    if (typeof(Storage) !== "undefined") {
+        var savedScroll = sessionStorage.getItem('scrollPage_' + window.location.pathname);
+        if (savedScroll) {
+            if (!isNaN(savedScroll)) {
+                jQuery(window).scrollTop(parseInt(savedScroll));
+            }
+            sessionStorage.removeItem('scrollPage_' + window.location.pathname);
+        }
+    }
+});
+
+function controlarLimiteDeCaracteres(entradaId, contadorId, comprimentoMaximo) {
+    const elementoEntrada = document.getElementById(entradaId);
+    const elementoContador = document.getElementById(contadorId);
+
+    if (elementoEntrada.value.length > comprimentoMaximo) {
+        elementoEntrada.value = elementoEntrada.value.substring(0, comprimentoMaximo);
+    }
+
+    elementoContador.textContent = elementoEntrada.value.length + "/" + comprimentoMaximo;
+}
+
+function setCurrentData(campoFormulario){
+    const hoje = new Date();
+
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0'); // Janeiro eh 0
+    const ano = String(hoje.getFullYear()).slice(-2); // Pega os dois ultimos digitos
+
+    const dataFormatada = `${dia}/${mes}/${ano}`;
+
+    const campoAlterar = document.getElementById(campoFormulario);
+    if (campoAlterar) {
+        campoAlterar.value = dataFormatada;
+    }
+}
+
+function makeRadioReadonlyAndOpaqueByName(radioGroupName) {
+        jQuery(`input[name="${radioGroupName}"]`).each(function() {
+            jQuery(this).on('click', function(event) {
+                event.preventDefault(); // Impede a mudanÁa de seleÁ„o
+            });
+            jQuery(this).addClass('readonly'); // Adiciona classe para opacidade
+        });
+}
+
+function blockUI() {
+    jQuery.blockUI({message: jQuery('#waitingMessage'), css: { width:'25%', left:'35%', top: '33%'} });
+}
+
+function unblockUI() {
+    jQuery.unblockUI({message: jQuery('#waitingMessage'), css: { width:'25%', left:'35%', top: '33%'} });
+}
