@@ -3101,6 +3101,8 @@ def montar_grafico_ranking(ranking, titulo, eixo_x):
     return grafico
 
 if modo_gestao:
+    mostrar_lista_apoio_gestao()
+
     st.divider()
     st.subheader("📌 Legenda dos Status")
     col1, col2, col3, col4 = st.columns(4)
