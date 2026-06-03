@@ -602,6 +602,16 @@ def mostrar_lista_apoio_gestao():
     st.divider()
     st.subheader("Lista de Apoio")
 
+    if "filtro_data_lista_apoio_persistido" not in st.session_state:
+        st.session_state["filtro_data_lista_apoio_persistido"] = None
+    if (
+        "filtro_data_lista_apoio_widget" not in st.session_state
+        and st.session_state["filtro_data_lista_apoio_persistido"] is not None
+    ):
+        st.session_state["filtro_data_lista_apoio_widget"] = st.session_state[
+            "filtro_data_lista_apoio_persistido"
+        ]
+
     col_atualizar_apoio, col_status_apoio = st.columns([1, 3])
     with col_atualizar_apoio:
         if st.button("Atualizar lista de ajuda", key="atualizar_lista_apoio"):
@@ -624,15 +634,17 @@ def mostrar_lista_apoio_gestao():
     with col_filtro_data:
         filtro_data_apoio = st.date_input(
             "Filtrar ajudas por data",
-            value=None,
+            value=st.session_state["filtro_data_lista_apoio_persistido"],
             format="DD/MM/YYYY",
-            key="filtro_data_lista_apoio",
+            key="filtro_data_lista_apoio_widget",
         )
+        st.session_state["filtro_data_lista_apoio_persistido"] = filtro_data_apoio
     with col_limpar_filtro:
         st.write("")
         st.write("")
         if st.button("Limpar filtro", key="limpar_filtro_lista_apoio"):
-            st.session_state["filtro_data_lista_apoio"] = None
+            st.session_state["filtro_data_lista_apoio_persistido"] = None
+            st.session_state["filtro_data_lista_apoio_widget"] = None
             st.rerun()
 
     lista_exibida = lista_apoio.copy()
