@@ -1,0 +1,10 @@
+2026-06-05 08:10:22.727 WARNING streamlit.runtime.caching.cache_data_api: No runtime found, using MemoryCacheStorageManager
+2026-06-05 08:10:22.731 WARNING streamlit.runtime.caching.cache_data_api: No runtime found, using MemoryCacheStorageManager
+2026-06-05 08:10:22.732 WARNING streamlit.runtime.caching.cache_data_api: No runtime found, using MemoryCacheStorageManager
+2026-06-05 08:10:22.733 WARNING streamlit.runtime.caching.cache_data_api: No runtime found, using MemoryCacheStorageManager
+127.0.0.1 - - [05/Jun/2026 08:10:36] "GET /health HTTP/1.1" 200 -
+2026-06-05 08:11:00.444 WARNING streamlit.runtime.caching.cache_data_api: No runtime found, using MemoryCacheStorageManager
+2026-06-05 08:11:01.585 WARNING streamlit.runtime.caching.cache_data_api: No runtime found, using MemoryCacheStorageManager
+127.0.0.1 - - [05/Jun/2026 08:11:22] "POST /atualizar HTTP/1.1" 200 -
+C:\Users\esther.queiroz\AppData\Local\Programs\Python\Python314\Lib\site-packages\openpyxl\styles\stylesheet.py:237: UserWarning: Workbook contains no default style, apply openpyxl's default
+  warn("Workbook contains no default style, apply openpyxl's default")
