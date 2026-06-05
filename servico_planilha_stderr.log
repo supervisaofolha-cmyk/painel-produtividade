@@ -20,3 +20,4 @@ C:\Users\esther.queiroz\AppData\Local\Programs\Python\Python314\Lib\site-package
 127.0.0.1 - - [05/Jun/2026 08:21:12] "POST /atualizar HTTP/1.1" 500 -
 127.0.0.1 - - [05/Jun/2026 08:21:21] "POST /atualizar HTTP/1.1" 200 -
 127.0.0.1 - - [05/Jun/2026 08:32:00] "POST /atualizar HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 08:47:41] "GET /health HTTP/1.1" 200 -
