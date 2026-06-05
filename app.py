@@ -506,6 +506,14 @@ def espelhar_lista_apoio_para_arquivos(dataframe):
     salvar_dataframe_lista_apoio(dataframe)
 
 
+def tentar_espelhar_lista_apoio_para_arquivos(dataframe):
+    try:
+        espelhar_lista_apoio_para_arquivos(dataframe)
+    except Exception:
+        return False
+    return True
+
+
 def ler_lista_apoio_do_banco():
     garantir_banco_lista_apoio()
     with conexao_lista_apoio_db() as conexao:
@@ -656,6 +664,14 @@ def salvar_snapshot_banco_lista_apoio(prefixo="lista_apoio_db"):
         f"{prefixo}_{timestamp}.db",
     )
     shutil.copyfile(ARQUIVO_LISTA_APOIO_DB, destino)
+
+
+def bytes_dataframe_excel(dataframe):
+    buffer = BytesIO()
+    dataframe = padronizar_dataframe_lista_apoio(dataframe)
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        dataframe.to_excel(writer, index=False)
+    return buffer.getvalue()
 
 
 def garantir_backup_lista_apoio_por_versao_app():
