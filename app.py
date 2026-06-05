@@ -502,7 +502,11 @@ def conexao_lista_apoio_db():
             raise RuntimeError(
                 "Banco online da Lista de Apoio configurado, mas a dependência psycopg não está instalada."
             )
-        return psycopg.connect(database_url_lista_apoio(), row_factory=dict_row)
+        return psycopg.connect(
+            database_url_lista_apoio(),
+            row_factory=dict_row,
+            prepare_threshold=None,
+        )
 
     conexao = sqlite3.connect(ARQUIVO_LISTA_APOIO_DB)
     conexao.row_factory = sqlite3.Row
