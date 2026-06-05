@@ -42,6 +42,7 @@ ARQUIVO_LISTA_APOIO = "lista_apoio.xlsx"
 ARQUIVO_LISTA_APOIO_BACKUP = "lista_apoio_backup.xlsx"
 ARQUIVO_LISTA_APOIO_DB = "lista_apoio.db"
 ENV_LISTA_APOIO_DATABASE_URL = "LISTA_APOIO_DATABASE_URL"
+LISTA_APOIO_DATABASE_URL_PADRAO = "postgresql://postgres.pogiuykdubgvcjjzjihs:TgKyzWZhAXJjczXd@aws-1-us-west-2.pooler.supabase.com:6543/postgres?sslmode=require"
 ARQUIVO_LISTA_APOIO_HISTORICO = "lista_apoio_historico.jsonl"
 ARQUIVO_META_BACKUP_LISTA_APOIO = "lista_apoio_backup_meta.json"
 PASTA_BACKUP_LISTA_APOIO = "backups_lista_apoio"
@@ -477,6 +478,7 @@ def database_url_lista_apoio():
             ENV_LISTA_APOIO_DATABASE_URL,
             env_local.get(ENV_LISTA_APOIO_DATABASE_URL, ""),
         )
+        or LISTA_APOIO_DATABASE_URL_PADRAO
         or ""
     ).strip()
     return url
