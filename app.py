@@ -326,8 +326,8 @@ def chave_registro_lista_apoio(registro):
     return "||".join(
         [
             texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Carimbo de data/hora")),
-                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, coluna_tecnico)),
-                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, coluna_topico)),
+            texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Nome do T?cnico")),
+            texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Selecione o t?pico")),
             texto_lista_apoio(
                 valor_campo_registro_lista_apoio(
                     registro,
@@ -654,16 +654,16 @@ def salvar_registros_lista_apoio_no_banco(registros):
                     identificador,
                     chave,
                     texto_lista_apoio(valor_campo_registro_lista_apoio(registro, coluna_carimbo)),
-                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Nome do TÃ©cnico")),
-                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Selecione o tÃ³pico")),
+                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, coluna_tecnico)),
+                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, coluna_topico)),
                     texto_lista_apoio(
                         valor_campo_registro_lista_apoio(
                             registro,
                             coluna_descricao,
                         )
                     ),
-                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "SituaÃ§Ã£o")) or "Aberto",
-                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "ResponsÃ¡vel/Apoio")),
+                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, coluna_situacao)) or "Aberto",
+                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, coluna_responsavel)),
                     agora,
                     agora,
                 ),
