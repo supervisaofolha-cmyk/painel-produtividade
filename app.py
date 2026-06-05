@@ -720,6 +720,8 @@ def salvar_dataframe_lista_apoio(dataframe):
 
 
 def garantir_lista_apoio():
+    garantir_banco_lista_apoio()
+    migrar_lista_apoio_para_banco_se_necessario()
     garantir_planilha_lista_apoio_integra()
     garantir_backup_lista_apoio_por_versao_app()
     if os.path.exists(ARQUIVO_LISTA_APOIO):
@@ -747,7 +749,7 @@ def garantir_lista_apoio():
 
 
 def registrar_duvida_apoio(tecnico, topico, resumo):
-    wb, ws = garantir_lista_apoio()
+    garantir_lista_apoio()
     registro = {
         "Carimbo de data/hora": datetime.now(FUSO_HORARIO_APP).strftime(
             "%d/%m/%Y %H:%M:%S"
@@ -758,13 +760,17 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
         "Situação": "Aberto",
         "Responsável/Apoio": "",
     }
-    ws.append([registro[coluna] for coluna in CABECALHOS_LISTA_APOIO])
-    salvar_workbook_lista_apoio(wb)
+    salvar_registros_lista_apoio_no_banco([registro])
     registrar_historico_lista_apoio("create", registro)
+    espelhar_lista_apoio_para_arquivos(ler_lista_apoio_do_banco())
 
 
 def ler_lista_apoio():
     garantir_lista_apoio()
+    dataframe_banco = ler_lista_apoio_do_banco()
+    if not dataframe_banco.empty:
+        return dataframe_banco
+
     dataframe_principal = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO)
     dataframe_backup = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO_BACKUP)
     dataframe_historico = restaurar_lista_apoio_do_historico()
@@ -772,24 +778,13 @@ def ler_lista_apoio():
         [dataframe_principal, dataframe_backup, dataframe_historico]
     )
 
-    principal_chaves = {
-        chave_registro_lista_apoio(linha)
-        for _, linha in dataframe_principal.iterrows()
-    }
-    mesclado_chaves = {
-        chave_registro_lista_apoio(linha)
-        for _, linha in dataframe_mesclado.iterrows()
-    }
+    if not dataframe_mesclado.empty:
+        salvar_registros_lista_apoio_no_banco(
+            dataframe_para_registros_lista_apoio(dataframe_mesclado)
+        )
+        espelhar_lista_apoio_para_arquivos(dataframe_mesclado)
 
-    if mesclado_chaves != principal_chaves:
-        salvar_dataframe_lista_apoio(dataframe_mesclado)
-        return dataframe_mesclado
-
-    if dataframe_principal.empty and not dataframe_mesclado.empty:
-        salvar_dataframe_lista_apoio(dataframe_mesclado)
-        return dataframe_mesclado
-
-    return dataframe_principal
+    return dataframe_mesclado
 
 
 def texto_lista_apoio(valor):
