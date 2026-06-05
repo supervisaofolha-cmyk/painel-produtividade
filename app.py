@@ -361,7 +361,19 @@ def padronizar_dataframe_lista_apoio(dataframe):
     dataframe = dataframe.copy()
     for coluna_lista in CABECALHOS_LISTA_APOIO:
         if coluna_lista not in dataframe.columns:
-            dataframe[coluna_lista] = ""
+            chave_esperada = normalizar_cabecalho(coluna_lista)
+            coluna_equivalente = next(
+                (
+                    nome_coluna
+                    for nome_coluna in dataframe.columns
+                    if normalizar_cabecalho(nome_coluna) == chave_esperada
+                ),
+                None,
+            )
+            if coluna_equivalente is not None:
+                dataframe[coluna_lista] = dataframe[coluna_equivalente]
+            else:
+                dataframe[coluna_lista] = ""
         dataframe[coluna_lista] = dataframe[coluna_lista].astype("object")
 
     dataframe = dataframe[CABECALHOS_LISTA_APOIO]
