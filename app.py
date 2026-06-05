@@ -5,6 +5,7 @@ import os
 import pathlib
 import re
 import shutil
+import sqlite3
 import tempfile
 import time
 import unicodedata
@@ -31,6 +32,7 @@ ARQUIVO_PRODUTIVIDADE_BACKUP = "produtividade_backup.xlsx"
 ARQUIVO_USUARIOS = "usuarios.xlsx"
 ARQUIVO_LISTA_APOIO = "lista_apoio.xlsx"
 ARQUIVO_LISTA_APOIO_BACKUP = "lista_apoio_backup.xlsx"
+ARQUIVO_LISTA_APOIO_DB = "lista_apoio.db"
 ARQUIVO_LISTA_APOIO_HISTORICO = "lista_apoio_historico.jsonl"
 ARQUIVO_META_BACKUP_LISTA_APOIO = "lista_apoio_backup_meta.json"
 PASTA_BACKUP_LISTA_APOIO = "backups_lista_apoio"
