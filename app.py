@@ -557,20 +557,22 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
 
 def ler_lista_apoio():
     garantir_lista_apoio()
-    dataframe = pd.read_excel(ARQUIVO_LISTA_APOIO)
-    for coluna_lista in CABECALHOS_LISTA_APOIO:
-        if coluna_lista not in dataframe.columns:
-            dataframe[coluna_lista] = ""
-        dataframe[coluna_lista] = dataframe[coluna_lista].astype("object")
-    dataframe = dataframe[CABECALHOS_LISTA_APOIO]
+    dataframe_principal = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO)
+    dataframe_backup = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO_BACKUP)
+    dataframe_historico = restaurar_lista_apoio_do_historico()
+    dataframe_mesclado = mesclar_dataframes_lista_apoio(
+        [dataframe_principal, dataframe_backup, dataframe_historico]
+    )
 
-    if dataframe.empty:
-        restaurado = restaurar_lista_apoio_do_historico()
-        if not restaurado.empty:
-            salvar_dataframe_lista_apoio(restaurado)
-            dataframe = restaurado
+    if len(dataframe_mesclado) > len(dataframe_principal):
+        salvar_dataframe_lista_apoio(dataframe_mesclado)
+        return dataframe_mesclado
 
-    return dataframe
+    if dataframe_principal.empty and not dataframe_mesclado.empty:
+        salvar_dataframe_lista_apoio(dataframe_mesclado)
+        return dataframe_mesclado
+
+    return dataframe_principal
 
 
 def texto_lista_apoio(valor):
