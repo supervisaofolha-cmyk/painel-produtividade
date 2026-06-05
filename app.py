@@ -547,6 +547,12 @@ def ler_lista_apoio_do_banco():
 def salvar_registros_lista_apoio_no_banco(registros):
     garantir_banco_lista_apoio()
     agora = datetime.now(FUSO_HORARIO_APP).strftime("%Y-%m-%d %H:%M:%S")
+    coluna_carimbo = CABECALHOS_LISTA_APOIO[0]
+    coluna_tecnico = CABECALHOS_LISTA_APOIO[1]
+    coluna_topico = CABECALHOS_LISTA_APOIO[2]
+    coluna_descricao = CABECALHOS_LISTA_APOIO[3]
+    coluna_situacao = CABECALHOS_LISTA_APOIO[4]
+    coluna_responsavel = CABECALHOS_LISTA_APOIO[5]
     with conexao_lista_apoio_db() as conexao:
         for registro in registros:
             chave = chave_registro_lista_apoio(registro)
@@ -585,7 +591,7 @@ def salvar_registros_lista_apoio_no_banco(registros):
                 (
                     identificador,
                     chave,
-                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Carimbo de data/hora")),
+                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, coluna_carimbo)),
                     texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Nome do TÃ©cnico")),
                     texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Selecione o tÃ³pico")),
                     texto_lista_apoio(
