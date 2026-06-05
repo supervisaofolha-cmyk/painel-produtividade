@@ -646,8 +646,20 @@ def salvar_snapshot_lista_apoio(caminho_origem, prefixo="lista_apoio"):
     shutil.copyfile(caminho_origem, destino)
 
 
+def salvar_snapshot_banco_lista_apoio(prefixo="lista_apoio_db"):
+    if not os.path.exists(ARQUIVO_LISTA_APOIO_DB):
+        return
+    os.makedirs(PASTA_BACKUP_LISTA_APOIO, exist_ok=True)
+    timestamp = datetime.now(FUSO_HORARIO_APP).strftime("%Y%m%d_%H%M%S")
+    destino = os.path.join(
+        PASTA_BACKUP_LISTA_APOIO,
+        f"{prefixo}_{timestamp}.db",
+    )
+    shutil.copyfile(ARQUIVO_LISTA_APOIO_DB, destino)
+
+
 def garantir_backup_lista_apoio_por_versao_app():
-    if not os.path.exists(ARQUIVO_LISTA_APOIO):
+    if not os.path.exists(ARQUIVO_LISTA_APOIO) and not os.path.exists(ARQUIVO_LISTA_APOIO_DB):
         return
 
     os.makedirs(PASTA_BACKUP_LISTA_APOIO, exist_ok=True)
@@ -669,6 +681,7 @@ def garantir_backup_lista_apoio_por_versao_app():
         return
 
     salvar_snapshot_lista_apoio(ARQUIVO_LISTA_APOIO, prefixo="lista_apoio_pre_alteracao_app")
+    salvar_snapshot_banco_lista_apoio(prefixo="lista_apoio_db_pre_alteracao_app")
 
     with open(caminho_meta, "w", encoding="utf-8") as arquivo_meta:
         json.dump(
