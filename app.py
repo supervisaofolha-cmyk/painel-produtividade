@@ -18,6 +18,7 @@ from html import unescape
 from html.parser import HTMLParser
 from io import BytesIO, StringIO
 import calendar
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 import openpyxl
@@ -26,6 +27,13 @@ import plotly.express as px
 import requests
 import streamlit as st
 
+try:
+    import psycopg
+    from psycopg.rows import dict_row
+except Exception:
+    psycopg = None
+    dict_row = None
+
 
 ARQUIVO_PRODUTIVIDADE = "produtividade.xlsx"
 ARQUIVO_PRODUTIVIDADE_BACKUP = "produtividade_backup.xlsx"
@@ -33,6 +41,7 @@ ARQUIVO_USUARIOS = "usuarios.xlsx"
 ARQUIVO_LISTA_APOIO = "lista_apoio.xlsx"
 ARQUIVO_LISTA_APOIO_BACKUP = "lista_apoio_backup.xlsx"
 ARQUIVO_LISTA_APOIO_DB = "lista_apoio.db"
+ENV_LISTA_APOIO_DATABASE_URL = "LISTA_APOIO_DATABASE_URL"
 ARQUIVO_LISTA_APOIO_HISTORICO = "lista_apoio_historico.jsonl"
 ARQUIVO_META_BACKUP_LISTA_APOIO = "lista_apoio_backup_meta.json"
 PASTA_BACKUP_LISTA_APOIO = "backups_lista_apoio"
@@ -455,7 +464,38 @@ def mesclar_dataframes_lista_apoio(dataframes):
     return padronizar_dataframe_lista_apoio(pd.DataFrame(list(registros.values())))
 
 
+def database_url_lista_apoio():
+    env_local = carregar_env_local()
+    url = builtins.str(
+        os.getenv(
+            ENV_LISTA_APOIO_DATABASE_URL,
+            env_local.get(ENV_LISTA_APOIO_DATABASE_URL, ""),
+        )
+        or ""
+    ).strip()
+    return url
+
+
+def backend_lista_apoio():
+    url = database_url_lista_apoio()
+    if not url:
+        return "sqlite"
+
+    esquema = urlparse(url).scheme.lower()
+    if esquema.startswith("postgres"):
+        return "postgres"
+    return "sqlite"
+
+
 def conexao_lista_apoio_db():
+    backend = backend_lista_apoio()
+    if backend == "postgres":
+        if psycopg is None:
+            raise RuntimeError(
+                "Banco online da Lista de Apoio configurado, mas a dependência psycopg não está instalada."
+            )
+        return psycopg.connect(database_url_lista_apoio(), row_factory=dict_row)
+
     conexao = sqlite3.connect(ARQUIVO_LISTA_APOIO_DB)
     conexao.row_factory = sqlite3.Row
     return conexao
@@ -516,21 +556,29 @@ def tentar_espelhar_lista_apoio_para_arquivos(dataframe):
 
 def ler_lista_apoio_do_banco():
     garantir_banco_lista_apoio()
+    backend = backend_lista_apoio()
+    consulta = """
+        SELECT
+            carimbo_data_hora,
+            nome_tecnico,
+            topico,
+            descricao,
+            situacao,
+            responsavel_apoio
+        FROM lista_apoio
+    """
+    if backend == "postgres":
+        consulta += """
+        ORDER BY to_timestamp(carimbo_data_hora, 'DD/MM/YYYY HH24:MI:SS') ASC,
+                 criado_em ASC
+        """
+    else:
+        consulta += """
+        ORDER BY datetime(substr(carimbo_data_hora, 7, 4) || '-' || substr(carimbo_data_hora, 4, 2) || '-' || substr(carimbo_data_hora, 1, 2) || ' ' || substr(carimbo_data_hora, 12, 8)) ASC,
+                 rowid ASC
+        """
     with conexao_lista_apoio_db() as conexao:
-        linhas = conexao.execute(
-            """
-            SELECT
-                carimbo_data_hora,
-                nome_tecnico,
-                topico,
-                descricao,
-                situacao,
-                responsavel_apoio
-            FROM lista_apoio
-            ORDER BY datetime(substr(carimbo_data_hora, 7, 4) || '-' || substr(carimbo_data_hora, 4, 2) || '-' || substr(carimbo_data_hora, 1, 2) || ' ' || substr(carimbo_data_hora, 12, 8)) ASC,
-                     rowid ASC
-            """
-        ).fetchall()
+        linhas = conexao.execute(consulta).fetchall()
 
     if not linhas:
         return dataframe_lista_apoio_vazio()
