@@ -925,6 +925,19 @@ def coluna(colunas, *nomes):
     raise KeyError(nomes[0])
 
 
+def nome_coluna_dataframe(dataframe, *nomes):
+    colunas_normalizadas = {
+        normalizar_cabecalho(nome): nome for nome in dataframe.columns
+    }
+
+    for nome in nomes:
+        coluna_encontrada = colunas_normalizadas.get(normalizar_cabecalho(nome))
+        if coluna_encontrada:
+            return coluna_encontrada
+
+    raise KeyError(nomes[0])
+
+
 def status_por_desvio(desvio):
     if desvio < -5:
         return "CRÍTICO"
