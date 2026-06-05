@@ -601,6 +601,7 @@ def salvar_registros_lista_apoio_no_banco(registros):
                 ),
             )
         conexao.commit()
+    return
 
 
 def migrar_lista_apoio_para_banco_se_necessario():
