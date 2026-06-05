@@ -653,7 +653,7 @@ def ler_lista_apoio_do_banco():
                 coluna_responsavel: texto_lista_apoio(linha["responsavel_apoio"]),
             }
         )
-    return padronizar_dataframe_lista_apoio(pd.DataFrame(registros))
+    return deduplicar_dataframe_lista_apoio(pd.DataFrame(registros))
 def salvar_registros_lista_apoio_no_banco(registros):
     garantir_banco_lista_apoio()
     backend = backend_lista_apoio()
@@ -1053,12 +1053,12 @@ def salvar_lista_apoio(dataframe):
         existente[coluna_lista] = existente[coluna_lista].astype("object")
     dataframe = dataframe[CABECALHOS_LISTA_APOIO]
 
-    colunas_editaveis = ["Situação", "Responsável/Apoio"]
+    colunas_editaveis = [CABECALHOS_LISTA_APOIO[4], CABECALHOS_LISTA_APOIO[5]]
     colunas_chave = [
-        "Carimbo de data/hora",
-        "Nome do Técnico",
-        "Selecione o tópico",
-        "Descreva o problema/pedido em poucas palavras",
+        CABECALHOS_LISTA_APOIO[0],
+        CABECALHOS_LISTA_APOIO[1],
+        CABECALHOS_LISTA_APOIO[2],
+        CABECALHOS_LISTA_APOIO[3],
     ]
 
     for coluna_lista in colunas_editaveis:
