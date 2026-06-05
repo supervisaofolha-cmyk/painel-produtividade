@@ -608,6 +608,7 @@ def ler_lista_apoio_do_banco():
 
 def salvar_registros_lista_apoio_no_banco(registros):
     garantir_banco_lista_apoio()
+    backend = backend_lista_apoio()
     agora = datetime.now(FUSO_HORARIO_APP).strftime("%Y-%m-%d %H:%M:%S")
     coluna_carimbo = CABECALHOS_LISTA_APOIO[0]
     coluna_tecnico = CABECALHOS_LISTA_APOIO[1]
@@ -615,20 +616,32 @@ def salvar_registros_lista_apoio_no_banco(registros):
     coluna_descricao = CABECALHOS_LISTA_APOIO[3]
     coluna_situacao = CABECALHOS_LISTA_APOIO[4]
     coluna_responsavel = CABECALHOS_LISTA_APOIO[5]
-    with conexao_lista_apoio_db() as conexao:
-        for registro in registros:
-            chave = chave_registro_lista_apoio(registro)
-            if not chave:
-                continue
-            identificador_existente = conexao.execute(
-                "SELECT id FROM lista_apoio WHERE chave = ?",
-                (chave,),
-            ).fetchone()
-            identificador = (
-                identificador_existente["id"] if identificador_existente else builtins.str(uuid.uuid4())
-            )
-            conexao.execute(
+    consulta_busca = "SELECT id FROM lista_apoio WHERE chave = %s"
+    consulta_upsert = """
+                INSERT INTO lista_apoio (
+                    id,
+                    chave,
+                    carimbo_data_hora,
+                    nome_tecnico,
+                    topico,
+                    descricao,
+                    situacao,
+                    responsavel_apoio,
+                    criado_em,
+                    atualizado_em
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT(chave) DO UPDATE SET
+                    carimbo_data_hora = excluded.carimbo_data_hora,
+                    nome_tecnico = excluded.nome_tecnico,
+                    topico = excluded.topico,
+                    descricao = excluded.descricao,
+                    situacao = excluded.situacao,
+                    responsavel_apoio = excluded.responsavel_apoio,
+                    atualizado_em = excluded.atualizado_em
                 """
+    if backend != "postgres":
+        consulta_busca = "SELECT id FROM lista_apoio WHERE chave = ?"
+        consulta_upsert = """
                 INSERT INTO lista_apoio (
                     id,
                     chave,
@@ -649,7 +662,21 @@ def salvar_registros_lista_apoio_no_banco(registros):
                     situacao = excluded.situacao,
                     responsavel_apoio = excluded.responsavel_apoio,
                     atualizado_em = excluded.atualizado_em
-                """,
+                """
+    with conexao_lista_apoio_db() as conexao:
+        for registro in registros:
+            chave = chave_registro_lista_apoio(registro)
+            if not chave:
+                continue
+            identificador_existente = conexao.execute(
+                consulta_busca,
+                (chave,),
+            ).fetchone()
+            identificador = (
+                identificador_existente["id"] if identificador_existente else builtins.str(uuid.uuid4())
+            )
+            conexao.execute(
+                consulta_upsert,
                 (
                     identificador,
                     chave,
