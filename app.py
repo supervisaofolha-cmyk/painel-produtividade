@@ -970,6 +970,7 @@ def salvar_dataframe_lista_apoio(dataframe):
 def garantir_lista_apoio():
     garantir_banco_lista_apoio()
     migrar_lista_apoio_para_banco_se_necessario()
+    deduplicar_lista_apoio_no_banco()
     return None, None
 
 
