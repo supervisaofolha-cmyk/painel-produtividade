@@ -8,3 +8,15 @@
 127.0.0.1 - - [05/Jun/2026 08:11:22] "POST /atualizar HTTP/1.1" 200 -
 C:\Users\esther.queiroz\AppData\Local\Programs\Python\Python314\Lib\site-packages\openpyxl\styles\stylesheet.py:237: UserWarning: Workbook contains no default style, apply openpyxl's default
   warn("Workbook contains no default style, apply openpyxl's default")
+127.0.0.1 - - [05/Jun/2026 08:12:46] "POST /atualizar HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 08:12:57] "POST /atualizar HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 08:13:13] "POST /atualizar HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 08:14:37] "POST /atualizar HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 08:14:51] "POST /atualizar HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 08:15:14] "POST /atualizar HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 08:16:08] "POST /atualizar HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 08:16:18] "POST /atualizar HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 08:21:01] "POST /atualizar HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 08:21:12] "POST /atualizar HTTP/1.1" 500 -
+127.0.0.1 - - [05/Jun/2026 08:21:21] "POST /atualizar HTTP/1.1" 200 -
+127.0.0.1 - - [05/Jun/2026 08:32:00] "POST /atualizar HTTP/1.1" 200 -
