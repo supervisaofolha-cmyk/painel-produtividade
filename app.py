@@ -747,6 +747,89 @@ def salvar_registros_lista_apoio_no_banco(registros):
     return
 
 
+def deduplicar_lista_apoio_no_banco():
+    garantir_banco_lista_apoio()
+    backend = backend_lista_apoio()
+    consulta = """
+        SELECT
+            id,
+            chave,
+            carimbo_data_hora,
+            nome_tecnico,
+            topico,
+            descricao,
+            situacao,
+            responsavel_apoio,
+            criado_em,
+            atualizado_em
+        FROM lista_apoio
+    """
+    with conexao_lista_apoio_db() as conexao:
+        linhas = conexao.execute(consulta).fetchall()
+        if not linhas:
+            return 0
+
+        grupos = {}
+        for linha in linhas:
+            registro = {
+                CABECALHOS_LISTA_APOIO[0]: texto_lista_apoio(linha["carimbo_data_hora"]),
+                CABECALHOS_LISTA_APOIO[1]: texto_lista_apoio(linha["nome_tecnico"]),
+                CABECALHOS_LISTA_APOIO[2]: texto_lista_apoio(linha["topico"]),
+                CABECALHOS_LISTA_APOIO[3]: texto_lista_apoio(linha["descricao"]),
+                CABECALHOS_LISTA_APOIO[4]: texto_lista_apoio(linha["situacao"]),
+                CABECALHOS_LISTA_APOIO[5]: texto_lista_apoio(linha["responsavel_apoio"]),
+            }
+            chave_natural = chave_registro_lista_apoio(registro)
+            if not chave_natural:
+                continue
+            grupos.setdefault(chave_natural, []).append(
+                {
+                    "id": linha["id"],
+                    "chave_atual": texto_lista_apoio(linha["chave"]),
+                    "chave_natural": chave_natural,
+                    "atualizado_em": texto_lista_apoio(linha["atualizado_em"]),
+                    "criado_em": texto_lista_apoio(linha["criado_em"]),
+                }
+            )
+
+        ids_para_excluir = []
+        atualizacoes = []
+        for chave_natural, grupo in grupos.items():
+            grupo_ordenado = sorted(
+                grupo,
+                key=lambda item: (
+                    item["chave_atual"] == chave_natural,
+                    item["atualizado_em"],
+                    item["criado_em"],
+                    item["id"],
+                ),
+                reverse=True,
+            )
+            manter = grupo_ordenado[0]
+            for duplicado in grupo_ordenado[1:]:
+                ids_para_excluir.append(duplicado["id"])
+            if manter["chave_atual"] != chave_natural:
+                atualizacoes.append((chave_natural, manter["id"]))
+
+        if ids_para_excluir:
+            marcador = "%s" if backend == "postgres" else "?"
+            consulta_delete = (
+                f"DELETE FROM lista_apoio WHERE id IN ({', '.join([marcador] * len(ids_para_excluir))})"
+            )
+            conexao.execute(consulta_delete, tuple(ids_para_excluir))
+
+        consulta_update = (
+            "UPDATE lista_apoio SET chave = %s WHERE id = %s"
+            if backend == "postgres"
+            else "UPDATE lista_apoio SET chave = ? WHERE id = ?"
+        )
+        for chave_natural, identificador in atualizacoes:
+            conexao.execute(consulta_update, (chave_natural, identificador))
+
+        conexao.commit()
+        return len(ids_para_excluir) + len(atualizacoes)
+
+
 def migrar_lista_apoio_para_banco_se_necessario():
     garantir_banco_lista_apoio()
     with conexao_lista_apoio_db() as conexao:
