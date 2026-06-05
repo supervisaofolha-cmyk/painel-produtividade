@@ -639,7 +639,7 @@ def migrar_lista_apoio_para_banco_se_necessario():
     registros = dataframe_para_registros_lista_apoio(dataframe_mesclado)
     if registros:
         salvar_registros_lista_apoio_no_banco(registros)
-        espelhar_lista_apoio_para_arquivos(pd.DataFrame(registros))
+        tentar_espelhar_lista_apoio_para_arquivos(pd.DataFrame(registros))
 
 
 def salvar_snapshot_lista_apoio(caminho_origem, prefixo="lista_apoio"):
@@ -758,30 +758,33 @@ def salvar_dataframe_lista_apoio(dataframe):
 def garantir_lista_apoio():
     garantir_banco_lista_apoio()
     migrar_lista_apoio_para_banco_se_necessario()
-    garantir_planilha_lista_apoio_integra()
-    garantir_backup_lista_apoio_por_versao_app()
-    if os.path.exists(ARQUIVO_LISTA_APOIO):
-        wb = openpyxl.load_workbook(ARQUIVO_LISTA_APOIO)
-        ws = wb.active
-        alterou_estrutura = False
-    else:
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Lista de Apoio"
-        alterou_estrutura = True
-
-    for indice, cabecalho in enumerate(CABECALHOS_LISTA_APOIO, start=1):
-        if ws.cell(row=1, column=indice).value != cabecalho:
-            ws.cell(row=1, column=indice).value = cabecalho
+    try:
+        garantir_planilha_lista_apoio_integra()
+        garantir_backup_lista_apoio_por_versao_app()
+        if os.path.exists(ARQUIVO_LISTA_APOIO):
+            wb = openpyxl.load_workbook(ARQUIVO_LISTA_APOIO)
+            ws = wb.active
+            alterou_estrutura = False
+        else:
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Lista de Apoio"
             alterou_estrutura = True
 
-    while ws.max_column > len(CABECALHOS_LISTA_APOIO):
-        ws.delete_cols(len(CABECALHOS_LISTA_APOIO) + 1)
-        alterou_estrutura = True
+        for indice, cabecalho in enumerate(CABECALHOS_LISTA_APOIO, start=1):
+            if ws.cell(row=1, column=indice).value != cabecalho:
+                ws.cell(row=1, column=indice).value = cabecalho
+                alterou_estrutura = True
 
-    if alterou_estrutura:
-        salvar_workbook_lista_apoio(wb)
-    return wb, ws
+        while ws.max_column > len(CABECALHOS_LISTA_APOIO):
+            ws.delete_cols(len(CABECALHOS_LISTA_APOIO) + 1)
+            alterou_estrutura = True
+
+        if alterou_estrutura:
+            salvar_workbook_lista_apoio(wb)
+        return wb, ws
+    except Exception:
+        return None, None
 
 
 def registrar_duvida_apoio(tecnico, topico, resumo):
@@ -798,7 +801,7 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
     }
     salvar_registros_lista_apoio_no_banco([registro])
     registrar_historico_lista_apoio("create", registro)
-    espelhar_lista_apoio_para_arquivos(ler_lista_apoio_do_banco())
+    tentar_espelhar_lista_apoio_para_arquivos(ler_lista_apoio_do_banco())
 
 
 def ler_lista_apoio():
@@ -818,7 +821,7 @@ def ler_lista_apoio():
         salvar_registros_lista_apoio_no_banco(
             dataframe_para_registros_lista_apoio(dataframe_mesclado)
         )
-        espelhar_lista_apoio_para_arquivos(dataframe_mesclado)
+        tentar_espelhar_lista_apoio_para_arquivos(dataframe_mesclado)
 
     return dataframe_mesclado
 
@@ -925,14 +928,14 @@ def salvar_lista_apoio(dataframe):
     salvar_registros_lista_apoio_no_banco(
         dataframe_para_registros_lista_apoio(dataframe_final)
     )
-    espelhar_lista_apoio_para_arquivos(dataframe_final)
+    tentar_espelhar_lista_apoio_para_arquivos(dataframe_final)
 
 
 def bytes_lista_apoio():
     garantir_lista_apoio()
-    espelhar_lista_apoio_para_arquivos(ler_lista_apoio_do_banco())
-    with open(ARQUIVO_LISTA_APOIO, "rb") as arquivo:
-        return arquivo.read()
+    dataframe = ler_lista_apoio_do_banco()
+    tentar_espelhar_lista_apoio_para_arquivos(dataframe)
+    return bytes_dataframe_excel(dataframe)
 
 
 def versao_lista_apoio():
