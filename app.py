@@ -725,7 +725,6 @@ def migrar_lista_apoio_para_banco_se_necessario():
     registros = dataframe_para_registros_lista_apoio(dataframe_mesclado)
     if registros:
         salvar_registros_lista_apoio_no_banco(registros)
-        tentar_espelhar_lista_apoio_para_arquivos(pd.DataFrame(registros))
 
 
 def salvar_snapshot_lista_apoio(caminho_origem, prefixo="lista_apoio"):
@@ -846,33 +845,7 @@ def salvar_dataframe_lista_apoio(dataframe):
 def garantir_lista_apoio():
     garantir_banco_lista_apoio()
     migrar_lista_apoio_para_banco_se_necessario()
-    try:
-        garantir_planilha_lista_apoio_integra()
-        garantir_backup_lista_apoio_por_versao_app()
-        if os.path.exists(ARQUIVO_LISTA_APOIO):
-            wb = openpyxl.load_workbook(ARQUIVO_LISTA_APOIO)
-            ws = wb.active
-            alterou_estrutura = False
-        else:
-            wb = openpyxl.Workbook()
-            ws = wb.active
-            ws.title = "Lista de Apoio"
-            alterou_estrutura = True
-
-        for indice, cabecalho in enumerate(CABECALHOS_LISTA_APOIO, start=1):
-            if ws.cell(row=1, column=indice).value != cabecalho:
-                ws.cell(row=1, column=indice).value = cabecalho
-                alterou_estrutura = True
-
-        while ws.max_column > len(CABECALHOS_LISTA_APOIO):
-            ws.delete_cols(len(CABECALHOS_LISTA_APOIO) + 1)
-            alterou_estrutura = True
-
-        if alterou_estrutura:
-            salvar_workbook_lista_apoio(wb)
-        return wb, ws
-    except Exception:
-        return None, None
+    return None, None
 
 
 def registrar_duvida_apoio(tecnico, topico, resumo):
@@ -889,7 +862,6 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
     }
     salvar_registros_lista_apoio_no_banco([registro])
     registrar_historico_lista_apoio("create", registro)
-    tentar_espelhar_lista_apoio_para_arquivos(ler_lista_apoio_do_banco())
 
 
 def ler_lista_apoio():
@@ -897,21 +869,13 @@ def ler_lista_apoio():
     dataframe_banco = ler_lista_apoio_do_banco()
     if not dataframe_banco.empty:
         return dataframe_banco
-
-    dataframe_principal = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO)
-    dataframe_backup = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO_BACKUP)
     dataframe_historico = restaurar_lista_apoio_do_historico()
-    dataframe_mesclado = mesclar_dataframes_lista_apoio(
-        [dataframe_principal, dataframe_backup, dataframe_historico]
-    )
-
-    if not dataframe_mesclado.empty:
+    if not dataframe_historico.empty:
         salvar_registros_lista_apoio_no_banco(
-            dataframe_para_registros_lista_apoio(dataframe_mesclado)
+            dataframe_para_registros_lista_apoio(dataframe_historico)
         )
-        tentar_espelhar_lista_apoio_para_arquivos(dataframe_mesclado)
-
-    return dataframe_mesclado
+        return dataframe_historico
+    return dataframe_lista_apoio_vazio()
 
 
 def texto_lista_apoio(valor):
@@ -1016,13 +980,11 @@ def salvar_lista_apoio(dataframe):
     salvar_registros_lista_apoio_no_banco(
         dataframe_para_registros_lista_apoio(dataframe_final)
     )
-    tentar_espelhar_lista_apoio_para_arquivos(dataframe_final)
 
 
 def bytes_lista_apoio():
     garantir_lista_apoio()
     dataframe = ler_lista_apoio_do_banco()
-    tentar_espelhar_lista_apoio_para_arquivos(dataframe)
     return bytes_dataframe_excel(dataframe)
 
 
@@ -1039,9 +1001,7 @@ def versao_lista_apoio():
             return "sem_arquivo"
     if os.path.exists(ARQUIVO_LISTA_APOIO_DB):
         return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO_DB)))
-    if not os.path.exists(ARQUIVO_LISTA_APOIO):
-        return "sem_arquivo"
-    return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO)))
+    return "sem_arquivo"
 
 
 def mostrar_lista_apoio_gestao():
