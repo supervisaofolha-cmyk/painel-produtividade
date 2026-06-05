@@ -3313,35 +3313,38 @@ nivel_mode = dados_mes_atual["Nível"].dropna().mode()
 nivel_tecnico = None if nivel_mode.empty else nivel_mode.iloc[0]
 
 if modo_gestao:
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
 else:
-    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
+    col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns(9)
 
 with col1:
-    st.metric("Realizado Total", int(dados_mes_atual["Realizado"].sum()))
+    st.metric("Atendidas BI Total", int(dados_mes_atual["Atendidas"].sum()))
 
 with col2:
-    st.metric("SSC Total", int(dados_mes_atual["SSC"].sum()))
+    st.metric("Realizado Total", int(dados_mes_atual["Realizado"].sum()))
 
 with col3:
-    st.metric("RO Total", int(dados_mes_atual["RO"].sum()))
+    st.metric("SSC Total", int(dados_mes_atual["SSC"].sum()))
 
 with col4:
-    votacao_ultimo_dia = round(dados_ultimo_dia_votacao["Votação"].mean(), 2)
-    st.metric("Votação Média", f"{votacao_ultimo_dia}%")
+    st.metric("RO Total", int(dados_mes_atual["RO"].sum()))
 
 with col5:
-    satisfacao_ultimo_dia = round(dados_ultimo_dia_satisfacao["Satisfação"].mean(), 2)
-    st.metric("Satisfação", f"{satisfacao_ultimo_dia}%")
+    votacao_ultimo_dia = round(dados_ultimo_dia_votacao["Vota??o"].mean(), 2)
+    st.metric("Vota??o M?dia", f"{votacao_ultimo_dia}%")
 
 with col6:
-    classificacao_mode = dados_mes_atual["Classificação"].dropna().mode()
+    satisfacao_ultimo_dia = round(dados_ultimo_dia_satisfacao["Satisfa??o"].mean(), 2)
+    st.metric("Satisfa??o", f"{satisfacao_ultimo_dia}%")
+
+with col7:
+    classificacao_mode = dados_mes_atual["Classifica??o"].dropna().mode()
     classificacao = (
-        "Sem classificação"
+        "Sem classifica??o"
         if classificacao_mode.empty
         else classificacao_mode.iloc[0]
     )
-    st.metric("Classificação", classificacao)
+    st.metric("Classifica??o", classificacao)
 
 if not modo_gestao:
     percentual_absorcao = PERCENTUAL_ABSORCAO_POR_NIVEL.get(nivel_tecnico, 0)
