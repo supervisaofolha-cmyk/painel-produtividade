@@ -466,8 +466,14 @@ def mesclar_dataframes_lista_apoio(dataframes):
 
 def database_url_lista_apoio():
     env_local = carregar_env_local()
+    segredo = ""
+    try:
+        segredo = builtins.str(st.secrets.get(ENV_LISTA_APOIO_DATABASE_URL, "") or "").strip()
+    except Exception:
+        segredo = ""
     url = builtins.str(
-        os.getenv(
+        segredo
+        or os.getenv(
             ENV_LISTA_APOIO_DATABASE_URL,
             env_local.get(ENV_LISTA_APOIO_DATABASE_URL, ""),
         )
@@ -669,9 +675,8 @@ def salvar_registros_lista_apoio_no_banco(registros):
 def migrar_lista_apoio_para_banco_se_necessario():
     garantir_banco_lista_apoio()
     with conexao_lista_apoio_db() as conexao:
-        total_banco = conexao.execute("SELECT COUNT(*) AS total FROM lista_apoio").fetchone()[
-            "total"
-        ]
+        linha_total = conexao.execute("SELECT COUNT(*) AS total FROM lista_apoio").fetchone()
+        total_banco = linha_total["total"] if linha_total else 0
 
     if total_banco > 0:
         return
@@ -703,6 +708,8 @@ def salvar_snapshot_lista_apoio(caminho_origem, prefixo="lista_apoio"):
 
 
 def salvar_snapshot_banco_lista_apoio(prefixo="lista_apoio_db"):
+    if backend_lista_apoio() != "sqlite":
+        return
     if not os.path.exists(ARQUIVO_LISTA_APOIO_DB):
         return
     os.makedirs(PASTA_BACKUP_LISTA_APOIO, exist_ok=True)
@@ -987,6 +994,16 @@ def bytes_lista_apoio():
 
 
 def versao_lista_apoio():
+    if backend_lista_apoio() == "postgres":
+        try:
+            with conexao_lista_apoio_db() as conexao:
+                linha = conexao.execute(
+                    "SELECT COALESCE(MAX(atualizado_em), 'sem_arquivo') AS versao, COUNT(*) AS total FROM lista_apoio"
+                ).fetchone()
+                if linha:
+                    return f"{linha['versao']}|{linha['total']}"
+        except Exception:
+            return "sem_arquivo"
     if os.path.exists(ARQUIVO_LISTA_APOIO_DB):
         return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO_DB)))
     if not os.path.exists(ARQUIVO_LISTA_APOIO):
