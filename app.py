@@ -976,15 +976,21 @@ def garantir_lista_apoio():
 
 def registrar_duvida_apoio(tecnico, topico, resumo):
     garantir_lista_apoio()
+    coluna_carimbo = CABECALHOS_LISTA_APOIO[0]
+    coluna_tecnico = CABECALHOS_LISTA_APOIO[1]
+    coluna_topico = CABECALHOS_LISTA_APOIO[2]
+    coluna_descricao = CABECALHOS_LISTA_APOIO[3]
+    coluna_situacao = CABECALHOS_LISTA_APOIO[4]
+    coluna_responsavel = CABECALHOS_LISTA_APOIO[5]
     registro = {
-        "Carimbo de data/hora": datetime.now(FUSO_HORARIO_APP).strftime(
+        coluna_carimbo: datetime.now(FUSO_HORARIO_APP).strftime(
             "%d/%m/%Y %H:%M:%S"
         ),
-        "Nome do Técnico": builtins.str(tecnico or "").title(),
-        "Selecione o tópico": builtins.str(topico or "").strip(),
-        "Descreva o problema/pedido em poucas palavras": builtins.str(resumo or "").strip(),
-        "Situação": "Aberto",
-        "Responsável/Apoio": "",
+        coluna_tecnico: builtins.str(tecnico or "").title(),
+        coluna_topico: builtins.str(topico or "").strip(),
+        coluna_descricao: builtins.str(resumo or "").strip(),
+        coluna_situacao: "Aberto",
+        coluna_responsavel: "",
     }
     salvar_registros_lista_apoio_no_banco([registro])
     registrar_historico_lista_apoio("create", registro)
