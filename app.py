@@ -455,6 +455,178 @@ def mesclar_dataframes_lista_apoio(dataframes):
     return padronizar_dataframe_lista_apoio(pd.DataFrame(list(registros.values())))
 
 
+def conexao_lista_apoio_db():
+    conexao = sqlite3.connect(ARQUIVO_LISTA_APOIO_DB)
+    conexao.row_factory = sqlite3.Row
+    return conexao
+
+
+def garantir_banco_lista_apoio():
+    with conexao_lista_apoio_db() as conexao:
+        conexao.execute(
+            """
+            CREATE TABLE IF NOT EXISTS lista_apoio (
+                id TEXT PRIMARY KEY,
+                chave TEXT NOT NULL UNIQUE,
+                carimbo_data_hora TEXT NOT NULL,
+                nome_tecnico TEXT NOT NULL,
+                topico TEXT NOT NULL,
+                descricao TEXT NOT NULL,
+                situacao TEXT NOT NULL,
+                responsavel_apoio TEXT NOT NULL,
+                criado_em TEXT NOT NULL,
+                atualizado_em TEXT NOT NULL
+            )
+            """
+        )
+        conexao.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_lista_apoio_carimbo
+            ON lista_apoio (carimbo_data_hora)
+            """
+        )
+        conexao.commit()
+
+
+def dataframe_para_registros_lista_apoio(dataframe):
+    dataframe = padronizar_dataframe_lista_apoio(dataframe)
+    registros = []
+    for _, linha in dataframe.iterrows():
+        registro = {
+            coluna: texto_lista_apoio(linha.get(coluna, ""))
+            for coluna in CABECALHOS_LISTA_APOIO
+        }
+        if chave_registro_lista_apoio(registro):
+            registros.append(registro)
+    return registros
+
+
+def espelhar_lista_apoio_para_arquivos(dataframe):
+    dataframe = padronizar_dataframe_lista_apoio(dataframe)
+    salvar_dataframe_lista_apoio(dataframe)
+
+
+def ler_lista_apoio_do_banco():
+    garantir_banco_lista_apoio()
+    with conexao_lista_apoio_db() as conexao:
+        linhas = conexao.execute(
+            """
+            SELECT
+                carimbo_data_hora,
+                nome_tecnico,
+                topico,
+                descricao,
+                situacao,
+                responsavel_apoio
+            FROM lista_apoio
+            ORDER BY datetime(substr(carimbo_data_hora, 7, 4) || '-' || substr(carimbo_data_hora, 4, 2) || '-' || substr(carimbo_data_hora, 1, 2) || ' ' || substr(carimbo_data_hora, 12, 8)) ASC,
+                     rowid ASC
+            """
+        ).fetchall()
+
+    if not linhas:
+        return dataframe_lista_apoio_vazio()
+
+    registros = []
+    for linha in linhas:
+        registros.append(
+            {
+                "Carimbo de data/hora": texto_lista_apoio(linha["carimbo_data_hora"]),
+                "Nome do TÃ©cnico": texto_lista_apoio(linha["nome_tecnico"]),
+                "Selecione o tÃ³pico": texto_lista_apoio(linha["topico"]),
+                "Descreva o problema/pedido em poucas palavras": texto_lista_apoio(
+                    linha["descricao"]
+                ),
+                "SituaÃ§Ã£o": texto_lista_apoio(linha["situacao"]),
+                "ResponsÃ¡vel/Apoio": texto_lista_apoio(linha["responsavel_apoio"]),
+            }
+        )
+    return padronizar_dataframe_lista_apoio(pd.DataFrame(registros))
+
+
+def salvar_registros_lista_apoio_no_banco(registros):
+    garantir_banco_lista_apoio()
+    agora = datetime.now(FUSO_HORARIO_APP).strftime("%Y-%m-%d %H:%M:%S")
+    with conexao_lista_apoio_db() as conexao:
+        for registro in registros:
+            chave = chave_registro_lista_apoio(registro)
+            if not chave:
+                continue
+            identificador_existente = conexao.execute(
+                "SELECT id FROM lista_apoio WHERE chave = ?",
+                (chave,),
+            ).fetchone()
+            identificador = (
+                identificador_existente["id"] if identificador_existente else builtins.str(uuid.uuid4())
+            )
+            conexao.execute(
+                """
+                INSERT INTO lista_apoio (
+                    id,
+                    chave,
+                    carimbo_data_hora,
+                    nome_tecnico,
+                    topico,
+                    descricao,
+                    situacao,
+                    responsavel_apoio,
+                    criado_em,
+                    atualizado_em
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(chave) DO UPDATE SET
+                    carimbo_data_hora = excluded.carimbo_data_hora,
+                    nome_tecnico = excluded.nome_tecnico,
+                    topico = excluded.topico,
+                    descricao = excluded.descricao,
+                    situacao = excluded.situacao,
+                    responsavel_apoio = excluded.responsavel_apoio,
+                    atualizado_em = excluded.atualizado_em
+                """,
+                (
+                    identificador,
+                    chave,
+                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Carimbo de data/hora")),
+                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Nome do TÃ©cnico")),
+                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Selecione o tÃ³pico")),
+                    texto_lista_apoio(
+                        valor_campo_registro_lista_apoio(
+                            registro,
+                            "Descreva o problema/pedido em poucas palavras",
+                        )
+                    ),
+                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "SituaÃ§Ã£o")) or "Aberto",
+                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "ResponsÃ¡vel/Apoio")),
+                    agora,
+                    agora,
+                ),
+            )
+        conexao.commit()
+
+
+def migrar_lista_apoio_para_banco_se_necessario():
+    garantir_banco_lista_apoio()
+    with conexao_lista_apoio_db() as conexao:
+        total_banco = conexao.execute("SELECT COUNT(*) AS total FROM lista_apoio").fetchone()[
+            "total"
+        ]
+
+    if total_banco > 0:
+        return
+
+    garantir_planilha_lista_apoio_integra()
+    dataframe_principal = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO)
+    dataframe_backup = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO_BACKUP)
+    dataframe_historico = restaurar_lista_apoio_do_historico()
+    dataframe_mesclado = mesclar_dataframes_lista_apoio(
+        [dataframe_principal, dataframe_backup, dataframe_historico]
+    )
+
+    registros = dataframe_para_registros_lista_apoio(dataframe_mesclado)
+    if registros:
+        salvar_registros_lista_apoio_no_banco(registros)
+        espelhar_lista_apoio_para_arquivos(pd.DataFrame(registros))
+
+
 def salvar_snapshot_lista_apoio(caminho_origem, prefixo="lista_apoio"):
     if not os.path.exists(caminho_origem):
         return
