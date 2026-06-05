@@ -581,6 +581,12 @@ def tentar_espelhar_lista_apoio_para_arquivos(dataframe):
 def ler_lista_apoio_do_banco():
     garantir_banco_lista_apoio()
     backend = backend_lista_apoio()
+    coluna_carimbo = CABECALHOS_LISTA_APOIO[0]
+    coluna_tecnico = CABECALHOS_LISTA_APOIO[1]
+    coluna_topico = CABECALHOS_LISTA_APOIO[2]
+    coluna_descricao = CABECALHOS_LISTA_APOIO[3]
+    coluna_situacao = CABECALHOS_LISTA_APOIO[4]
+    coluna_responsavel = CABECALHOS_LISTA_APOIO[5]
     consulta = """
         SELECT
             carimbo_data_hora,
@@ -611,19 +617,15 @@ def ler_lista_apoio_do_banco():
     for linha in linhas:
         registros.append(
             {
-                "Carimbo de data/hora": texto_lista_apoio(linha["carimbo_data_hora"]),
-                "Nome do TÃ©cnico": texto_lista_apoio(linha["nome_tecnico"]),
-                "Selecione o tÃ³pico": texto_lista_apoio(linha["topico"]),
-                "Descreva o problema/pedido em poucas palavras": texto_lista_apoio(
-                    linha["descricao"]
-                ),
-                "SituaÃ§Ã£o": texto_lista_apoio(linha["situacao"]),
-                "ResponsÃ¡vel/Apoio": texto_lista_apoio(linha["responsavel_apoio"]),
+                coluna_carimbo: texto_lista_apoio(linha["carimbo_data_hora"]),
+                coluna_tecnico: texto_lista_apoio(linha["nome_tecnico"]),
+                coluna_topico: texto_lista_apoio(linha["topico"]),
+                coluna_descricao: texto_lista_apoio(linha["descricao"]),
+                coluna_situacao: texto_lista_apoio(linha["situacao"]),
+                coluna_responsavel: texto_lista_apoio(linha["responsavel_apoio"]),
             }
         )
     return padronizar_dataframe_lista_apoio(pd.DataFrame(registros))
-
-
 def salvar_registros_lista_apoio_no_banco(registros):
     garantir_banco_lista_apoio()
     backend = backend_lista_apoio()
