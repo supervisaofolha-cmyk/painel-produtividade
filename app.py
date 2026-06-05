@@ -3981,40 +3981,6 @@ produtividade = (
     .sort_values(by="Data")
 )
 
-ligacoes_bi = (
-    dados_produtividade.groupby(["Data", "Data Formatada"])["Atendidas"]
-    .sum()
-    .reset_index()
-    .sort_values(by="Data")
-)
-
-grafico_ligacoes_bi = px.bar(
-    ligacoes_bi,
-    x="Data Formatada",
-    y="Atendidas",
-    text="Atendidas",
-    labels={
-        "Data Formatada": "Dia",
-        "Atendidas": "Ligações do BI",
-    },
-    title="Ligações do BI por Dia",
-)
-
-grafico_ligacoes_bi.update_traces(
-    marker_color=COR_LARANJA,
-    textposition="outside",
-)
-grafico_ligacoes_bi.update_layout(
-    plot_bgcolor=COR_BRANCO,
-    paper_bgcolor=COR_BRANCO,
-    font_color=COR_CINZA,
-    xaxis_title="Dia",
-    yaxis_title="Ligações do BI",
-    xaxis=dict(type="category"),
-)
-
-st.plotly_chart(grafico_ligacoes_bi, use_container_width=True)
-
 produtividade_long = produtividade.melt(
     id_vars=["Data", "Data Formatada"],
     value_vars=["Realizado", "Esperado"],
@@ -4034,7 +4000,7 @@ grafico_produtividade = px.bar(
         "Quantidade": "Quantidade",
         "Indicador": "Indicador",
     },
-    title="Produtividade do Mês (Realizado x Esperado)",
+    title="Produtividade do Mês",
     color_discrete_map={
         "Realizado": COR_LARANJA,
         "Esperado": COR_CINZA,
