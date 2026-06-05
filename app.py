@@ -314,11 +314,14 @@ def garantir_planilha_lista_apoio_integra():
 def chave_registro_lista_apoio(registro):
     return "||".join(
         [
-            texto_lista_apoio(registro.get("Carimbo de data/hora", "")),
-            texto_lista_apoio(registro.get("Nome do Técnico", "")),
-            texto_lista_apoio(registro.get("Selecione o tópico", "")),
+            texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Carimbo de data/hora")),
+            texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Nome do Técnico")),
+            texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Selecione o tópico")),
             texto_lista_apoio(
-                registro.get("Descreva o problema/pedido em poucas palavras", "")
+                valor_campo_registro_lista_apoio(
+                    registro,
+                    "Descreva o problema/pedido em poucas palavras",
+                )
             ),
         ]
     )
@@ -326,6 +329,17 @@ def chave_registro_lista_apoio(registro):
 
 def dataframe_lista_apoio_vazio():
     return pd.DataFrame(columns=CABECALHOS_LISTA_APOIO)
+
+
+def valor_campo_registro_lista_apoio(registro, coluna_esperada):
+    if coluna_esperada in registro:
+        return registro.get(coluna_esperada, "")
+
+    chave_esperada = normalizar_cabecalho(coluna_esperada)
+    for chave, valor in registro.items():
+        if normalizar_cabecalho(chave) == chave_esperada:
+            return valor
+    return ""
 
 
 def padronizar_dataframe_lista_apoio(dataframe):
@@ -338,7 +352,25 @@ def padronizar_dataframe_lista_apoio(dataframe):
             dataframe[coluna_lista] = ""
         dataframe[coluna_lista] = dataframe[coluna_lista].astype("object")
 
-    return dataframe[CABECALHOS_LISTA_APOIO]
+    dataframe = dataframe[CABECALHOS_LISTA_APOIO]
+    colunas_obrigatorias = [
+        "Carimbo de data/hora",
+        "Nome do Técnico",
+        "Selecione o tópico",
+        "Descreva o problema/pedido em poucas palavras",
+    ]
+    for coluna_obrigatoria in colunas_obrigatorias:
+        dataframe[coluna_obrigatoria] = dataframe[coluna_obrigatoria].map(
+            texto_lista_apoio
+        )
+
+    filtro_valido = dataframe["Carimbo de data/hora"].ne("")
+    filtro_valido &= dataframe["Nome do Técnico"].ne("")
+    filtro_valido &= dataframe["Selecione o tópico"].ne("")
+    filtro_valido &= dataframe["Descreva o problema/pedido em poucas palavras"].ne("")
+    dataframe = dataframe.loc[filtro_valido].reset_index(drop=True)
+
+    return dataframe
 
 
 def ler_dataframe_lista_apoio_arquivo(caminho):
@@ -386,7 +418,9 @@ def restaurar_lista_apoio_do_historico():
             if not chave:
                 continue
             registros[chave] = {
-                coluna: texto_lista_apoio(registro.get(coluna, ""))
+                coluna: texto_lista_apoio(
+                    valor_campo_registro_lista_apoio(registro, coluna)
+                )
                 for coluna in CABECALHOS_LISTA_APOIO
             }
 
@@ -564,7 +598,16 @@ def ler_lista_apoio():
         [dataframe_principal, dataframe_backup, dataframe_historico]
     )
 
-    if len(dataframe_mesclado) > len(dataframe_principal):
+    principal_chaves = {
+        chave_registro_lista_apoio(linha)
+        for _, linha in dataframe_principal.iterrows()
+    }
+    mesclado_chaves = {
+        chave_registro_lista_apoio(linha)
+        for _, linha in dataframe_mesclado.iterrows()
+    }
+
+    if mesclado_chaves != principal_chaves:
         salvar_dataframe_lista_apoio(dataframe_mesclado)
         return dataframe_mesclado
 
@@ -3330,21 +3373,21 @@ with col4:
     st.metric("RO Total", int(dados_mes_atual["RO"].sum()))
 
 with col5:
-    votacao_ultimo_dia = round(dados_ultimo_dia_votacao["Vota??o"].mean(), 2)
-    st.metric("Vota??o M?dia", f"{votacao_ultimo_dia}%")
+    votacao_ultimo_dia = round(dados_ultimo_dia_votacao["Votação"].mean(), 2)
+    st.metric("Votação Média", f"{votacao_ultimo_dia}%")
 
 with col6:
-    satisfacao_ultimo_dia = round(dados_ultimo_dia_satisfacao["Satisfa??o"].mean(), 2)
-    st.metric("Satisfa??o", f"{satisfacao_ultimo_dia}%")
+    satisfacao_ultimo_dia = round(dados_ultimo_dia_satisfacao["Satisfação"].mean(), 2)
+    st.metric("Satisfação", f"{satisfacao_ultimo_dia}%")
 
 with col7:
-    classificacao_mode = dados_mes_atual["Classifica??o"].dropna().mode()
+    classificacao_mode = dados_mes_atual["Classificação"].dropna().mode()
     classificacao = (
-        "Sem classifica??o"
+        "Sem classificação"
         if classificacao_mode.empty
         else classificacao_mode.iloc[0]
     )
-    st.metric("Classifica??o", classificacao)
+    st.metric("Classificação", classificacao)
 
 if not modo_gestao:
     percentual_absorcao = PERCENTUAL_ABSORCAO_POR_NIVEL.get(nivel_tecnico, 0)
