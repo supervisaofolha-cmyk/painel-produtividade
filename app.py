@@ -885,16 +885,23 @@ def salvar_lista_apoio(dataframe):
         if registro_antes != registro_depois:
             registrar_historico_lista_apoio("update", registro_depois)
 
-    salvar_dataframe_lista_apoio(existente[CABECALHOS_LISTA_APOIO])
+    dataframe_final = existente[CABECALHOS_LISTA_APOIO]
+    salvar_registros_lista_apoio_no_banco(
+        dataframe_para_registros_lista_apoio(dataframe_final)
+    )
+    espelhar_lista_apoio_para_arquivos(dataframe_final)
 
 
 def bytes_lista_apoio():
     garantir_lista_apoio()
+    espelhar_lista_apoio_para_arquivos(ler_lista_apoio_do_banco())
     with open(ARQUIVO_LISTA_APOIO, "rb") as arquivo:
         return arquivo.read()
 
 
 def versao_lista_apoio():
+    if os.path.exists(ARQUIVO_LISTA_APOIO_DB):
+        return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO_DB)))
     if not os.path.exists(ARQUIVO_LISTA_APOIO):
         return "sem_arquivo"
     return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO)))
