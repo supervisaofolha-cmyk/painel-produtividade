@@ -317,8 +317,8 @@ def chave_registro_lista_apoio(registro):
     return "||".join(
         [
             texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Carimbo de data/hora")),
-            texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Nome do Técnico")),
-            texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Selecione o tópico")),
+                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, coluna_tecnico)),
+                    texto_lista_apoio(valor_campo_registro_lista_apoio(registro, coluna_topico)),
             texto_lista_apoio(
                 valor_campo_registro_lista_apoio(
                     registro,
@@ -597,7 +597,7 @@ def salvar_registros_lista_apoio_no_banco(registros):
                     texto_lista_apoio(
                         valor_campo_registro_lista_apoio(
                             registro,
-                            "Descreva o problema/pedido em poucas palavras",
+                            coluna_descricao,
                         )
                     ),
                     texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "SituaÃ§Ã£o")) or "Aberto",
