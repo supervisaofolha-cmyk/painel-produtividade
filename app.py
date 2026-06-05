@@ -324,15 +324,19 @@ def garantir_planilha_lista_apoio_integra():
 
 
 def chave_registro_lista_apoio(registro):
+    coluna_carimbo = CABECALHOS_LISTA_APOIO[0]
+    coluna_tecnico = CABECALHOS_LISTA_APOIO[1]
+    coluna_topico = CABECALHOS_LISTA_APOIO[2]
+    coluna_descricao = CABECALHOS_LISTA_APOIO[3]
     return "||".join(
         [
-            texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Carimbo de data/hora")),
-            texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Nome do T?cnico")),
-            texto_lista_apoio(valor_campo_registro_lista_apoio(registro, "Selecione o t?pico")),
+            texto_lista_apoio(valor_campo_registro_lista_apoio(registro, coluna_carimbo)),
+            texto_lista_apoio(valor_campo_registro_lista_apoio(registro, coluna_tecnico)),
+            texto_lista_apoio(valor_campo_registro_lista_apoio(registro, coluna_topico)),
             texto_lista_apoio(
                 valor_campo_registro_lista_apoio(
                     registro,
-                    "Descreva o problema/pedido em poucas palavras",
+                    coluna_descricao,
                 )
             ),
         ]
@@ -563,6 +567,30 @@ def dataframe_para_registros_lista_apoio(dataframe):
         if chave_registro_lista_apoio(registro):
             registros.append(registro)
     return registros
+
+
+def deduplicar_dataframe_lista_apoio(dataframe):
+    dataframe = padronizar_dataframe_lista_apoio(dataframe)
+    if dataframe.empty:
+        return dataframe
+
+    registros_por_chave = {}
+    for _, linha in dataframe.iterrows():
+        registro = {
+            coluna: texto_lista_apoio(linha.get(coluna, ""))
+            for coluna in CABECALHOS_LISTA_APOIO
+        }
+        chave = chave_registro_lista_apoio(registro)
+        if not chave:
+            continue
+        registros_por_chave[chave] = registro
+
+    if not registros_por_chave:
+        return dataframe_lista_apoio_vazio()
+
+    return padronizar_dataframe_lista_apoio(
+        pd.DataFrame(list(registros_por_chave.values()))
+    )
 
 
 def espelhar_lista_apoio_para_arquivos(dataframe):
