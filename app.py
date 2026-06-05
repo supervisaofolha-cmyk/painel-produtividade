@@ -328,6 +328,31 @@ def dataframe_lista_apoio_vazio():
     return pd.DataFrame(columns=CABECALHOS_LISTA_APOIO)
 
 
+def padronizar_dataframe_lista_apoio(dataframe):
+    if dataframe is None or dataframe.empty:
+        return dataframe_lista_apoio_vazio()
+
+    dataframe = dataframe.copy()
+    for coluna_lista in CABECALHOS_LISTA_APOIO:
+        if coluna_lista not in dataframe.columns:
+            dataframe[coluna_lista] = ""
+        dataframe[coluna_lista] = dataframe[coluna_lista].astype("object")
+
+    return dataframe[CABECALHOS_LISTA_APOIO]
+
+
+def ler_dataframe_lista_apoio_arquivo(caminho):
+    if not os.path.exists(caminho) or not arquivo_excel_integro(caminho):
+        return dataframe_lista_apoio_vazio()
+
+    try:
+        dataframe = pd.read_excel(caminho)
+    except Exception:
+        return dataframe_lista_apoio_vazio()
+
+    return padronizar_dataframe_lista_apoio(dataframe)
+
+
 def registrar_historico_lista_apoio(acao, registro):
     os.makedirs(PASTA_BACKUP_LISTA_APOIO, exist_ok=True)
     payload = {
@@ -369,7 +394,29 @@ def restaurar_lista_apoio_do_historico():
         return dataframe_lista_apoio_vazio()
 
     dataframe = pd.DataFrame(list(registros.values()))
-    return dataframe[CABECALHOS_LISTA_APOIO]
+    return padronizar_dataframe_lista_apoio(dataframe)
+
+
+def mesclar_dataframes_lista_apoio(dataframes):
+    registros = {}
+    for dataframe in dataframes:
+        dataframe = padronizar_dataframe_lista_apoio(dataframe)
+        if dataframe.empty:
+            continue
+        for _, linha in dataframe.iterrows():
+            registro = {
+                coluna: texto_lista_apoio(linha.get(coluna, ""))
+                for coluna in CABECALHOS_LISTA_APOIO
+            }
+            chave = chave_registro_lista_apoio(registro)
+            if not chave:
+                continue
+            registros[chave] = registro
+
+    if not registros:
+        return dataframe_lista_apoio_vazio()
+
+    return padronizar_dataframe_lista_apoio(pd.DataFrame(list(registros.values())))
 
 
 def salvar_snapshot_lista_apoio(caminho_origem, prefixo="lista_apoio"):
