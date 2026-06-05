@@ -3386,15 +3386,36 @@ with col4:
     st.metric("RO Total", int(dados_mes_atual["RO"].sum()))
 
 with col5:
-    votacao_ultimo_dia = round(dados_ultimo_dia_votacao["Votação"].mean(), 2)
+    coluna_votacao = nome_coluna_dataframe(
+        dados_ultimo_dia_votacao,
+        "Votação",
+        "VotaÃ§Ã£o",
+        "Vota??o",
+    )
+    votacao_ultimo_dia = round(dados_ultimo_dia_votacao[coluna_votacao].mean(), 2)
     st.metric("Votação Média", f"{votacao_ultimo_dia}%")
 
 with col6:
-    satisfacao_ultimo_dia = round(dados_ultimo_dia_satisfacao["Satisfação"].mean(), 2)
+    coluna_satisfacao = nome_coluna_dataframe(
+        dados_ultimo_dia_satisfacao,
+        "Satisfação",
+        "SatisfaÃ§Ã£o",
+        "Satisfa??o",
+    )
+    satisfacao_ultimo_dia = round(
+        dados_ultimo_dia_satisfacao[coluna_satisfacao].mean(),
+        2,
+    )
     st.metric("Satisfação", f"{satisfacao_ultimo_dia}%")
 
 with col7:
-    classificacao_mode = dados_mes_atual["Classificação"].dropna().mode()
+    coluna_classificacao = nome_coluna_dataframe(
+        dados_mes_atual,
+        "Classificação",
+        "ClassificaÃ§Ã£o",
+        "Classifica??o",
+    )
+    classificacao_mode = dados_mes_atual[coluna_classificacao].dropna().mode()
     classificacao = (
         "Sem classificação"
         if classificacao_mode.empty
