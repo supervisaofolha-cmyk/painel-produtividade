@@ -177,6 +177,13 @@ PERCENTUAL_ABSORCAO_POR_NIVEL = {
     "JR": 1.85,
     "Estágio": 0.92,
 }
+META_ESPERADA_POR_NIVEL = {
+    "Técnico III": 35,
+    "Técnico II": 28,
+    "Técnico I": 23,
+    "JR": 20,
+    "Estágio": 10,
+}
 
 FERIADOS_FEDERAIS_FIXOS = {
     (1, 1),
