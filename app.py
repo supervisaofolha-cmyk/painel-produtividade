@@ -46,6 +46,7 @@ LISTA_APOIO_DATABASE_URL_PADRAO = "postgresql://postgres.pogiuykdubgvcjjzjihs:Tg
 ARQUIVO_LISTA_APOIO_HISTORICO = "lista_apoio_historico.jsonl"
 ARQUIVO_META_BACKUP_LISTA_APOIO = "lista_apoio_backup_meta.json"
 PASTA_BACKUP_LISTA_APOIO = "backups_lista_apoio"
+ARQUIVO_LOG_BACKUP_PAINEL = "painel_backup_db_erro.log"
 ABA_PRODUTIVIDADE = "Produtividade"
 ABA_ALIASES = "Aliases"
 COLUNA_DIAS_META = "Dias Meta"
