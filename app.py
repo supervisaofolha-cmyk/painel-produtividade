@@ -1673,6 +1673,61 @@ def normalizar_nome(valor):
     return re.sub(r"\s+", " ", texto).strip()
 
 
+def nivel_canonico(valor):
+    nivel = normalizar_nome(valor)
+    niveis = {
+        "tecnico iii": "Técnico III",
+        "tecnico ii": "Técnico II",
+        "tecnico i": "Técnico I",
+        "jr": "JR",
+        "estagio": "Estágio",
+    }
+    return niveis.get(nivel, builtins.str(valor or "").strip())
+
+
+def meta_esperada_nivel(valor):
+    return META_ESPERADA_POR_NIVEL.get(nivel_canonico(valor), 0)
+
+
+def percentuais_absorcao_por_mes(dataframe, ano, mes):
+    dados_mes = dataframe[
+        (dataframe["Data"].dt.year == ano)
+        & (dataframe["Data"].dt.month == mes)
+    ].copy()
+    if dados_mes.empty:
+        return {nivel: 0 for nivel in META_ESPERADA_POR_NIVEL}
+
+    dados_mes = dados_mes[
+        ~dados_mes["Técnico"]
+        .map(normalizar_nome)
+        .isin(TECNICOS_DESCONSIDERADOS_ESPERADO)
+    ].copy()
+    dados_mes["Nivel Canonico"] = dados_mes["Nível"].map(nivel_canonico)
+    dados_mes = dados_mes.sort_values("Data")
+    ultimo_nivel_tecnico = dados_mes.drop_duplicates(
+        subset=["Técnico"],
+        keep="last",
+    )
+    total_meta_mes = ultimo_nivel_tecnico["Nivel Canonico"].map(
+        META_ESPERADA_POR_NIVEL
+    ).fillna(0).sum()
+
+    if not total_meta_mes:
+        return {nivel: 0 for nivel in META_ESPERADA_POR_NIVEL}
+
+    return {
+        nivel: (meta / total_meta_mes) * 100
+        for nivel, meta in META_ESPERADA_POR_NIVEL.items()
+    }
+
+
+def percentual_absorcao_tecnico(dataframe, ano, mes, nivel):
+    return percentuais_absorcao_por_mes(dataframe, ano, mes).get(
+        nivel_canonico(nivel),
+        0,
+    )
+
+
 def cabecalhos(ws):
     return {
         builtins.str(cell.value).strip(): cell.column
