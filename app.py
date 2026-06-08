@@ -49,6 +49,7 @@ PASTA_BACKUP_LISTA_APOIO = "backups_lista_apoio"
 ABA_PRODUTIVIDADE = "Produtividade"
 ABA_ALIASES = "Aliases"
 COLUNA_DIAS_META = "Dias Meta"
+COLUNA_ABANDONADAS = "Abandonadas"
 CABECALHOS_LISTA_APOIO = [
     "Carimbo de data/hora",
     "Nome do Técnico",
