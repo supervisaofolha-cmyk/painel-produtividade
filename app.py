@@ -1721,6 +1721,30 @@ def percentual_absorcao_tecnico(dataframe, ano, mes, nivel):
     )
 
 
+def total_meta_mensal_por_linha(dataframe):
+    totais_por_mes = {}
+    for periodo, dados_mes in dataframe.groupby(dataframe["Data"].dt.to_period("M")):
+        dados_validos = dados_mes[
+            ~dados_mes["Técnico"]
+            .map(normalizar_nome)
+            .isin(TECNICOS_DESCONSIDERADOS_ESPERADO)
+        ].copy()
+        if dados_validos.empty:
+            totais_por_mes[periodo] = 0
+            continue
+
+        dados_validos = dados_validos.sort_values("Data")
+        ultimo_nivel_tecnico = dados_validos.drop_duplicates(
+            subset=["Técnico"],
+            keep="last",
+        )
+        totais_por_mes[periodo] = ultimo_nivel_tecnico["Nível"].map(
+            meta_esperada_nivel
+        ).fillna(0).sum()
+
+    return dataframe["Data"].dt.to_period("M").map(totais_por_mes).fillna(0)
+
+
 def cabecalhos(ws):
     return {
         builtins.str(cell.value).strip(): cell.column
@@ -3582,16 +3606,12 @@ def recalcular_colunas_derivadas(df):
         ~tecnicos_normalizados.isin(TECNICOS_DESCONSIDERADOS_ESPERADO),
         0,
     )
-    metas_validas = meta_por_linha.where(
-        ~tecnicos_normalizados.isin(TECNICOS_DESCONSIDERADOS_ESPERADO),
-        0,
-    )
-    total_meta_dia = metas_validas.groupby(df["Data"]).transform("sum")
+    total_meta_mes = total_meta_mensal_por_linha(df)
     total_atendidas_dia = atendidas_validas.groupby(df["Data"]).transform("sum")
     total_abandonadas_dia = df[COLUNA_ABANDONADAS].groupby(df["Data"]).transform("max")
     total_base_fila_dia = total_atendidas_dia + total_abandonadas_dia
     proporcional = total_base_fila_dia * (
-        meta_por_linha / total_meta_dia.replace(0, pd.NA)
+        meta_por_linha / total_meta_mes.replace(0, pd.NA)
     )
     proporcional = proporcional.fillna(0)
     df["Esperado"] = proporcional.clip(upper=meta_por_linha).round(0)
