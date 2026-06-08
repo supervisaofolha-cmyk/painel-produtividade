@@ -300,6 +300,7 @@ def salvar_workbook_produtividade(wb):
                 raise zipfile.BadZipFile("Arquivo temporário gerado com corrupção.")
         os.replace(caminho_temporario, ARQUIVO_PRODUTIVIDADE)
         shutil.copyfile(ARQUIVO_PRODUTIVIDADE, ARQUIVO_PRODUTIVIDADE_BACKUP)
+        tentar_salvar_backup_painel_no_banco(wb)
     finally:
         if os.path.exists(caminho_temporario):
             os.remove(caminho_temporario)
@@ -529,6 +530,185 @@ def conexao_lista_apoio_db():
     conexao = sqlite3.connect(ARQUIVO_LISTA_APOIO_DB)
     conexao.row_factory = sqlite3.Row
     return conexao
+
+
+def valor_backup_painel(valor):
+    if valor is None:
+        return ""
+    if isinstance(valor, datetime):
+        return valor.isoformat()
+    if isinstance(valor, date):
+        return valor.isoformat()
+    return valor
+
+
+def texto_chave_backup_painel(valor):
+    valor = valor_backup_painel(valor)
+    return builtins.str(valor or "").strip()
+
+
+def garantir_banco_backup_painel():
+    with conexao_lista_apoio_db() as conexao:
+        conexao.execute(
+            """
+            CREATE TABLE IF NOT EXISTS painel_dados_backup (
+                id TEXT PRIMARY KEY,
+                origem TEXT NOT NULL,
+                aba TEXT NOT NULL,
+                chave TEXT NOT NULL,
+                payload TEXT NOT NULL,
+                criado_em TEXT NOT NULL,
+                atualizado_em TEXT NOT NULL,
+                UNIQUE(origem, aba, chave)
+            )
+            """
+        )
+        conexao.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_painel_dados_backup_origem_aba
+            ON painel_dados_backup (origem, aba)
+            """
+        )
+        conexao.commit()
+
+
+def registros_backup_painel_do_workbook(wb):
+    registros = []
+    abas_permitidas = {ABA_PRODUTIVIDADE, ABA_ALIASES}
+
+    for nome_aba in wb.sheetnames:
+        if nome_aba not in abas_permitidas:
+            continue
+
+        ws = wb[nome_aba]
+        cabecalhos_aba = [
+            texto_chave_backup_painel(celula.value)
+            for celula in ws[1]
+        ]
+
+        for row in range(2, ws.max_row + 1):
+            valores = [
+                valor_backup_painel(ws.cell(row=row, column=coluna).value)
+                for coluna in range(1, len(cabecalhos_aba) + 1)
+            ]
+            if not any(texto_chave_backup_painel(valor) for valor in valores):
+                continue
+
+            payload = {
+                cabecalho: valor
+                for cabecalho, valor in zip(cabecalhos_aba, valores)
+                if cabecalho
+            }
+
+            if nome_aba == ABA_PRODUTIVIDADE:
+                chave = "||".join(
+                    [
+                        texto_chave_backup_painel(payload.get("Data")),
+                        texto_chave_backup_painel(payload.get("Técnico")),
+                    ]
+                )
+            elif nome_aba == ABA_ALIASES:
+                chave = texto_chave_backup_painel(
+                    payload.get("Técnico Planilha")
+                    or payload.get("T??cnico Planilha")
+                    or payload.get("TÃ©cnico Planilha")
+                )
+            else:
+                chave = ""
+
+            if not chave or chave == "||":
+                chave = f"linha_{row}"
+
+            registros.append(
+                {
+                    "origem": ARQUIVO_PRODUTIVIDADE,
+                    "aba": nome_aba,
+                    "chave": chave,
+                    "payload": json.dumps(payload, ensure_ascii=False, default=builtins.str),
+                }
+            )
+
+    return registros
+
+
+def salvar_backup_painel_no_banco(wb):
+    registros = registros_backup_painel_do_workbook(wb)
+    if not registros:
+        return 0
+
+    garantir_banco_backup_painel()
+    backend = backend_lista_apoio()
+    agora = datetime.now(FUSO_HORARIO_APP).strftime("%Y-%m-%d %H:%M:%S")
+    consulta = """
+        INSERT INTO painel_dados_backup (
+            id,
+            origem,
+            aba,
+            chave,
+            payload,
+            criado_em,
+            atualizado_em
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT(origem, aba, chave) DO UPDATE SET
+            payload = excluded.payload,
+            atualizado_em = excluded.atualizado_em
+    """
+    if backend != "postgres":
+        consulta = """
+            INSERT INTO painel_dados_backup (
+                id,
+                origem,
+                aba,
+                chave,
+                payload,
+                criado_em,
+                atualizado_em
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(origem, aba, chave) DO UPDATE SET
+                payload = excluded.payload,
+                atualizado_em = excluded.atualizado_em
+        """
+
+    with conexao_lista_apoio_db() as conexao:
+        for registro in registros:
+            identificador = builtins.str(
+                uuid.uuid5(
+                    uuid.NAMESPACE_URL,
+                    f"{registro['origem']}|{registro['aba']}|{registro['chave']}",
+                )
+            )
+            conexao.execute(
+                consulta,
+                (
+                    identificador,
+                    registro["origem"],
+                    registro["aba"],
+                    registro["chave"],
+                    registro["payload"],
+                    agora,
+                    agora,
+                ),
+            )
+        conexao.commit()
+
+    return len(registros)
+
+
+def registrar_erro_backup_painel(erro):
+    try:
+        with open(ARQUIVO_LOG_BACKUP_PAINEL, "a", encoding="utf-8") as arquivo:
+            timestamp = datetime.now(FUSO_HORARIO_APP).strftime("%Y-%m-%d %H:%M:%S")
+            arquivo.write(f"{timestamp} - {erro}\n")
+    except Exception:
+        pass
+
+
+def tentar_salvar_backup_painel_no_banco(wb):
+    try:
+        return salvar_backup_painel_no_banco(wb)
+    except Exception as erro:
+        registrar_erro_backup_painel(erro)
+        return 0
 
 
 def garantir_banco_lista_apoio():
