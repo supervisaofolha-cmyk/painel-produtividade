@@ -301,7 +301,7 @@ def salvar_workbook_produtividade(wb):
                 raise zipfile.BadZipFile("Arquivo temporário gerado com corrupção.")
         os.replace(caminho_temporario, ARQUIVO_PRODUTIVIDADE)
         shutil.copyfile(ARQUIVO_PRODUTIVIDADE, ARQUIVO_PRODUTIVIDADE_BACKUP)
-        tentar_salvar_backup_painel_no_banco(wb)
+        tentar_salvar_backup_arquivo_painel_no_banco(ARQUIVO_PRODUTIVIDADE)
     finally:
         if os.path.exists(caminho_temporario):
             os.remove(caminho_temporario)
@@ -707,6 +707,77 @@ def registrar_erro_backup_painel(erro):
 def tentar_salvar_backup_painel_no_banco(wb):
     try:
         return salvar_backup_painel_no_banco(wb)
+    except Exception as erro:
+        registrar_erro_backup_painel(erro)
+        return 0
+
+
+def garantir_banco_arquivo_backup_painel():
+    with conexao_lista_apoio_db() as conexao:
+        conexao.execute(
+            """
+            CREATE TABLE IF NOT EXISTS painel_arquivo_backup (
+                origem TEXT PRIMARY KEY,
+                conteudo_base64 TEXT NOT NULL,
+                tamanho_bytes INTEGER NOT NULL,
+                atualizado_em TEXT NOT NULL
+            )
+            """
+        )
+        conexao.commit()
+
+
+def salvar_backup_arquivo_painel_no_banco(caminho_arquivo):
+    if not os.path.exists(caminho_arquivo):
+        return 0
+
+    garantir_banco_arquivo_backup_painel()
+    origem = os.path.basename(caminho_arquivo)
+    with open(caminho_arquivo, "rb") as arquivo:
+        conteudo = arquivo.read()
+
+    conteudo_base64 = base64.b64encode(conteudo).decode("ascii")
+    agora = datetime.now(FUSO_HORARIO_APP).strftime("%Y-%m-%d %H:%M:%S")
+    backend = backend_lista_apoio()
+    consulta = """
+        INSERT INTO painel_arquivo_backup (
+            origem,
+            conteudo_base64,
+            tamanho_bytes,
+            atualizado_em
+        ) VALUES (%s, %s, %s, %s)
+        ON CONFLICT(origem) DO UPDATE SET
+            conteudo_base64 = excluded.conteudo_base64,
+            tamanho_bytes = excluded.tamanho_bytes,
+            atualizado_em = excluded.atualizado_em
+    """
+    if backend != "postgres":
+        consulta = """
+            INSERT INTO painel_arquivo_backup (
+                origem,
+                conteudo_base64,
+                tamanho_bytes,
+                atualizado_em
+            ) VALUES (?, ?, ?, ?)
+            ON CONFLICT(origem) DO UPDATE SET
+                conteudo_base64 = excluded.conteudo_base64,
+                tamanho_bytes = excluded.tamanho_bytes,
+                atualizado_em = excluded.atualizado_em
+        """
+
+    with conexao_lista_apoio_db() as conexao:
+        conexao.execute(
+            consulta,
+            (origem, conteudo_base64, len(conteudo), agora),
+        )
+        conexao.commit()
+
+    return len(conteudo)
+
+
+def tentar_salvar_backup_arquivo_painel_no_banco(caminho_arquivo):
+    try:
+        return salvar_backup_arquivo_painel_no_banco(caminho_arquivo)
     except Exception as erro:
         registrar_erro_backup_painel(erro)
         return 0
