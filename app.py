@@ -783,6 +783,130 @@ def tentar_salvar_backup_arquivo_painel_no_banco(caminho_arquivo):
         return 0
 
 
+def garantir_banco_ro_backup():
+    with conexao_lista_apoio_db() as conexao:
+        conexao.execute(
+            """
+            CREATE TABLE IF NOT EXISTS ro_backup (
+                id TEXT PRIMARY KEY,
+                data_referencia TEXT NOT NULL,
+                arquivo TEXT NOT NULL,
+                arquivo_id TEXT NOT NULL,
+                origem TEXT NOT NULL,
+                url TEXT NOT NULL,
+                csv_base64 TEXT NOT NULL,
+                contagens_json TEXT NOT NULL,
+                tecnicos_origem_json TEXT NOT NULL,
+                criado_em TEXT NOT NULL,
+                atualizado_em TEXT NOT NULL,
+                UNIQUE(data_referencia, arquivo_id)
+            )
+            """
+        )
+        conexao.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_ro_backup_data
+            ON ro_backup (data_referencia)
+            """
+        )
+        conexao.commit()
+
+
+def salvar_backup_ro_no_banco(data_referencia, arquivo, texto_csv, contagens, tecnicos_origem):
+    garantir_banco_ro_backup()
+    backend = backend_lista_apoio()
+    data_texto = data_referencia.strftime("%Y-%m-%d")
+    agora = datetime.now(FUSO_HORARIO_APP).strftime("%Y-%m-%d %H:%M:%S")
+    identificador = builtins.str(
+        uuid.uuid5(
+            uuid.NAMESPACE_URL,
+            f"ro|{data_texto}|{arquivo.get('id', '')}",
+        )
+    )
+    csv_base64 = base64.b64encode(texto_csv.encode("utf-8")).decode("ascii")
+    consulta = """
+        INSERT INTO ro_backup (
+            id,
+            data_referencia,
+            arquivo,
+            arquivo_id,
+            origem,
+            url,
+            csv_base64,
+            contagens_json,
+            tecnicos_origem_json,
+            criado_em,
+            atualizado_em
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT(data_referencia, arquivo_id) DO UPDATE SET
+            arquivo = excluded.arquivo,
+            origem = excluded.origem,
+            url = excluded.url,
+            csv_base64 = excluded.csv_base64,
+            contagens_json = excluded.contagens_json,
+            tecnicos_origem_json = excluded.tecnicos_origem_json,
+            atualizado_em = excluded.atualizado_em
+    """
+    if backend != "postgres":
+        consulta = """
+            INSERT INTO ro_backup (
+                id,
+                data_referencia,
+                arquivo,
+                arquivo_id,
+                origem,
+                url,
+                csv_base64,
+                contagens_json,
+                tecnicos_origem_json,
+                criado_em,
+                atualizado_em
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(data_referencia, arquivo_id) DO UPDATE SET
+                arquivo = excluded.arquivo,
+                origem = excluded.origem,
+                url = excluded.url,
+                csv_base64 = excluded.csv_base64,
+                contagens_json = excluded.contagens_json,
+                tecnicos_origem_json = excluded.tecnicos_origem_json,
+                atualizado_em = excluded.atualizado_em
+        """
+
+    with conexao_lista_apoio_db() as conexao:
+        conexao.execute(
+            consulta,
+            (
+                identificador,
+                data_texto,
+                arquivo.get("titulo", ""),
+                arquivo.get("id", ""),
+                arquivo.get("origem", ""),
+                arquivo.get("url", ""),
+                csv_base64,
+                json.dumps(contagens, ensure_ascii=False, sort_keys=True),
+                json.dumps(tecnicos_origem, ensure_ascii=False),
+                agora,
+                agora,
+            ),
+        )
+        conexao.commit()
+
+
+def tentar_salvar_backup_ro_no_banco(data_referencia, arquivo, texto_csv, contagens, tecnicos_origem):
+    try:
+        salvar_backup_ro_no_banco(
+            data_referencia,
+            arquivo,
+            texto_csv,
+            contagens,
+            tecnicos_origem,
+        )
+        return True
+    except Exception as erro:
+        registrar_erro_backup_painel(erro)
+        return False
+
+
 def garantir_banco_lista_apoio():
     with conexao_lista_apoio_db() as conexao:
         conexao.execute(
@@ -2313,6 +2437,14 @@ def buscar_ro_forms(data_referencia):
         chave = normalizar_nome(tecnico)
         contagens[chave] = contagens.get(chave, 0) + 1
         tecnicos_origem.append(tecnico)
+
+    tentar_salvar_backup_ro_no_banco(
+        data_referencia,
+        arquivo,
+        texto_csv,
+        contagens,
+        tecnicos_origem,
+    )
 
     return {
         "arquivo": arquivo["titulo"],
