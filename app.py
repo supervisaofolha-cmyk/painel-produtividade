@@ -170,13 +170,6 @@ TECNICOS_DESCONSIDERADOS_ESPERADO = {
     "lucas luiz romero",
 }
 
-PERCENTUAL_ABSORCAO_POR_NIVEL = {
-    "Técnico III": 3.23,
-    "Técnico II": 2.59,
-    "Técnico I": 2.12,
-    "JR": 1.85,
-    "Estágio": 0.92,
-}
 META_ESPERADA_POR_NIVEL = {
     "Técnico III": 35,
     "Técnico II": 28,
