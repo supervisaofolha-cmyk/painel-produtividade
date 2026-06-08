@@ -3583,16 +3583,24 @@ def recalcular_colunas_derivadas(df):
             df.loc[linhas_sem_movimento, nome_coluna] = 0
 
     df["Realizado"] = df[coluna_2min] + df["RO"] + df["CHAT"]
-    meta_por_linha = df["Nível"].map(esperado_por_nivel).fillna(0)
+    meta_por_linha = df["Nível"].map(meta_esperada_nivel).fillna(0)
     tecnicos_normalizados = df["Técnico"].apply(normalizar_nome)
     atendidas_validas = df["Atendidas"].where(
         ~tecnicos_normalizados.isin(TECNICOS_DESCONSIDERADOS_ESPERADO),
         0,
     )
+    metas_validas = meta_por_linha.where(
+        ~tecnicos_normalizados.isin(TECNICOS_DESCONSIDERADOS_ESPERADO),
+        0,
+    )
+    total_meta_dia = metas_validas.groupby(df["Data"]).transform("sum")
     total_atendidas_dia = atendidas_validas.groupby(df["Data"]).transform("sum")
     total_abandonadas_dia = df[COLUNA_ABANDONADAS].groupby(df["Data"]).transform("max")
     total_base_fila_dia = total_atendidas_dia + total_abandonadas_dia
-    proporcional = total_base_fila_dia * (meta_por_linha / 1083)
+    proporcional = total_base_fila_dia * (
+        meta_por_linha / total_meta_dia.replace(0, pd.NA)
+    )
+    proporcional = proporcional.fillna(0)
     df["Esperado"] = proporcional.clip(upper=meta_por_linha).round(0)
     df.loc[linhas_sem_movimento, "Esperado"] = 0
     df["Desvio"] = df["Realizado"] - df["Esperado"]
@@ -4172,9 +4180,14 @@ if modo_gestao:
 
     st.divider()
     st.subheader("Percentual de Absorção por Nível")
+    percentuais_absorcao_mes = percentuais_absorcao_por_mes(
+        df,
+        ano_atual,
+        mes_atual,
+    )
     col1, col2, col3, col4, col5 = st.columns(5)
     for (nivel, percentual), coluna in zip(
-        PERCENTUAL_ABSORCAO_POR_NIVEL.items(),
+        percentuais_absorcao_mes.items(),
         [col1, col2, col3, col4, col5],
     ):
         with coluna:
