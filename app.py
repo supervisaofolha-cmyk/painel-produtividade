@@ -1,4 +1,5 @@
 import csv
+import base64
 import json
 import locale
 import os
