@@ -2193,6 +2193,61 @@ def montar_consulta_powerbi(data_referencia):
     }
 
 
+def montar_consulta_abandonadas_powerbi(data_referencia):
+    metadados = carregar_metadados_powerbi()
+    secao_abandonos = next(
+        secao
+        for secao in metadados["exploration"]["sections"]
+        if secao.get("displayName") == "Abandonos"
+    )
+    visual = secao_abandonos["visualContainers"][4]
+    consulta = json.loads(visual["query"])
+    comando = consulta["Commands"][0]["SemanticQueryDataShapeCommand"]
+    query = comando["Query"]
+    valores_data = query["Where"][0]["Condition"]["In"]["Values"][0]
+
+    valores_data[0]["Literal"]["Value"] = f"{data_referencia.year}L"
+    valores_data[1]["Literal"]["Value"] = f"'{trimestre_powerbi(data_referencia)}'"
+    valores_data[2]["Literal"]["Value"] = f"'{MESES_POWERBI[data_referencia.month]}'"
+    valores_data[3]["Literal"]["Value"] = f"{data_referencia.day}L"
+    query["Select"] = [
+        {
+            "Aggregation": {
+                "Expression": {
+                    "Column": {
+                        "Expression": {"SourceRef": {"Source": "a"}},
+                        "Property": "Evento",
+                    }
+                },
+                "Function": 5,
+            },
+            "Name": "CountNonNull(Abandonadas.Evento)",
+            "NativeReferenceName": "Abandonadas",
+        }
+    ]
+    aplicar_filtro_fila_powerbi(query)
+
+    return {
+        "version": "1.0.0",
+        "queries": [
+            {
+                "Query": consulta,
+                "ApplicationContext": {
+                    "DatasetId": builtins.str(metadados["models"][0]["id"]),
+                    "Sources": [
+                        {
+                            "ReportId": metadados["exploration"]["reportId"],
+                            "VisualId": json.loads(visual["config"])["name"],
+                        }
+                    ],
+                },
+            }
+        ],
+        "cancelQueries": [],
+        "modelId": metadados["models"][0]["id"],
+    }
+
+
 def valor_powerbi(linha, indice_coluna, valores, indice_valor, anterior):
     repetidos = int(linha.get("R", 0))
     nulos = int(linha.get("Ø", 0))
@@ -2260,8 +2315,26 @@ def buscar_produtividade_powerbi(data_referencia):
     return decodificar_linhas_powerbi(linhas)
 
 
+def buscar_abandonadas_powerbi(data_referencia):
+    sessao = criar_sessao_http()
+    resposta = sessao.post(
+        f"{POWERBI_API_BASE}/public/reports/querydata?synchronous=true",
+        headers=headers_powerbi(),
+        json=montar_consulta_abandonadas_powerbi(data_referencia),
+        timeout=45,
+    )
+    resposta.raise_for_status()
+    dados = resposta.json()
+    data_shape = dados["results"][0]["result"]["data"]["dsr"]["DS"][0]["PH"][0]
+    linhas = data_shape.get("DM0") or data_shape.get("DM1") or []
+    if not linhas:
+        return 0
+    return int(round(float(linhas[0].get("M0") or 0)))
+
+
 def atualizar_planilha_com_bi(data_referencia):
     registros_bi = buscar_produtividade_powerbi(data_referencia)
+    abandonadas = buscar_abandonadas_powerbi(data_referencia)
     registros_por_agente = {
         normalizar_nome(registro["agente"]): registro
         for registro in registros_bi
@@ -2275,6 +2348,8 @@ def atualizar_planilha_com_bi(data_referencia):
     col_atendidas = coluna(colunas, "Atendidas")
     col_2min = coluna(colunas, " > 2min", "> 2min", ">2min")
     col_tma = coluna(colunas, "TMA")
+    col_abandonadas = garantir_coluna(ws, COLUNA_ABANDONADAS)
+    ws.column_dimensions[openpyxl.utils.get_column_letter(col_abandonadas)].hidden = True
     linhas_criadas = garantir_linhas_da_data(ws, colunas, data_referencia)
     tecnicos = tecnicos_da_planilha(ws, colunas)
     ws_aliases = garantir_aba_aliases(
@@ -2300,6 +2375,7 @@ def atualizar_planilha_com_bi(data_referencia):
         ws.cell(row=row, column=col_atendidas).value = 0
         ws.cell(row=row, column=col_2min).value = 0
         ws.cell(row=row, column=col_tma).value = 0
+        ws.cell(row=row, column=col_abandonadas).value = abandonadas
         chave_agente = aliases.get(normalizar_nome(tecnico), normalizar_nome(tecnico))
         registro = registros_por_agente.get(chave_agente)
 
@@ -2318,6 +2394,7 @@ def atualizar_planilha_com_bi(data_referencia):
     return {
         "data": data_referencia.strftime("%d/%m/%Y"),
         "fonte": len(registros_bi),
+        "abandonadas": abandonadas,
         "linhas_criadas": linhas_criadas,
         "atualizados": len(atualizados),
         "sem_alias": sorted(set(sem_alias)),
