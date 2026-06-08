@@ -4365,7 +4365,12 @@ with col7:
     st.metric("Classificação", classificacao)
 
 if not modo_gestao:
-    percentual_absorcao = PERCENTUAL_ABSORCAO_POR_NIVEL.get(nivel_tecnico, 0)
+    percentual_absorcao = percentual_absorcao_tecnico(
+        df,
+        ano_atual,
+        mes_atual,
+        nivel_tecnico,
+    )
     dias_meta_valor = float(dias_uteis_para_meta(ano_atual, mes_atual))
     fonte_dias_meta = "Calendário do mês"
     detalhe_dias_meta = "Sem abatimentos do PontoWeb."
