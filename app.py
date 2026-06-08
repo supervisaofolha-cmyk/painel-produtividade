@@ -3126,6 +3126,12 @@ def recalcular_colunas_derivadas(df):
 
     if "Atendidas" in df.columns:
         df["Atendidas"] = pd.to_numeric(df["Atendidas"], errors="coerce").fillna(0)
+    if COLUNA_ABANDONADAS not in df.columns:
+        df[COLUNA_ABANDONADAS] = 0
+    df[COLUNA_ABANDONADAS] = pd.to_numeric(
+        df[COLUNA_ABANDONADAS],
+        errors="coerce",
+    ).fillna(0)
     if "TMA" in df.columns:
         df["TMA"] = pd.to_numeric(df["TMA"], errors="coerce").fillna(0)
 
@@ -3145,7 +3151,9 @@ def recalcular_colunas_derivadas(df):
         0,
     )
     total_atendidas_dia = atendidas_validas.groupby(df["Data"]).transform("sum")
-    proporcional = total_atendidas_dia * (meta_por_linha / 1083)
+    total_abandonadas_dia = df[COLUNA_ABANDONADAS].groupby(df["Data"]).transform("max")
+    total_base_fila_dia = total_atendidas_dia + total_abandonadas_dia
+    proporcional = total_base_fila_dia * (meta_por_linha / 1083)
     df["Esperado"] = proporcional.clip(upper=meta_por_linha).round(0)
     df.loc[linhas_sem_movimento, "Esperado"] = 0
     df["Desvio"] = df["Realizado"] - df["Esperado"]
