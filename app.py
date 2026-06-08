@@ -3558,14 +3558,6 @@ def zerar_colunas_sem_movimento_ws(ws):
 
 
 def recalcular_colunas_derivadas(df):
-    esperado_por_nivel = {
-        "Técnico III": 35,
-        "Técnico II": 28,
-        "Técnico I": 23,
-        "JR": 20,
-        "Estágio": 10,
-    }
-
     coluna_2min = " > 2min" if " > 2min" in df.columns else "> 2min"
     for coluna in [coluna_2min, "RO", "CHAT"]:
         if coluna in df.columns:
