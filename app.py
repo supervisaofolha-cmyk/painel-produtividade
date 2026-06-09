@@ -3747,7 +3747,7 @@ def recalcular_colunas_derivadas(df):
         0,
     )
     total_meta_mes = total_meta_mensal_por_linha(df)
-    total_atendidas_dia = atendidas_validas.groupby(df["Data"]).transform("sum")
+    total_atendidas_dia = df["Atendidas"].groupby(df["Data"]).transform("sum")
     total_abandonadas_dia = df[COLUNA_ABANDONADAS].groupby(df["Data"]).transform("max")
     total_base_fila_dia = total_atendidas_dia + total_abandonadas_dia
     proporcional = total_base_fila_dia * (
