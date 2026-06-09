@@ -166,8 +166,8 @@ MOTIVOS_RO_CONTAM = {
 }
 
 TECNICOS_DESCONSIDERADOS_ESPERADO = {
-    "patricia karla de sousa araujo",
-    "lorena dias de araujo",
+    "patricia karla sousa araujo",
+    "lorena dias araujo",
     "lucas luiz romero",
 }
 
