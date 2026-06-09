@@ -4623,6 +4623,16 @@ if not modo_gestao:
         nivel_tecnico,
     )
     dias_meta_valor = float(dias_uteis_para_meta(ano_atual, mes_atual))
+    dias_ferias_programadas = dias_uteis_ferias_no_mes(
+        tecnico,
+        ano_atual,
+        mes_atual,
+    )
+    dias_meta_programados = max(
+        dias_meta_valor - dias_ferias_programadas,
+        0,
+    )
+    dias_meta_valor = dias_meta_programados
     fonte_dias_meta = "Calendário do mês"
     dias_segunda_sexta = sum(
         1
@@ -4636,7 +4646,8 @@ if not modo_gestao:
     detalhe_dias_meta = (
         f"{dias_segunda_sexta} dias de segunda a sexta"
         f" - {feriados_em_dias_uteis} feriado(s)"
-        f" = {int(dias_meta_valor)} dias."
+        f" - {dias_ferias_programadas} dia(s) de fÃ©rias"
+        f" = {dias_meta_valor:g} dias."
     )
     if COLUNA_DIAS_META in dados_tecnico.columns:
         dias_meta_salvos = (
@@ -4647,7 +4658,10 @@ if not modo_gestao:
             .dropna()
         )
         if not dias_meta_salvos.empty:
-            dias_meta_valor = float(dias_meta_salvos.iloc[-1])
+            dias_meta_valor = min(
+                float(dias_meta_salvos.iloc[-1]),
+                dias_meta_programados,
+            )
             fonte_dias_meta = "Planilha"
             detalhe_dias_meta = "Valor atualizado pela gestão a partir do PontoWeb."
     elif pontoweb_email and pontoweb_senha:
@@ -4661,11 +4675,15 @@ if not modo_gestao:
                 pontoweb_banco_id,
                 pontoweb_banco_identificador,
             )
-            dias_meta_valor = float(resumo_meta_pontoweb["dias_considerados"])
+            dias_meta_valor = min(
+                float(resumo_meta_pontoweb["dias_considerados"]),
+                dias_meta_programados,
+            )
             fonte_dias_meta = "PontoWeb"
             detalhe_dias_meta = (
                 f"Dias base: {resumo_meta_pontoweb['dias_base']} | "
-                f"Abatimento: {resumo_meta_pontoweb['abatimento']}"
+                f"Abatimento: {resumo_meta_pontoweb['abatimento']} | "
+                f"FÃ©rias programadas: {dias_ferias_programadas} dia(s)"
             )
         except Exception as erro_pontoweb:
             detalhe_dias_meta = f"PontoWeb indisponível: {erro_pontoweb}"
@@ -4683,6 +4701,15 @@ if not modo_gestao:
             dias_meta_exibicao,
         )
     st.caption(f"Fonte: {fonte_dias_meta}. {detalhe_dias_meta}")
+
+    ferias_ativa = ferias_ativa_tecnico(tecnico)
+    if ferias_ativa:
+        inicio_ferias, fim_ferias = ferias_ativa
+        st.info(
+            "Em fÃ©rias: "
+            f"{inicio_ferias.strftime('%d/%m/%Y')} a "
+            f"{fim_ferias.strftime('%d/%m/%Y')}"
+        )
 
     st.caption("Referência da classificação")
     col_leg_1, col_leg_2, col_leg_3, col_leg_4 = st.columns(4)
