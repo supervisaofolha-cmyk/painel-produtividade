@@ -2630,6 +2630,137 @@ def aplicar_filtro_fila_powerbi(query):
     )
 
 
+def aplicar_filtro_data_powerbi(query, data_referencia):
+    fonte_data = next(
+        (
+            fonte
+            for fonte in query.setdefault("From", [])
+            if builtins.str(fonte.get("Entity", "")).startswith("LocalDateTable_")
+        ),
+        None,
+    )
+    if fonte_data is None:
+        fonte_data = {
+            "Name": "l",
+            "Entity": "LocalDateTable_5b42e521-bbb7-4d39-8e7e-735e21b48675",
+            "Type": 0,
+        }
+        query["From"].append(fonte_data)
+
+    nome_fonte = fonte_data["Name"]
+    query.setdefault("Where", []).insert(
+        0,
+        {
+            "Condition": {
+                "In": {
+                    "Expressions": [
+                        {
+                            "Column": {
+                                "Expression": {"SourceRef": {"Source": nome_fonte}},
+                                "Property": "Ano",
+                            }
+                        },
+                        {
+                            "Column": {
+                                "Expression": {"SourceRef": {"Source": nome_fonte}},
+                                "Property": "Trimestre",
+                            }
+                        },
+                        {
+                            "Column": {
+                                "Expression": {"SourceRef": {"Source": nome_fonte}},
+                                "Property": "Mês",
+                            }
+                        },
+                        {
+                            "Column": {
+                                "Expression": {"SourceRef": {"Source": nome_fonte}},
+                                "Property": "Dia",
+                            }
+                        },
+                    ],
+                    "Values": [
+                        [
+                            {"Literal": {"Value": f"{data_referencia.year}L"}},
+                            {
+                                "Literal": {
+                                    "Value": f"'{trimestre_powerbi(data_referencia)}'"
+                                }
+                            },
+                            {
+                                "Literal": {
+                                    "Value": f"'{MESES_POWERBI[data_referencia.month]}'"
+                                }
+                            },
+                            {"Literal": {"Value": f"{data_referencia.day}L"}},
+                        ]
+                    ],
+                }
+            }
+        },
+    )
+
+
+def consulta_visual_powerbi(visual):
+    if visual.get("query"):
+        return json.loads(visual["query"])
+
+    configuracao = json.loads(visual["config"])
+    visual_config = configuracao["singleVisual"]
+    query = json.loads(
+        json.dumps(
+            visual_config["prototypeQuery"],
+            ensure_ascii=False,
+        )
+    )
+    tipo_visual = visual_config.get("visualType")
+    total_selecoes = len(query.get("Select", []))
+
+    if tipo_visual == "tableEx":
+        binding = {
+            "Primary": {
+                "Groupings": [
+                    {
+                        "Projections": list(range(total_selecoes)),
+                        "Subtotal": 1,
+                    }
+                ]
+            },
+            "DataReduction": {
+                "DataVolume": 3,
+                "Primary": {"Window": {"Count": 500}},
+            },
+            "Version": 1,
+        }
+    else:
+        binding = {
+            "Primary": {
+                "Groupings": [
+                    {
+                        "Projections": list(range(total_selecoes)),
+                    }
+                ]
+            },
+            "DataReduction": {
+                "DataVolume": 3,
+                "Primary": {"Top": {}},
+            },
+            "Version": 1,
+        }
+
+    return {
+        "Commands": [
+            {
+                "SemanticQueryDataShapeCommand": {
+                    "Query": query,
+                    "Binding": binding,
+                    "ExecutionMetricsKind": 1,
+                }
+            }
+        ]
+    }
+
+
 def montar_consulta_powerbi(data_referencia):
     metadados = carregar_metadados_powerbi()
     secao_mapa = next(
@@ -2638,14 +2769,10 @@ def montar_consulta_powerbi(data_referencia):
         if secao.get("displayName") == "Mapa"
     )
     visual = secao_mapa["visualContainers"][0]
-    consulta = json.loads(visual["query"])
+    consulta = consulta_visual_powerbi(visual)
     comando = consulta["Commands"][0]["SemanticQueryDataShapeCommand"]
-    valores_data = comando["Query"]["Where"][0]["Condition"]["In"]["Values"][0]
-
-    valores_data[0]["Literal"]["Value"] = f"{data_referencia.year}L"
-    valores_data[1]["Literal"]["Value"] = f"'{trimestre_powerbi(data_referencia)}'"
-    valores_data[2]["Literal"]["Value"] = f"'{MESES_POWERBI[data_referencia.month]}'"
-    valores_data[3]["Literal"]["Value"] = f"{data_referencia.day}L"
+    comando["Query"]["Where"] = []
+    aplicar_filtro_data_powerbi(comando["Query"], data_referencia)
     aplicar_filtro_fila_powerbi(comando["Query"])
 
     return {
@@ -2676,16 +2803,17 @@ def montar_consulta_abandonadas_powerbi(data_referencia):
         for secao in metadados["exploration"]["sections"]
         if secao.get("displayName") == "Abandonos"
     )
-    visual = secao_abandonos["visualContainers"][4]
-    consulta = json.loads(visual["query"])
+    visual = next(
+        visual
+        for visual in secao_abandonos["visualContainers"]
+        if "Abandonadas.MAB" in visual.get("query", "")
+        or "Abandonadas.MAB" in visual.get("config", "")
+    )
+    consulta = consulta_visual_powerbi(visual)
     comando = consulta["Commands"][0]["SemanticQueryDataShapeCommand"]
     query = comando["Query"]
-    valores_data = query["Where"][0]["Condition"]["In"]["Values"][0]
-
-    valores_data[0]["Literal"]["Value"] = f"{data_referencia.year}L"
-    valores_data[1]["Literal"]["Value"] = f"'{trimestre_powerbi(data_referencia)}'"
-    valores_data[2]["Literal"]["Value"] = f"'{MESES_POWERBI[data_referencia.month]}'"
-    valores_data[3]["Literal"]["Value"] = f"{data_referencia.day}L"
+    query["Where"] = []
+    aplicar_filtro_data_powerbi(query, data_referencia)
     query["Select"] = [
         {
             "Aggregation": {
