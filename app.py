@@ -195,6 +195,49 @@ FERIADOS_ADICIONAIS = {
     date(2026, 6, 4),
 }
 
+PROGRAMACAO_FERIAS = [
+    ("Janaina Lima dos Reis Urany", date(2026, 6, 1), date(2026, 6, 30)),
+    ("Kerollen Cristielly de Jesus Siqueira", date(2026, 6, 1), date(2026, 6, 30)),
+    ("JoÃ£o Frutuoso Machado Neto", date(2026, 6, 15), date(2026, 6, 29)),
+    ("Cristiane Ramos da Silva Rocha", date(2026, 6, 15), date(2026, 6, 29)),
+    ("Brenda de Menezes Silva", date(2026, 6, 15), date(2026, 6, 29)),
+    ("JÃ©ssica FÃ© Moura", date(2026, 5, 25), date(2026, 6, 23)),
+    ("Alisson de Freitas Silva", date(2026, 7, 1), date(2026, 7, 15)),
+    ("Emilly Kamilly Medeiros Miranda", date(2026, 7, 1), date(2026, 7, 15)),
+    ("Jaqueline Evangelista da Silva Martins", date(2026, 7, 1), date(2026, 7, 10)),
+    ("Davylla Rodrigues Freitas Silva", date(2026, 7, 15), date(2026, 7, 29)),
+    ("Ana Paula Da Luz Silva Aleixo", date(2026, 7, 15), date(2026, 7, 29)),
+    ("SubLuma", date(2026, 7, 16), date(2026, 7, 30)),
+    ("Lizandra Gomes Duarte", date(2026, 8, 3), date(2026, 8, 17)),
+    ("Matheus Farias De Souza", date(2026, 8, 3), date(2026, 8, 17)),
+    ("Rafael Gomes de Morais", date(2026, 8, 17), date(2026, 8, 31)),
+    ("Sarah Steffanie de Lima Borges", date(2026, 8, 17), date(2026, 9, 15)),
+    ("Brenda Oliveira", date(2026, 8, 17), date(2026, 8, 30)),
+    ("Francielson de Oliveira", date(2026, 9, 1), date(2026, 9, 15)),
+    ("Lucas Luiz Romero", date(2026, 9, 1), date(2026, 9, 15)),
+    ("Brenda de Menezes Silva", date(2026, 9, 16), date(2026, 9, 30)),
+    ("Maysa Victoria Dias Moura", date(2026, 9, 16), date(2026, 10, 16)),
+    ("SubLuma", date(2026, 9, 8), date(2026, 9, 17)),
+    ("Brenda Oliveira", date(2026, 9, 21), date(2026, 9, 26)),
+    ("Leandro Oliveira de Sousa", date(2026, 10, 1), date(2026, 10, 30)),
+    ("Ana Karollyne Souza Faria", date(2026, 10, 1), date(2026, 10, 15)),
+    ("Damyllis Lorraine de Oliveira GonÃ§alves", date(2026, 10, 19), date(2026, 11, 2)),
+    ("Carlos Mateus Cassimiro Nunes", date(2026, 10, 19), date(2026, 11, 17)),
+    ("Esther", date(2026, 10, 19), date(2026, 11, 1)),
+    ("JoÃ£o Frutuoso Machado Neto", date(2026, 11, 3), date(2026, 11, 17)),
+    ("Lizandra Gomes Duarte", date(2026, 11, 3), date(2026, 11, 17)),
+    ("Esther", date(2026, 12, 23), date(2026, 12, 29)),
+    ("SubLuma", date(2026, 12, 21), date(2026, 12, 25)),
+    ("Rafael Gomes de Morais", date(2026, 12, 21), date(2027, 1, 4)),
+    ("Matheus Farias De Souza", date(2026, 12, 21), date(2027, 1, 4)),
+    ("Ana Paula Da Luz Silva Aleixo", date(2026, 12, 21), date(2027, 1, 4)),
+    ("Emilly Kamilly Medeiros Miranda", date(2026, 12, 21), date(2027, 1, 4)),
+    ("Isabella Alves Queiroz", date(2026, 12, 21), date(2027, 1, 4)),
+    ("Alisson de Freitas Silva", date(2026, 12, 21), date(2027, 1, 4)),
+    ("Jaqueline Evangelista da Silva Martins", date(2026, 12, 21), date(2027, 1, 4)),
+    ("Isabella Borges de Oliveira", date(2026, 12, 21), date(2027, 1, 4)),
+]
+
 
 class FormularioSGDParser(HTMLParser):
     def __init__(self):
@@ -1669,6 +1712,41 @@ def normalizar_nome(valor):
     texto = re.sub(r"\b(de|da|do|das|dos|e)\b", " ", texto)
     texto = re.sub(r"[^a-z0-9]+", " ", texto)
     return re.sub(r"\s+", " ", texto).strip()
+
+
+def periodos_ferias_tecnico(tecnico):
+    tecnico_normalizado = normalizar_nome(tecnico)
+    return [
+        (inicio, fim)
+        for nome, inicio, fim in PROGRAMACAO_FERIAS
+        if normalizar_nome(nome) == tecnico_normalizado
+    ]
+
+
+def dias_uteis_ferias_no_mes(tecnico, ano, mes):
+    inicio_mes_referencia = date(ano, mes, 1)
+    fim_mes_referencia = date(ano, mes, calendar.monthrange(ano, mes)[1])
+    dias_ferias = set()
+
+    for inicio_ferias, fim_ferias in periodos_ferias_tecnico(tecnico):
+        inicio = max(inicio_ferias, inicio_mes_referencia)
+        fim = min(fim_ferias, fim_mes_referencia)
+        if inicio > fim:
+            continue
+
+        for data_atual in datas_no_periodo(inicio, fim):
+            if data_atual.weekday() < 5 and not eh_feriado_federal(data_atual):
+                dias_ferias.add(data_atual)
+
+    return len(dias_ferias)
+
+
+def ferias_ativa_tecnico(tecnico, data_referencia=None):
+    data_referencia = data_referencia or datetime.now(FUSO_HORARIO_APP).date()
+    for inicio, fim in periodos_ferias_tecnico(tecnico):
+        if inicio <= data_referencia <= fim:
+            return inicio, fim
+    return None
 
 
 def nivel_canonico(valor):
