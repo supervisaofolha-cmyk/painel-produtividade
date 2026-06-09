@@ -549,6 +549,14 @@ def database_url_lista_apoio():
         or LISTA_APOIO_DATABASE_URL_PADRAO
         or ""
     ).strip()
+    if "pooler.supabase.com:6543/" in url:
+        url = url.replace(
+            "pooler.supabase.com:6543/",
+            "pooler.supabase.com:5432/",
+        )
+    if url and "connect_timeout=" not in url:
+        separador = "&" if "?" in url else "?"
+        url = f"{url}{separador}connect_timeout=15"
     return url
 
 
