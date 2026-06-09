@@ -5357,27 +5357,143 @@ ssc_diario = (
     .reset_index()
     .sort_values(by="Data")
 )
+ssc_diario["Data Curta"] = ssc_diario["Data"].dt.strftime("%d/%m")
+ssc_total_periodo = int(round(ssc_diario["SSC"].sum()))
+ssc_media_diaria = float(ssc_diario["SSC"].mean()) if not ssc_diario.empty else 0
 
-grafico_ssc = px.line(
-    ssc_diario,
-    x="Data Formatada",
-    y="SSC",
-    markers=True,
-    labels={
-        "Data Formatada": "Dia",
-        "SSC": "SSC Atendido",
-    },
-    title="SSC Atendido no Mês",
+if ssc_diario.empty:
+    melhor_data_ssc = "-"
+    melhor_valor_ssc = 0
+    indice_melhor_ssc = None
+else:
+    indice_melhor_ssc = ssc_diario["SSC"].idxmax()
+    melhor_linha_ssc = ssc_diario.loc[indice_melhor_ssc]
+    melhor_data_ssc = melhor_linha_ssc["Data Curta"]
+    melhor_valor_ssc = int(round(melhor_linha_ssc["SSC"]))
+
+st.markdown(
+    f"""
+    <div class="produtividade-resumo">
+        <div class="produtividade-resumo-item">
+            <span class="produtividade-resumo-ponto" style="background:#16A34A;"></span>
+            <span>SSC total <strong>{ssc_total_periodo}</strong></span>
+        </div>
+        <div class="produtividade-resumo-item">
+            <span class="produtividade-resumo-ponto" style="background:#6B7280;"></span>
+            <span>Média diária <strong>{ssc_media_diaria:.0f}</strong></span>
+        </div>
+        <div class="produtividade-resumo-item">
+            <span class="produtividade-resumo-ponto" style="background:#F97316;"></span>
+            <span>Melhor dia <strong>{melhor_data_ssc} · {melhor_valor_ssc}</strong></span>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
-grafico_ssc.update_traces(line_color=COR_LARANJA, marker_color=COR_LARANJA)
+grafico_ssc = go.Figure()
+grafico_ssc.add_trace(
+    go.Scatter(
+        name="SSC",
+        x=ssc_diario["Data Curta"],
+        y=ssc_diario["SSC"],
+        mode="lines+markers+text",
+        line=dict(color="#15803D", width=2.5),
+        marker=dict(
+            color="#FFFFFF",
+            size=8,
+            line=dict(color="#15803D", width=2),
+        ),
+        fill="tozeroy",
+        fillcolor="rgba(22, 163, 74, 0.10)",
+        text=ssc_diario["SSC"].round().astype(int),
+        textposition="top center",
+        textfont=dict(color="#374151", size=11),
+        cliponaxis=False,
+        customdata=ssc_diario[["Data Formatada"]].to_numpy(),
+        hovertemplate=(
+            "<b>%{customdata[0]}</b><br>"
+            "SSC atendido: %{y}<br>"
+            f"Média do período: {ssc_media_diaria:.0f}<extra></extra>"
+        ),
+    )
+)
+
+if indice_melhor_ssc is not None:
+    melhor_linha_ssc = ssc_diario.loc[indice_melhor_ssc]
+    grafico_ssc.add_trace(
+        go.Scatter(
+            name="Melhor dia",
+            x=[melhor_linha_ssc["Data Curta"]],
+            y=[melhor_linha_ssc["SSC"]],
+            mode="markers",
+            marker=dict(
+                color=COR_LARANJA,
+                size=12,
+                line=dict(color="#FFFFFF", width=2),
+            ),
+            hoverinfo="skip",
+            showlegend=False,
+        )
+    )
+    grafico_ssc.add_annotation(
+        x=melhor_linha_ssc["Data Curta"],
+        y=melhor_linha_ssc["SSC"],
+        text="Melhor dia",
+        showarrow=True,
+        arrowhead=0,
+        arrowcolor=COR_LARANJA,
+        ax=0,
+        ay=-42,
+        font=dict(color="#C2410C", size=11),
+        bgcolor="#FFFFFF",
+        bordercolor="#FED7AA",
+        borderpad=4,
+    )
+
+if ssc_media_diaria > 0:
+    grafico_ssc.add_hline(
+        y=ssc_media_diaria,
+        line_color="#9CA3AF",
+        line_dash="dash",
+        line_width=1.2,
+        annotation_text=f"Média: {ssc_media_diaria:.0f}",
+        annotation_position="top left",
+        annotation_font_color="#6B7280",
+        annotation_font_size=11,
+        annotation_bgcolor="#FFFFFF",
+    )
+
+maior_ssc = max(
+    ssc_diario["SSC"].max() if not ssc_diario.empty else 0,
+    ssc_media_diaria,
+    1,
+)
 grafico_ssc.update_layout(
     plot_bgcolor=COR_BRANCO,
     paper_bgcolor=COR_BRANCO,
-    font_color=COR_CINZA,
+    font_color="#4B5563",
+    showlegend=False,
+    height=410,
+    margin=dict(l=45, r=20, t=38, b=55),
     xaxis_title="Dia",
     yaxis_title="SSC Atendido",
-    xaxis=dict(type="category"),
+    xaxis=dict(
+        type="category",
+        showgrid=False,
+        linecolor="#E5E7EB",
+        tickfont=dict(size=11, color="#4B5563"),
+    ),
+    yaxis=dict(
+        showgrid=True,
+        gridcolor="#F3F4F6",
+        gridwidth=1,
+        zeroline=False,
+        rangemode="tozero",
+        range=[0, maior_ssc * 1.25],
+        tickfont=dict(size=11, color="#6B7280"),
+    ),
+    hovermode="x unified",
 )
 
 st.plotly_chart(grafico_ssc, use_container_width=True)
