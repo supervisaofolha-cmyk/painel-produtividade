@@ -4468,15 +4468,30 @@ dados_ultimo_dia_votacao = dados_mes_atual[
 
 
 def montar_grafico_ranking(ranking, titulo, eixo_x, meta_referencia=None):
+    def abreviar_nome_ranking(nome):
+        partes = builtins.str(nome or "").title().split()
+        if len(partes) <= 2:
+            return " ".join(partes)
+        return f"{partes[0]} {partes[-1]}"
+
     ranking = (
         ranking.copy()
         .sort_values(by="Realizado", ascending=False)
         .reset_index(drop=True)
     )
     ranking["Posição"] = ranking.index + 1
-    ranking["Técnico Exibição"] = ranking["Técnico"].str.title()
+    ranking["Técnico Completo"] = ranking["Técnico"].str.title()
+    ranking["Técnico Exibição"] = ranking["Técnico"].map(abreviar_nome_ranking)
     ranking["Cor"] = ranking["Técnico"].apply(
         lambda nome: "Selecionado" if nome == tecnico else "Mesmo nível"
+    )
+    ranking["Rótulo"] = ranking.apply(
+        lambda linha: (
+            f"{int(linha['Posição'])}º · {int(linha['Realizado'])}"
+            if linha["Posição"] <= 3
+            else f"{int(linha['Realizado'])}"
+        ),
+        axis=1,
     )
 
     grafico = px.bar(
@@ -4484,7 +4499,8 @@ def montar_grafico_ranking(ranking, titulo, eixo_x, meta_referencia=None):
         x="Técnico Exibição",
         y="Realizado",
         color="Cor",
-        text="Realizado",
+        text="Rótulo",
+        custom_data=["Técnico Completo", "Posição"],
         labels={
             "Realizado": eixo_x,
             "Técnico Exibição": "Técnico",
@@ -4493,31 +4509,68 @@ def montar_grafico_ranking(ranking, titulo, eixo_x, meta_referencia=None):
         title=titulo,
         color_discrete_map={
             "Selecionado": COR_LARANJA,
-            "Mesmo nível": COR_CINZA,
+            "Mesmo nível": "#9CA3AF",
         },
         category_orders={
             "Técnico Exibição": ranking["Técnico Exibição"].tolist()
         },
     )
 
-    grafico.update_traces(textposition="outside")
+    grafico.update_traces(
+        textposition="outside",
+        textfont_color="#374151",
+        textfont_size=12,
+        width=0.54,
+        cliponaxis=False,
+        hovertemplate=(
+            "<b>%{customdata[0]}</b><br>"
+            "Posição: %{customdata[1]}º<br>"
+            f"{eixo_x}: %{{y}}<extra></extra>"
+        ),
+    )
     if meta_referencia is not None and meta_referencia > 0:
         grafico.add_hline(
             y=meta_referencia,
-            line_color="#DC2626",
+            line_color="#EF4444",
             line_dash="dash",
-            line_width=2,
-            annotation_text=f"Meta: {arredondar_esperado(meta_referencia)}",
+            line_width=1.4,
+            annotation_text=(
+                f"Meta do nível: {arredondar_esperado(meta_referencia)}"
+            ),
             annotation_position="top left",
-            annotation_font_color="#DC2626",
+            annotation_font_color="#B91C1C",
+            annotation_font_size=11,
+            annotation_bgcolor="#FFFFFF",
         )
     grafico.update_layout(
         plot_bgcolor=COR_BRANCO,
         paper_bgcolor=COR_BRANCO,
-        font_color=COR_CINZA,
+        font_color="#4B5563",
+        showlegend=False,
+        bargap=0.42,
+        height=430,
+        margin=dict(l=45, r=20, t=62, b=95),
         xaxis_title="Técnico",
         yaxis_title=eixo_x,
-        legend_title="",
+        xaxis=dict(
+            type="category",
+            showgrid=False,
+            tickangle=-25,
+            tickfont=dict(size=11, color="#4B5563"),
+            linecolor="#E5E7EB",
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor="#F3F4F6",
+            gridwidth=1,
+            zeroline=False,
+            rangemode="tozero",
+            tickfont=dict(size=11, color="#6B7280"),
+        ),
+        title=dict(
+            font=dict(size=15, color="#111827"),
+            x=0,
+        ),
     )
     return grafico
 
