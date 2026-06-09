@@ -4535,7 +4535,20 @@ if not modo_gestao:
     )
     dias_meta_valor = float(dias_uteis_para_meta(ano_atual, mes_atual))
     fonte_dias_meta = "Calendário do mês"
-    detalhe_dias_meta = "Sem abatimentos do PontoWeb."
+    dias_segunda_sexta = sum(
+        1
+        for dia in range(
+            1,
+            calendar.monthrange(ano_atual, mes_atual)[1] + 1,
+        )
+        if date(ano_atual, mes_atual, dia).weekday() < 5
+    )
+    feriados_em_dias_uteis = int(dias_segunda_sexta - dias_meta_valor)
+    detalhe_dias_meta = (
+        f"{dias_segunda_sexta} dias de segunda a sexta"
+        f" - {feriados_em_dias_uteis} feriado(s)"
+        f" = {int(dias_meta_valor)} dias."
+    )
     if COLUNA_DIAS_META in dados_tecnico.columns:
         dias_meta_salvos = (
             dados_tecnico[
