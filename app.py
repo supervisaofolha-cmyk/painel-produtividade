@@ -4184,8 +4184,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.title("📊 Painel de Produtividade")
-
 df = ler_dataframe_produtividade()
 usuarios = pd.read_excel(ARQUIVO_USUARIOS)
 
@@ -4222,7 +4220,6 @@ pontoweb_banco_identificador = env_local.get(
     os.getenv("PONTOWEB_BANCO_IDENTIFICADOR", ""),
 )
 
-st.sidebar.title("🔐 Login")
 for chave, valor_padrao in {
     "auth_ok": False,
     "auth_modo_gestao": False,
@@ -4233,10 +4230,102 @@ for chave, valor_padrao in {
         st.session_state[chave] = valor_padrao
 
 if not st.session_state["auth_ok"]:
-    with st.sidebar.form("form_login"):
-        usuario_input = st.text_input("Usuário", key="login_usuario_input")
-        senha_input = st.text_input("Senha", type="password", key="login_senha_input")
-        entrar = st.form_submit_button("Entrar")
+    st.markdown(
+        """
+        <style>
+        [data-testid="stSidebar"],
+        [data-testid="collapsedControl"] {
+            display:none;
+        }
+        [data-testid="stAppViewContainer"] > .main {
+            background:#FFFFFF;
+        }
+        [data-testid="stForm"] {
+            border:0;
+            padding:0;
+        }
+        [data-testid="stFormSubmitButton"] button {
+            width:100%;
+            background:#F97316;
+            color:#FFFFFF;
+            border:1px solid #F97316;
+            border-radius:7px;
+            font-weight:700;
+            min-height:42px;
+        }
+        [data-testid="stFormSubmitButton"] button:hover {
+            background:#EA580C;
+            border-color:#EA580C;
+            color:#FFFFFF;
+        }
+        </style>
+        <div class="login-marca"></div>
+        <div class="login-topo">Soft News · Folha</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    data_atualizacao_login = df["Data"].max()
+    data_atualizacao_texto = (
+        data_atualizacao_login.strftime("%d/%m/%Y")
+        if not pd.isna(data_atualizacao_login)
+        else "não disponível"
+    )
+
+    espaco_esquerdo, coluna_login, espaco_direito = st.columns([1, 1.05, 1])
+    with coluna_login:
+        st.markdown(
+            """
+            <div class="login-cabecalho">
+                <div class="login-simbolo" aria-hidden="true">
+                    <span style="height:13px;background:#2563EB;"></span>
+                    <span style="height:21px;background:#F97316;"></span>
+                    <span style="height:28px;background:#16A34A;"></span>
+                </div>
+                <div class="login-titulo">Painel de Produtividade</div>
+                <div class="login-subtitulo">
+                    Acompanhe seus resultados e indicadores
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        with st.form("form_login"):
+            usuario_input = st.text_input(
+                "Usuário",
+                key="login_usuario_input",
+                placeholder="Informe seu usuário",
+            )
+            senha_input = st.text_input(
+                "Senha",
+                type="password",
+                key="login_senha_input",
+                placeholder="Informe sua senha",
+            )
+            entrar = st.form_submit_button("Entrar")
+
+        st.markdown(
+            f"""
+            <div class="login-indicadores">
+                <div class="login-indicador">
+                    <span style="background:#16A34A;"></span>
+                    Produtividade
+                </div>
+                <div class="login-indicador">
+                    <span style="background:#F97316;"></span>
+                    Qualidade
+                </div>
+                <div class="login-indicador">
+                    <span style="background:#2563EB;"></span>
+                    Evolução
+                </div>
+            </div>
+            <div class="login-atualizacao">
+                Dados atualizados em {data_atualizacao_texto}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     if entrar:
         usuario_digitado = builtins.str(usuario_input).lower().strip()
@@ -4270,14 +4359,16 @@ if not st.session_state["auth_ok"]:
             ).lower().strip()
             st.rerun()
         else:
-            st.sidebar.error("Usuário ou senha inválidos.")
+            st.error("Usuário ou senha inválidos.")
 
-    st.warning("Digite usuário e senha.")
     st.stop()
 
 modo_gestao = st.session_state["auth_modo_gestao"]
 usuario_digitado = st.session_state["auth_usuario"]
 tecnico = st.session_state["auth_tecnico"]
+
+st.title("📊 Painel de Produtividade")
+st.sidebar.title("Painel")
 
 if st.sidebar.button("Sair", key="logout_painel"):
     for chave, valor_padrao in {
