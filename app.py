@@ -5047,6 +5047,15 @@ if not modo_gestao:
             .sort_values(by="Realizado", ascending=False)
             .reset_index(drop=True)
         )
+        meta_diaria_nivel = meta_esperada_nivel(nivel_tecnico)
+        datas_validas_ranking = {
+            pd.Timestamp(data_linha).date()
+            for data_linha in base_ranking_nivel["Data"].dropna().unique()
+            if pd.Timestamp(data_linha).date() <= ultima_data_produtividade.date()
+            and pd.Timestamp(data_linha).weekday() < 5
+            and not eh_feriado_federal(pd.Timestamp(data_linha).date())
+        }
+        meta_mensal_nivel = meta_diaria_nivel * len(datas_validas_ranking)
 
         st.divider()
         st.subheader(f"Ranking do Seu Nível - {nivel_tecnico}")
@@ -5058,6 +5067,7 @@ if not modo_gestao:
                     ranking_nivel_diario,
                     f"Ranking Diário - {nivel_tecnico}",
                     "Produtividade do dia",
+                    meta_referencia=meta_diaria_nivel,
                 ),
                 use_container_width=True,
             )
@@ -5068,6 +5078,7 @@ if not modo_gestao:
                     ranking_nivel_mensal,
                     f"Ranking Mensal - {nivel_tecnico}",
                     "Produtividade do mês",
+                    meta_referencia=meta_mensal_nivel,
                 ),
                 use_container_width=True,
             )
