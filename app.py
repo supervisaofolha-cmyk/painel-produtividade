@@ -1683,6 +1683,17 @@ def meta_esperada_nivel(valor):
     return META_ESPERADA_POR_NIVEL.get(nivel_canonico(valor), 0)
 
 
+def arredondar_esperado(valor):
+    if pd.isna(valor):
+        return 0
+    return int(
+        Decimal(builtins.str(float(valor))).quantize(
+            Decimal("1"),
+            rounding=ROUND_HALF_UP,
+        )
+    )
+
+
 def percentuais_absorcao_por_mes(dataframe, ano, mes):
     dados_mes = dataframe[
         (dataframe["Data"].dt.year == ano)
@@ -3615,7 +3626,9 @@ def recalcular_colunas_derivadas(df):
         meta_por_linha / total_meta_mes.replace(0, pd.NA)
     )
     proporcional = proporcional.fillna(0)
-    df["Esperado"] = proporcional.clip(upper=meta_por_linha).round(0)
+    df["Esperado"] = proporcional.clip(upper=meta_por_linha).map(
+        arredondar_esperado
+    )
     df.loc[linhas_sem_movimento, "Esperado"] = 0
     df["Desvio"] = df["Realizado"] - df["Esperado"]
     df["Classificação"] = df["Desvio"].apply(status_por_desvio)
