@@ -16,7 +16,7 @@ import builtins
 from datetime import date, datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from difflib import SequenceMatcher
-from html import unescape
+from html import escape, unescape
 from html.parser import HTMLParser
 from io import BytesIO, StringIO
 import calendar
@@ -3970,6 +3970,113 @@ st.markdown(
     color:white;
     font-weight:bold;
     font-size:16px;
+}}
+.resultado-cabecalho {{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin:4px 0 14px;
+}}
+.resultado-identidade {{
+    min-width:0;
+}}
+.resultado-nome {{
+    color:#111827;
+    font-size:24px;
+    font-weight:700;
+    line-height:1.2;
+}}
+.resultado-nivel {{
+    color:#6B7280;
+    font-size:13px;
+    margin-top:4px;
+}}
+.resultado-status {{
+    color:#FFFFFF;
+    border-radius:6px;
+    padding:6px 10px;
+    font-size:12px;
+    font-weight:700;
+    white-space:nowrap;
+}}
+.resultado-grid-principal {{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:12px;
+}}
+.resultado-grid-secundario {{
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:10px;
+    margin-top:12px;
+}}
+.resultado-card {{
+    background:#FFFFFF;
+    border:1px solid #E5E7EB;
+    border-radius:8px;
+    padding:14px 16px;
+    min-width:0;
+}}
+.resultado-card.destaque {{
+    min-height:92px;
+}}
+.resultado-label {{
+    color:#6B7280;
+    font-size:12px;
+    line-height:1.3;
+}}
+.resultado-valor {{
+    color:#111827;
+    font-size:28px;
+    font-weight:700;
+    line-height:1.15;
+    margin-top:8px;
+}}
+.resultado-card.secundario .resultado-valor {{
+    font-size:21px;
+    margin-top:6px;
+}}
+.resultado-progresso-bloco {{
+    margin:14px 0 2px;
+}}
+.resultado-progresso-texto {{
+    display:flex;
+    justify-content:space-between;
+    color:#4B5563;
+    font-size:12px;
+    margin-bottom:6px;
+}}
+.resultado-progresso-trilho {{
+    width:100%;
+    height:8px;
+    background:#E5E7EB;
+    border-radius:4px;
+    overflow:hidden;
+}}
+.resultado-progresso-barra {{
+    height:100%;
+    border-radius:4px;
+}}
+.resultado-faixa {{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+    margin-top:12px;
+}}
+@media (max-width: 900px) {{
+    .resultado-grid-principal {{
+        grid-template-columns:1fr;
+    }}
+    .resultado-grid-secundario {{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }}
+    .resultado-faixa {{
+        grid-template-columns:1fr;
+    }}
+    .resultado-nome {{
+        font-size:20px;
+    }}
 }}
 </style>
 """,
