@@ -4670,65 +4670,126 @@ if modo_gestao:
     )
 
 st.divider()
-st.subheader(f"📌 Resultados Individuais - {tecnico.title()}")
+st.subheader("Resultados Individuais")
 
 nivel_mode = dados_mes_atual["Nível"].dropna().mode()
 nivel_tecnico = None if nivel_mode.empty else nivel_mode.iloc[0]
 
-if modo_gestao:
-    col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
-else:
-    col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns(9)
+coluna_votacao = nome_coluna_dataframe(
+    dados_ultimo_dia_votacao,
+    "Votação",
+    "VotaÃ§Ã£o",
+    "Vota??o",
+)
+votacao_ultimo_dia = round(dados_ultimo_dia_votacao[coluna_votacao].mean(), 2)
 
-with col1:
-    st.metric("Atendidas BI Total", int(dados_mes_atual["Atendidas"].sum()))
+coluna_satisfacao = nome_coluna_dataframe(
+    dados_ultimo_dia_satisfacao,
+    "Satisfação",
+    "SatisfaÃ§Ã£o",
+    "Satisfa??o",
+)
+satisfacao_ultimo_dia = round(
+    dados_ultimo_dia_satisfacao[coluna_satisfacao].mean(),
+    2,
+)
 
-with col2:
-    st.metric("Realizado Total", int(dados_mes_atual["Realizado"].sum()))
+coluna_classificacao = nome_coluna_dataframe(
+    dados_mes_atual,
+    "Classificação",
+    "ClassificaÃ§Ã£o",
+    "Classifica??o",
+)
+classificacao_mode = dados_mes_atual[coluna_classificacao].dropna().mode()
+classificacao = (
+    "Sem classificação"
+    if classificacao_mode.empty
+    else classificacao_mode.iloc[0]
+)
 
-with col3:
-    st.metric("SSC Total", int(dados_mes_atual["SSC"].sum()))
+atendidas_total = int(dados_mes_atual["Atendidas"].sum())
+realizado_total = int(dados_mes_atual["Realizado"].sum())
+esperado_total = int(dados_mes_atual["Esperado"].sum())
+desvio_total = realizado_total - esperado_total
+ssc_total = int(dados_mes_atual["SSC"].sum())
+ro_total = int(dados_mes_atual["RO"].sum())
+progresso_meta = (
+    (realizado_total / esperado_total) * 100
+    if esperado_total > 0
+    else 0
+)
+largura_progresso = min(max(progresso_meta, 0), 100)
+cor_desvio = "#16A34A" if desvio_total >= 0 else "#DC2626"
+cor_progresso = "#16A34A" if progresso_meta >= 100 else COR_LARANJA
+cor_classificacao = CORES_STATUS.get(classificacao, "#6B7280")
+nome_exibicao = escape(tecnico.title())
+nivel_exibicao = escape(builtins.str(nivel_tecnico or "Nível não informado"))
+classificacao_exibicao = escape(builtins.str(classificacao))
+sinal_desvio = "+" if desvio_total > 0 else ""
 
-with col4:
-    st.metric("RO Total", int(dados_mes_atual["RO"].sum()))
-
-with col5:
-    coluna_votacao = nome_coluna_dataframe(
-        dados_ultimo_dia_votacao,
-        "Votação",
-        "VotaÃ§Ã£o",
-        "Vota??o",
-    )
-    votacao_ultimo_dia = round(dados_ultimo_dia_votacao[coluna_votacao].mean(), 2)
-    st.metric("Votação Média", f"{votacao_ultimo_dia}%")
-
-with col6:
-    coluna_satisfacao = nome_coluna_dataframe(
-        dados_ultimo_dia_satisfacao,
-        "Satisfação",
-        "SatisfaÃ§Ã£o",
-        "Satisfa??o",
-    )
-    satisfacao_ultimo_dia = round(
-        dados_ultimo_dia_satisfacao[coluna_satisfacao].mean(),
-        2,
-    )
-    st.metric("Satisfação", f"{satisfacao_ultimo_dia}%")
-
-with col7:
-    coluna_classificacao = nome_coluna_dataframe(
-        dados_mes_atual,
-        "Classificação",
-        "ClassificaÃ§Ã£o",
-        "Classifica??o",
-    )
-    classificacao_mode = dados_mes_atual[coluna_classificacao].dropna().mode()
-    classificacao = (
-        "Sem classificação"
-        if classificacao_mode.empty
-        else classificacao_mode.iloc[0]
-    )
-    st.metric("Classificação", classificacao)
+st.markdown(
+    f"""
+    <div class="resultado-cabecalho">
+        <div class="resultado-identidade">
+            <div class="resultado-nome">{nome_exibicao}</div>
+            <div class="resultado-nivel">{nivel_exibicao}</div>
+        </div>
+        <div class="resultado-status" style="background:{cor_classificacao};">
+            {classificacao_exibicao}
+        </div>
+    </div>
+    <div class="resultado-grid-principal">
+        <div class="resultado-card destaque">
+            <div class="resultado-label">Realizado</div>
+            <div class="resultado-valor">{realizado_total}</div>
+        </div>
+        <div class="resultado-card destaque">
+            <div class="resultado-label">Esperado</div>
+            <div class="resultado-valor">{esperado_total}</div>
+        </div>
+        <div class="resultado-card destaque">
+            <div class="resultado-label">Desvio</div>
+            <div class="resultado-valor" style="color:{cor_desvio};">
+                {sinal_desvio}{desvio_total}
+            </div>
+        </div>
+    </div>
+    <div class="resultado-progresso-bloco">
+        <div class="resultado-progresso-texto">
+            <span>Progresso da meta mensal</span>
+            <strong>{progresso_meta:.0f}% da meta</strong>
+        </div>
+        <div class="resultado-progresso-trilho">
+            <div class="resultado-progresso-barra"
+                 style="width:{largura_progresso:.2f}%;background:{cor_progresso};">
+            </div>
+        </div>
+    </div>
+    <div class="resultado-grid-secundario">
+        <div class="resultado-card secundario">
+            <div class="resultado-label">Atendidas</div>
+            <div class="resultado-valor">{atendidas_total}</div>
+        </div>
+        <div class="resultado-card secundario">
+            <div class="resultado-label">SSC</div>
+            <div class="resultado-valor">{ssc_total}</div>
+        </div>
+        <div class="resultado-card secundario">
+            <div class="resultado-label">RO</div>
+            <div class="resultado-valor">{ro_total}</div>
+        </div>
+        <div class="resultado-card secundario">
+            <div class="resultado-label">Votação Média</div>
+            <div class="resultado-valor">{votacao_ultimo_dia:.2f}%</div>
+        </div>
+        <div class="resultado-card secundario">
+            <div class="resultado-label">Satisfação</div>
+            <div class="resultado-valor">{satisfacao_ultimo_dia:.2f}%</div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 if not modo_gestao:
     percentual_absorcao = percentual_absorcao_tecnico(
