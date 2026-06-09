@@ -4727,6 +4727,7 @@ nivel_exibicao = escape(builtins.str(nivel_tecnico or "Nível não informado"))
 classificacao_exibicao = escape(builtins.str(classificacao))
 sinal_desvio = "+" if desvio_total > 0 else ""
 cor_votacao = "#DC2626" if votacao_ultimo_dia < 21 else "#111827"
+cor_satisfacao = "#DC2626" if satisfacao_ultimo_dia < 98 else "#111827"
 
 st.markdown(
     f"""
@@ -4787,7 +4788,9 @@ st.markdown(
         </div>
         <div class="resultado-card secundario">
             <div class="resultado-label">Satisfação</div>
-            <div class="resultado-valor">{satisfacao_ultimo_dia:.2f}%</div>
+            <div class="resultado-valor" style="color:{cor_satisfacao};">
+                {satisfacao_ultimo_dia:.2f}%
+            </div>
         </div>
     </div>
     """,
