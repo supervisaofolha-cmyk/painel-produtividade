@@ -4467,8 +4467,12 @@ dados_ultimo_dia_votacao = dados_mes_atual[
 ]
 
 
-def montar_grafico_ranking(ranking, titulo, eixo_x):
-    ranking = ranking.copy()
+def montar_grafico_ranking(ranking, titulo, eixo_x, meta_referencia=None):
+    ranking = (
+        ranking.copy()
+        .sort_values(by="Realizado", ascending=False)
+        .reset_index(drop=True)
+    )
     ranking["Posição"] = ranking.index + 1
     ranking["Técnico Exibição"] = ranking["Técnico"].str.title()
     ranking["Cor"] = ranking["Técnico"].apply(
@@ -4497,6 +4501,16 @@ def montar_grafico_ranking(ranking, titulo, eixo_x):
     )
 
     grafico.update_traces(textposition="outside")
+    if meta_referencia is not None and meta_referencia > 0:
+        grafico.add_hline(
+            y=meta_referencia,
+            line_color="#DC2626",
+            line_dash="dash",
+            line_width=2,
+            annotation_text=f"Meta: {arredondar_esperado(meta_referencia)}",
+            annotation_position="top left",
+            annotation_font_color="#DC2626",
+        )
     grafico.update_layout(
         plot_bgcolor=COR_BRANCO,
         paper_bgcolor=COR_BRANCO,
