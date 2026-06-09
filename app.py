@@ -2421,10 +2421,17 @@ def calcular_resumo_meta_pontoweb_contexto(
         if 0 < minutos_ausentes < carga_minutos:
             abatimento_total += minutos_ausentes / carga_minutos
 
-    dias_considerados = max(dias_base - abatimento_total, 0)
+    dias_ferias_programadas = dias_uteis_ferias_no_mes(tecnico, ano, mes)
+    dias_com_abatimento_ponto = max(dias_base - abatimento_total, 0)
+    dias_com_ferias_programadas = max(dias_base - dias_ferias_programadas, 0)
+    dias_considerados = min(
+        dias_com_abatimento_ponto,
+        dias_com_ferias_programadas,
+    )
     return {
         "dias_base": dias_base,
         "abatimento": round(abatimento_total, 2),
+        "dias_ferias_programadas": dias_ferias_programadas,
         "dias_considerados": round(dias_considerados, 2),
     }
 
