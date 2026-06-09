@@ -4085,6 +4085,86 @@ st.markdown(
     border-radius:50%;
     flex:0 0 9px;
 }}
+.login-marca {{
+    position:fixed;
+    top:0;
+    left:0;
+    width:10px;
+    height:100vh;
+    background:#166534;
+    z-index:9999;
+}}
+.login-marca::after {{
+    content:"";
+    position:absolute;
+    top:0;
+    left:10px;
+    width:4px;
+    height:120px;
+    background:#F97316;
+}}
+.login-topo {{
+    color:#6B7280;
+    font-size:12px;
+    text-align:right;
+    margin:4px 2px 54px 0;
+}}
+.login-cabecalho {{
+    text-align:center;
+    margin-bottom:22px;
+}}
+.login-simbolo {{
+    display:inline-grid;
+    grid-template-columns:repeat(3,7px);
+    align-items:end;
+    gap:3px;
+    height:28px;
+    margin-bottom:14px;
+}}
+.login-simbolo span {{
+    display:block;
+    border-radius:2px 2px 0 0;
+}}
+.login-titulo {{
+    color:#111827;
+    font-size:30px;
+    font-weight:700;
+    line-height:1.2;
+}}
+.login-subtitulo {{
+    color:#6B7280;
+    font-size:14px;
+    margin-top:8px;
+}}
+.login-indicadores {{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    margin-top:24px;
+    padding-top:18px;
+    border-top:1px solid #E5E7EB;
+}}
+.login-indicador {{
+    color:#4B5563;
+    font-size:12px;
+    text-align:center;
+    padding:0 8px;
+}}
+.login-indicador + .login-indicador {{
+    border-left:1px solid #E5E7EB;
+}}
+.login-indicador span {{
+    display:block;
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    margin:0 auto 7px;
+}}
+.login-atualizacao {{
+    color:#9CA3AF;
+    font-size:11px;
+    text-align:center;
+    margin-top:22px;
+}}
 @media (max-width: 900px) {{
     .resultado-grid-principal {{
         grid-template-columns:1fr;
