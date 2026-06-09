@@ -4798,7 +4798,8 @@ if not modo_gestao:
         mes_atual,
         nivel_tecnico,
     )
-    dias_meta_valor = float(dias_uteis_para_meta(ano_atual, mes_atual))
+    dias_base_calendario = float(dias_uteis_para_meta(ano_atual, mes_atual))
+    dias_meta_valor = dias_base_calendario
     dias_ferias_programadas = dias_uteis_ferias_no_mes(
         tecnico,
         ano_atual,
@@ -4818,11 +4819,11 @@ if not modo_gestao:
         )
         if date(ano_atual, mes_atual, dia).weekday() < 5
     )
-    feriados_em_dias_uteis = int(dias_segunda_sexta - dias_meta_valor)
+    feriados_em_dias_uteis = int(dias_segunda_sexta - dias_base_calendario)
     detalhe_dias_meta = (
         f"{dias_segunda_sexta} dias de segunda a sexta"
         f" - {feriados_em_dias_uteis} feriado(s)"
-        f" - {dias_ferias_programadas} dia(s) de fÃ©rias"
+        f" - {dias_ferias_programadas} dia(s) de férias"
         f" = {dias_meta_valor:g} dias."
     )
     if COLUNA_DIAS_META in dados_tecnico.columns:
@@ -4859,7 +4860,7 @@ if not modo_gestao:
             detalhe_dias_meta = (
                 f"Dias base: {resumo_meta_pontoweb['dias_base']} | "
                 f"Abatimento: {resumo_meta_pontoweb['abatimento']} | "
-                f"FÃ©rias programadas: {dias_ferias_programadas} dia(s)"
+                f"Férias programadas: {dias_ferias_programadas} dia(s)"
             )
         except Exception as erro_pontoweb:
             detalhe_dias_meta = f"PontoWeb indisponível: {erro_pontoweb}"
@@ -4869,20 +4870,28 @@ if not modo_gestao:
     else:
         dias_meta_exibicao = f"{dias_meta_valor:.2f}".replace(".", ",")
 
-    with col7:
-        st.metric("Percentual de Absorção", f"{percentual_absorcao:.2f}%")
-    with col8:
-        st.metric(
-            "Dias Úteis para Meta",
-            dias_meta_exibicao,
-        )
+    st.markdown(
+        f"""
+        <div class="resultado-faixa">
+            <div class="resultado-card secundario">
+                <div class="resultado-label">Percentual de Absorção</div>
+                <div class="resultado-valor">{percentual_absorcao:.2f}%</div>
+            </div>
+            <div class="resultado-card secundario">
+                <div class="resultado-label">Dias Úteis para Meta</div>
+                <div class="resultado-valor">{dias_meta_exibicao}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.caption(f"Fonte: {fonte_dias_meta}. {detalhe_dias_meta}")
 
     ferias_ativa = ferias_ativa_tecnico(tecnico)
     if ferias_ativa:
         inicio_ferias, fim_ferias = ferias_ativa
         st.info(
-            "Em fÃ©rias: "
+            "Em férias: "
             f"{inicio_ferias.strftime('%d/%m/%Y')} a "
             f"{fim_ferias.strftime('%d/%m/%Y')}"
         )
