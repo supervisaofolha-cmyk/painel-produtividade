@@ -3850,7 +3850,11 @@ try:
 except Exception:
     pass
 
-st.set_page_config(page_title="Painel de Produtividade", layout="wide")
+st.set_page_config(
+    page_title="Painel de Produtividade",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 atualizar_dados_automaticamente()
 
 st.markdown(
