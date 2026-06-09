@@ -191,6 +191,10 @@ FERIADOS_FEDERAIS_FIXOS = {
     (12, 25),
 }
 
+FERIADOS_ADICIONAIS = {
+    date(2026, 6, 4),
+}
+
 
 class FormularioSGDParser(HTMLParser):
     def __init__(self):
@@ -2024,14 +2028,17 @@ def dias_uteis_para_meta(ano, mes):
         data_atual = date(ano, mes, dia)
         if data_atual.weekday() >= 5:
             continue
-        if (mes, dia) in FERIADOS_FEDERAIS_FIXOS:
+        if eh_feriado_federal(data_atual):
             continue
         total += 1
     return total
 
 
 def eh_feriado_federal(data_atual):
-    return (data_atual.month, data_atual.day) in FERIADOS_FEDERAIS_FIXOS
+    return (
+        (data_atual.month, data_atual.day) in FERIADOS_FEDERAIS_FIXOS
+        or data_atual in FERIADOS_ADICIONAIS
+    )
 
 
 def hhmm_para_minutos(valor):
@@ -4768,6 +4775,10 @@ if periodo_inicial > periodo_final:
 dados_produtividade = dados_produtividade[
     (dados_produtividade["Data"].dt.date >= periodo_inicial)
     & (dados_produtividade["Data"].dt.date <= periodo_final)
+]
+dados_produtividade = dados_produtividade[
+    (dados_produtividade["Data"].dt.weekday < 5)
+    & ~dados_produtividade["Data"].dt.date.map(eh_feriado_federal)
 ]
 
 produtividade = (
