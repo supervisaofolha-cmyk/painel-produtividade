@@ -26,6 +26,7 @@ from zoneinfo import ZoneInfo
 import openpyxl
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import requests
 import streamlit as st
 
@@ -4063,6 +4064,26 @@ st.markdown(
     grid-template-columns:repeat(2,minmax(0,1fr));
     gap:10px;
     margin-top:12px;
+}}
+.produtividade-resumo {{
+    display:flex;
+    align-items:center;
+    gap:24px;
+    flex-wrap:wrap;
+    margin:4px 0 8px;
+    color:#4B5563;
+    font-size:13px;
+}}
+.produtividade-resumo-item {{
+    display:flex;
+    align-items:center;
+    gap:7px;
+}}
+.produtividade-resumo-ponto {{
+    width:9px;
+    height:9px;
+    border-radius:50%;
+    flex:0 0 9px;
 }}
 @media (max-width: 900px) {{
     .resultado-grid-principal {{
