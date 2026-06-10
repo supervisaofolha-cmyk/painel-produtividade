@@ -1611,6 +1611,11 @@ def salvar_lista_apoio(dataframe):
 
 
 def bytes_lista_apoio():
+    return _bytes_lista_apoio_cache(versao_lista_apoio())
+
+
+@st.cache_data(show_spinner=False)
+def _bytes_lista_apoio_cache(_versao_lista_apoio):
     garantir_lista_apoio()
     dataframe = ler_lista_apoio_do_banco()
     return bytes_dataframe_excel(dataframe)
@@ -5216,7 +5221,7 @@ st.markdown(
 )
 
 df = ler_dataframe_produtividade()
-usuarios = pd.read_excel(ARQUIVO_USUARIOS)
+usuarios = ler_dataframe_usuarios()
 
 df.columns = df.columns.str.strip()
 usuarios.columns = usuarios.columns.str.strip().str.lower()
