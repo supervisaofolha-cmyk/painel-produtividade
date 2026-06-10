@@ -5373,7 +5373,7 @@ modo_gestao = st.session_state["auth_modo_gestao"]
 usuario_digitado = st.session_state["auth_usuario"]
 tecnico = st.session_state["auth_tecnico"]
 
-st.title("📊 Painel de Produtividade")
+st.title("Painel de Produtividade")
 st.sidebar.title("Painel")
 
 visao_gestao = None
