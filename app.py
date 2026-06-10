@@ -5231,8 +5231,18 @@ if not modo_gestao:
         ano_atual,
         mes_atual,
     )
+    abatimento_ausencias_programadas = abatimento_ausencias_no_mes(
+        tecnico,
+        ano_atual,
+        mes_atual,
+    )
     dias_meta_programados = max(
-        dias_meta_valor - dias_ferias_programadas - dias_licenca_programados,
+        (
+            dias_meta_valor
+            - dias_ferias_programadas
+            - dias_licenca_programados
+            - abatimento_ausencias_programadas
+        ),
         0,
     )
     dias_meta_valor = dias_meta_programados
@@ -5251,6 +5261,7 @@ if not modo_gestao:
         f" - {feriados_em_dias_uteis} feriado(s)"
         f" - {dias_ferias_programadas} dia(s) de férias"
         f" - {dias_licenca_programados} dia(s) de licença"
+        f" - {abatimento_ausencias_programadas:g} dia(s) de ausência"
         f" = {dias_meta_valor:g} dias."
     )
     if COLUNA_DIAS_META in dados_tecnico.columns:
@@ -5288,7 +5299,8 @@ if not modo_gestao:
                 f"Dias base: {resumo_meta_pontoweb['dias_base']} | "
                 f"Abatimento: {resumo_meta_pontoweb['abatimento']} | "
                 f"Férias programadas: {dias_ferias_programadas} dia(s) | "
-                f"Licença: {dias_licenca_programados} dia(s)"
+                f"Licença: {dias_licenca_programados} dia(s) | "
+                f"Ausências informadas: {abatimento_ausencias_programadas:g} dia(s)"
             )
         except Exception as erro_pontoweb:
             detalhe_dias_meta = f"PontoWeb indisponível: {erro_pontoweb}"
