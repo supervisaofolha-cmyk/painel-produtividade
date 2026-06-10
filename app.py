@@ -5587,101 +5587,69 @@ if modo_gestao and visao_gestao == "Visão Geral":
     col_desvio.metric("Desvio", desvio_gestao)
     col_ativos.metric("Técnicos ativos", tecnicos_ativos_gestao)
 
-    st.divider()
-    st.subheader("📌 Legenda dos Status")
-    col1, col2, col3, col4 = st.columns(4)
-    legenda = {
-        "CRÍTICO": "Desvio menor que -5",
-        "ATENÇÃO": "Desvio entre -5 e menor que 0",
-        "BOM": "Desvio entre 0 e 5",
-        "EXCELENTE": "Desvio acima de 5",
-    }
-
-    for status, coluna in zip(
-        ["CRÍTICO", "ATENÇÃO", "BOM", "EXCELENTE"],
-        [col1, col2, col3, col4],
-    ):
-        with coluna:
-            st.markdown(
-                f"""
-                <div style="
-                    background-color:{CORES_STATUS[status]};
-                    padding:15px;
-                    border-radius:12px;
-                    color:white;
-                    text-align:center;
-                    min-height:120px;
-                ">
-                    <h2>{status}</h2>
-                    <p style="font-size:18px;font-weight:bold;">
-                        {legenda[status]}
-                    </p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-    st.divider()
-    st.subheader("Percentual de Absorção por Nível")
-    percentuais_absorcao_mes = percentuais_absorcao_por_mes(
-        df,
-        ano_atual,
-        mes_atual,
-    )
-    col1, col2, col3, col4, col5 = st.columns(5)
-    for (nivel, percentual), coluna in zip(
-        percentuais_absorcao_mes.items(),
-        [col1, col2, col3, col4, col5],
-    ):
-        with coluna:
-            st.metric(nivel, f"{percentual:.2f}%")
-
-    st.divider()
     data_status = df["Data"].max()
-    st.subheader(
-        f"Técnicos por Status em {data_status.strftime('%d/%m/%Y')}"
-    )
-
     status_atual = (
         df[df["Data"] == data_status][["Técnico", "Nível", "Classificação"]]
         .dropna(subset=["Técnico", "Classificação"])
         .sort_values(by=["Classificação", "Técnico"])
     )
+    percentuais_absorcao_mes = percentuais_absorcao_por_mes(
+        df,
+        ano_atual,
+        mes_atual,
+    )
 
-    col1, col2, col3, col4 = st.columns(4)
-    for status, coluna in zip(
-        ["CRÍTICO", "ATENÇÃO", "BOM", "EXCELENTE"],
-        [col1, col2, col3, col4],
-    ):
-        grupo_status = status_atual[status_atual["Classificação"] == status]
-        with coluna:
-            conteudo = [f"<strong>{status}</strong>"]
-            if grupo_status.empty:
-                conteudo.append("Nenhum técnico")
-            else:
-                for _, linha in grupo_status.iterrows():
-                    conteudo.append(
-                        f"{builtins.str(linha['Técnico']).title()} - {linha['Nível']}"
-                    )
-
-            st.markdown(
-                f"""
-                <div style="
-                    background-color:{CORES_STATUS[status]};
-                    padding:14px;
-                    border-radius:12px;
-                    color:white;
-                    min-height:240px;
-                ">
-                    {'<br>'.join(conteudo)}
-                </div>
-                """,
-                unsafe_allow_html=True,
+    col_classificacao, col_absorcao = st.columns([1.15, 1])
+    with col_classificacao:
+        st.markdown("#### Distribuição por classificação")
+        blocos_status = []
+        descricoes_status = {
+            "CRÍTICO": "Desvio menor que -5",
+            "ATENÇÃO": "Desvio entre -5 e 0",
+            "BOM": "Desvio entre 0 e 5",
+            "EXCELENTE": "Desvio acima de 5",
+        }
+        for status in ["CRÍTICO", "ATENÇÃO", "BOM", "EXCELENTE"]:
+            quantidade = int(
+                (status_atual["Classificação"] == status).sum()
             )
+            blocos_status.append(
+                '<div class="gestao-status-resumo" '
+                f'style="border-left-color:{CORES_STATUS[status]};">'
+                f"<span>{status}</span><strong>{quantidade}</strong>"
+                f"<small>{descricoes_status[status]}</small></div>"
+            )
+        st.markdown(
+            '<div class="gestao-status-grid">'
+            + "".join(blocos_status)
+            + "</div>",
+            unsafe_allow_html=True,
+        )
 
-
-    st.divider()
-    st.subheader("Ranking Geral de Todos os Níveis")
+    with col_absorcao:
+        st.markdown("#### Percentual de Absorção por Nível")
+        maior_percentual = max(percentuais_absorcao_mes.values(), default=1)
+        barras_absorcao = []
+        for nivel, percentual in percentuais_absorcao_mes.items():
+            largura = min(
+                (percentual / maior_percentual) * 100
+                if maior_percentual
+                else 0,
+                100,
+            )
+            barras_absorcao.append(
+                '<div class="gestao-absorcao-linha">'
+                f"<div><span>{escape(nivel)}</span>"
+                f"<strong>{percentual:.2f}%</strong></div>"
+                '<div class="gestao-absorcao-trilho">'
+                f'<i style="width:{largura:.2f}%;"></i></div></div>'
+            )
+        st.markdown(
+            '<div class="gestao-absorcao">'
+            + "".join(barras_absorcao)
+            + "</div>",
+            unsafe_allow_html=True,
+        )
 
     niveis_disponiveis = sorted(
         [nivel for nivel in df["Nível"].dropna().unique() if builtins.str(nivel).strip()]
@@ -5701,14 +5669,6 @@ if modo_gestao and visao_gestao == "Visão Geral":
             base_ranking_geral["Nível"] == nivel_ranking_geral
         ]
 
-    ranking_geral_diario = (
-        base_ranking_geral[base_ranking_geral["Data"] == ultima_data_produtividade]
-        .groupby("Técnico", as_index=False)["Realizado"]
-        .sum()
-        .sort_values(by="Realizado", ascending=False)
-        .reset_index(drop=True)
-    )
-
     ranking_geral_mensal = (
         base_ranking_geral.groupby("Técnico", as_index=False)["Realizado"]
         .sum()
@@ -5716,26 +5676,78 @@ if modo_gestao and visao_gestao == "Visão Geral":
         .reset_index(drop=True)
     )
 
-    aba_geral_diario, aba_geral_mensal = st.tabs(["Diário", "Mensal"])
+    tecnicos_abaixo_meta = int(
+        status_atual["Classificação"].isin(["CRÍTICO", "ATENÇÃO"]).sum()
+    )
+    hoje_gestao = datetime.now(FUSO_HORARIO_APP).date()
+    proximas_ferias = sum(
+        1
+        for _, inicio, _ in PROGRAMACAO_FERIAS
+        if hoje_gestao <= inicio <= hoje_gestao + timedelta(days=30)
+    )
+    afastados_hoje = len(
+        {
+            normalizar_nome(nome)
+            for nome, inicio, fim in PROGRAMACAO_FERIAS
+            if inicio <= hoje_gestao <= fim
+        }
+        | {
+            normalizar_nome(nome)
+            for nome, inicio, fim, _ in PROGRAMACAO_LICENCAS
+            if inicio <= hoje_gestao <= fim
+        }
+    )
+    try:
+        lista_apoio_resumo = ler_lista_apoio()
+        ajudas_em_aberto = int(
+            ~lista_apoio_resumo["Situação"].isin(
+                ["Finalizado", "Resolvido pelo técnico"]
+            )
+        ).sum()
+    except Exception:
+        ajudas_em_aberto = 0
 
-    with aba_geral_diario:
-        st.plotly_chart(
-            montar_grafico_ranking(
-                ranking_geral_diario,
-                f"Ranking Diário - {nivel_ranking_geral}",
-                "Produtividade do dia",
-            ),
-            use_container_width=True,
-        )
-
-    with aba_geral_mensal:
+    st.divider()
+    col_ranking, col_alertas = st.columns([3, 1])
+    with col_ranking:
+        st.markdown("#### Ranking Geral")
         st.plotly_chart(
             montar_grafico_ranking(
                 ranking_geral_mensal,
-                f"Ranking Mensal - {nivel_ranking_geral}",
+                f"Ranking mensal - {nivel_ranking_geral}",
                 "Produtividade do mês",
             ),
             use_container_width=True,
+        )
+    with col_alertas:
+        st.markdown("#### Alertas do mês")
+        alertas = [
+            (
+                "#DC2626",
+                f"{tecnicos_abaixo_meta} técnico(s) abaixo da meta",
+            ),
+            (
+                "#2563EB",
+                f"{proximas_ferias} férias iniciam nos próximos 30 dias",
+            ),
+            (
+                "#7C3AED",
+                f"{afastados_hoje} técnico(s) afastados hoje",
+            ),
+            (
+                "#F97316",
+                f"{ajudas_em_aberto} ajuda(s) em aberto",
+            ),
+        ]
+        st.markdown(
+            '<div class="gestao-alertas">'
+            + "".join(
+                '<div class="gestao-alerta" '
+                f'style="border-left-color:{cor};">{escape(texto)}</div>'
+                for cor, texto in alertas
+            )
+            + "</div>",
+            unsafe_allow_html=True,
         )
 
     st.stop()
