@@ -5543,9 +5543,28 @@ def montar_grafico_ranking(ranking, titulo, eixo_x, meta_referencia=None):
     )
     return grafico
 
-if modo_gestao:
+if modo_gestao and visao_gestao == "Lista de Apoio":
     mostrar_lista_apoio_gestao()
+    st.stop()
+
+if modo_gestao and visao_gestao == "Disponibilidade":
     mostrar_gestao_disponibilidade(df)
+    st.stop()
+
+if modo_gestao and visao_gestao == "Visão Geral":
+    dados_gestao_mes = df[
+        (df["Data"].dt.month == mes_atual)
+        & (df["Data"].dt.year == ano_atual)
+    ]
+    realizado_gestao = int(dados_gestao_mes["Realizado"].sum())
+    esperado_gestao = int(dados_gestao_mes["Esperado"].sum())
+    desvio_gestao = realizado_gestao - esperado_gestao
+    tecnicos_ativos_gestao = dados_gestao_mes["Técnico"].nunique()
+    col_realizado, col_esperado, col_desvio, col_ativos = st.columns(4)
+    col_realizado.metric("Realizado total", realizado_gestao)
+    col_esperado.metric("Esperado total", esperado_gestao)
+    col_desvio.metric("Desvio", desvio_gestao)
+    col_ativos.metric("Técnicos ativos", tecnicos_ativos_gestao)
 
     st.divider()
     st.subheader("📌 Legenda dos Status")
