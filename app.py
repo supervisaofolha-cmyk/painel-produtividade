@@ -5093,6 +5093,22 @@ tecnico = st.session_state["auth_tecnico"]
 st.title("📊 Painel de Produtividade")
 st.sidebar.title("Painel")
 
+visao_gestao = None
+if modo_gestao:
+    visao_gestao = st.radio(
+        "Navegação da gestão",
+        [
+            "Visão Geral",
+            "Resultados Individuais",
+            "Disponibilidade",
+            "Lista de Apoio",
+            "Atualizações",
+        ],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="visao_gestao",
+    )
+
 if st.sidebar.button("Sair", key="logout_painel"):
     for chave, valor_padrao in {
         "auth_ok": False,
@@ -5111,6 +5127,15 @@ if modo_gestao:
     else:
         st.sidebar.success("Bem-vinda Gestão")
 
+    st.sidebar.caption(
+        f"Dados atualizados em {df['Data'].max().strftime('%d/%m/%Y')}"
+    )
+
+if modo_gestao and visao_gestao == "Atualizações":
+    st.subheader("Atualizações de Dados")
+    st.caption(
+        "Atualize as fontes do painel sem misturar os controles com os resultados."
+    )
     data_referencia = data_dia_anterior()
     env_local = carregar_env_local()
     usuario_sgd_padrao = env_local.get("SGD_USUARIO", os.getenv("SGD_USUARIO", ""))
