@@ -4536,86 +4536,247 @@ st.markdown(
     color:#111827;
     font-weight:700;
 }}
+.gestao-kpi-grid {{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:16px;
+    margin-bottom:18px;
+}}
+.gestao-kpi-card {{
+    background:#FFFFFF;
+    border:1px solid #D9E1EC;
+    border-radius:12px;
+    min-height:112px;
+    padding:16px 18px;
+    box-shadow:0 8px 24px rgba(15, 23, 42, 0.04);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:12px;
+}}
+.gestao-kpi-card small {{
+    display:block;
+    color:#374151;
+    font-size:12px;
+    margin-bottom:8px;
+}}
+.gestao-kpi-card strong {{
+    color:#111827;
+    font-size:26px;
+    line-height:1;
+    font-weight:700;
+}}
+.gestao-kpi-card.negative strong,
+.gestao-kpi-card.negative .gestao-kpi-extra {{
+    color:#DC2626;
+}}
+.gestao-kpi-extra {{
+    color:#2563EB;
+    font-size:12px;
+    font-weight:600;
+    text-align:right;
+}}
+.gestao-kpi-spark {{
+    color:#16A34A;
+    font-size:36px;
+    line-height:1;
+    letter-spacing:0;
+}}
+.gestao-kpi-spark.blue {{
+    color:#2563EB;
+}}
+.gestao-kpi-spark.slate {{
+    color:#475569;
+}}
+.gestao-card {{
+    background:#FFFFFF;
+    border:1px solid #D9E1EC;
+    border-radius:14px;
+    padding:18px;
+    box-shadow:0 8px 24px rgba(15, 23, 42, 0.04);
+}}
+.gestao-card h4 {{
+    color:#111827;
+    font-size:16px;
+    font-weight:700;
+    margin:0 0 14px 0;
+}}
+.gestao-grid-duplo {{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    margin-bottom:18px;
+}}
 .gestao-status-grid {{
     display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:9px;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:12px;
 }}
 .gestao-status-resumo {{
     background:#FFFFFF;
-    border:1px solid #E5E7EB;
-    border-left:4px solid #6B7280;
-    border-radius:7px;
-    padding:11px 12px;
+    border:1px solid #D9E1EC;
+    border-top:4px solid #6B7280;
+    border-radius:10px;
+    padding:14px 14px 16px;
 }}
 .gestao-status-resumo span,
-.gestao-status-resumo small {{
+.gestao-status-resumo small,
+.gestao-status-resumo strong {{
     display:block;
 }}
 .gestao-status-resumo span {{
-    color:#4B5563;
-    font-size:11px;
+    color:#111827;
+    font-size:12px;
     font-weight:700;
+    margin-bottom:10px;
 }}
 .gestao-status-resumo strong {{
     color:#111827;
-    font-size:23px;
-    line-height:1.1;
-}}
-.gestao-status-resumo small {{
-    color:#6B7280;
-    font-size:9px;
-    margin-top:4px;
-}}
-.gestao-absorcao {{
-    background:#FFFFFF;
-    border:1px solid #E5E7EB;
-    border-radius:7px;
-    padding:10px 14px;
-}}
-.gestao-absorcao-linha {{
+    font-size:22px;
+    line-height:1;
     margin-bottom:10px;
 }}
-.gestao-absorcao-linha:last-child {{
-    margin-bottom:0;
-}}
-.gestao-absorcao-linha > div:first-child {{
-    display:flex;
-    justify-content:space-between;
-    gap:10px;
-    color:#4B5563;
+.gestao-status-resumo em {{
+    color:#374151;
+    display:block;
     font-size:11px;
-    margin-bottom:4px;
+    font-style:normal;
+    margin-bottom:10px;
+}}
+.gestao-status-resumo small {{
+    font-size:10px;
+    line-height:1.35;
+}}
+.gestao-absorcao {{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    padding-top:4px;
+}}
+.gestao-absorcao-linha {{
+    display:grid;
+    grid-template-columns:86px minmax(0,1fr) 48px;
+    align-items:center;
+    gap:10px;
+}}
+.gestao-absorcao-linha span {{
+    color:#111827;
+    font-size:12px;
 }}
 .gestao-absorcao-linha strong {{
     color:#111827;
+    font-size:12px;
+    text-align:right;
 }}
 .gestao-absorcao-trilho {{
-    height:7px;
-    background:#E5E7EB;
-    border-radius:4px;
+    height:16px;
+    background:
+        linear-gradient(to right, transparent 0, transparent calc(33.33% - 1px), #E5E7EB calc(33.33% - 1px), #E5E7EB calc(33.33% + 1px), transparent calc(33.33% + 1px), transparent calc(66.66% - 1px), #E5E7EB calc(66.66% - 1px), #E5E7EB calc(66.66% + 1px), transparent calc(66.66% + 1px)),
+        #F8FAFC;
+    border-radius:999px;
     overflow:hidden;
+    border:1px solid #E5E7EB;
 }}
 .gestao-absorcao-trilho i {{
     display:block;
     height:100%;
-    background:#2563EB;
-    border-radius:4px;
+    background:linear-gradient(90deg, #16A34A 0%, #16A34A 100%);
+    border-radius:999px;
+}}
+.gestao-linha-inferior {{
+    display:grid;
+    grid-template-columns:minmax(0,2fr) minmax(320px,1fr);
+    gap:16px;
+    margin-bottom:18px;
 }}
 .gestao-alertas {{
     display:flex;
     flex-direction:column;
-    gap:8px;
+    gap:10px;
 }}
 .gestao-alerta {{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
     background:#FFFFFF;
     border:1px solid #E5E7EB;
-    border-left:4px solid #6B7280;
-    border-radius:6px;
+    border-radius:10px;
+    padding:12px 14px;
+    color:#111827;
+    font-size:12px;
+}}
+.gestao-alerta-label {{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}}
+.gestao-alerta-icone {{
+    width:24px;
+    height:24px;
+    border-radius:999px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#FFFFFF;
+    font-size:13px;
+    font-weight:700;
+}}
+.gestao-alerta-seta {{
+    color:#6B7280;
+    font-size:16px;
+}}
+.gestao-resumo-faixa {{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    margin-bottom:18px;
+}}
+.gestao-resumo-card {{
+    background:#FFFFFF;
+    border:1px solid #D9E1EC;
+    border-radius:14px;
+    padding:16px 18px;
+    box-shadow:0 8px 24px rgba(15, 23, 42, 0.04);
+}}
+.gestao-resumo-card h4 {{
+    color:#111827;
+    font-size:16px;
+    font-weight:700;
+    margin:0 0 14px 0;
+}}
+.gestao-resumo-grid {{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:14px;
+}}
+.gestao-resumo-item {{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+}}
+.gestao-resumo-bola {{
+    width:22px;
+    height:22px;
+    border-radius:999px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    font-weight:700;
+    flex-shrink:0;
+}}
+.gestao-resumo-texto strong {{
+    color:#111827;
+    display:block;
+    font-size:14px;
+    line-height:1.1;
+}}
+.gestao-resumo-texto span {{
     color:#374151;
+    display:block;
     font-size:11px;
-    line-height:1.35;
-    padding:10px;
+    margin-top:3px;
 }}
 .card-tecnico {{
     padding:12px;
