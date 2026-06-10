@@ -1736,6 +1736,351 @@ def mostrar_lista_apoio_gestao():
         )
 
 
+CORES_DISPONIBILIDADE = {
+    "Férias": "#2563EB",
+    "Licença-maternidade": "#7C3AED",
+    "Atestado": "#DC2626",
+    "Falta/Atraso": "#DC2626",
+    "Energia": "#F97316",
+}
+
+
+def nivel_tecnico_no_mes(dataframe, tecnico, ano, mes):
+    limite_mes = pd.Timestamp(
+        date(ano, mes, calendar.monthrange(ano, mes)[1])
+    )
+    dados_tecnico_nivel = dataframe[
+        (dataframe["Técnico"].map(normalizar_nome) == normalizar_nome(tecnico))
+        & (dataframe["Data"] <= limite_mes)
+    ].dropna(subset=["Nível", "Data"])
+    if dados_tecnico_nivel.empty:
+        return "Não informado"
+    return builtins.str(
+        dados_tecnico_nivel.sort_values("Data").iloc[-1]["Nível"]
+    ).strip()
+
+
+def dataframe_disponibilidade(dataframe):
+    registros = []
+
+    for tecnico, inicio, fim in PROGRAMACAO_FERIAS:
+        registros.append(
+            {
+                "Técnico": tecnico,
+                "Tipo": "Férias",
+                "Início": inicio,
+                "Fim": fim,
+                "Duração": f"{(fim - inicio).days + 1} dias",
+                "Observação": "Férias programadas",
+            }
+        )
+
+    for tecnico, inicio, fim, motivo in PROGRAMACAO_LICENCAS:
+        registros.append(
+            {
+                "Técnico": tecnico,
+                "Tipo": motivo,
+                "Início": inicio,
+                "Fim": fim,
+                "Duração": f"{(fim - inicio).days + 1} dias",
+                "Observação": "Afastamento programado",
+            }
+        )
+
+    for tecnico, data_ausencia, tipo, minutos in PROGRAMACAO_AUSENCIAS:
+        duracao = (
+            "Dia integral"
+            if minutos is None
+            else f"{minutos // 60:02d}:{minutos % 60:02d}"
+        )
+        registros.append(
+            {
+                "Técnico": tecnico,
+                "Tipo": tipo,
+                "Início": data_ausencia,
+                "Fim": data_ausencia,
+                "Duração": duracao,
+                "Observação": (
+                    "Ausência integral"
+                    if minutos is None
+                    else "Ausência parcial"
+                ),
+            }
+        )
+
+    disponibilidade = pd.DataFrame(registros)
+    if disponibilidade.empty:
+        return disponibilidade
+
+    disponibilidade["Nível"] = disponibilidade.apply(
+        lambda linha: nivel_tecnico_no_mes(
+            dataframe,
+            linha["Técnico"],
+            linha["Início"].year,
+            linha["Início"].month,
+        ),
+        axis=1,
+    )
+    return disponibilidade
+
+
+def nome_mes_ano(ano, mes):
+    nomes_meses = [
+        "",
+        "Janeiro",
+        "Fevereiro",
+        "Março",
+        "Abril",
+        "Maio",
+        "Junho",
+        "Julho",
+        "Agosto",
+        "Setembro",
+        "Outubro",
+        "Novembro",
+        "Dezembro",
+    ]
+    return f"{nomes_meses[mes]} de {ano}"
+
+
+def abreviar_nome_disponibilidade(nome):
+    partes = builtins.str(nome or "").title().split()
+    if len(partes) <= 2:
+        return " ".join(partes)
+    return f"{partes[0]} {partes[-1]}"
+
+
+def html_calendario_disponibilidade(ano, mes, eventos):
+    calendario = calendar.Calendar(firstweekday=0)
+    semanas = calendario.monthdatescalendar(ano, mes)
+    hoje = datetime.now(FUSO_HORARIO_APP).date()
+    cabecalhos = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+    partes_html = [
+        '<div class="disp-calendario">',
+        '<div class="disp-semana-cabecalho">',
+    ]
+    partes_html.extend(
+        f'<div class="disp-dia-semana">{dia}</div>' for dia in cabecalhos
+    )
+    partes_html.append("</div>")
+
+    for semana in semanas:
+        partes_html.append('<div class="disp-semana">')
+        for data_calendario in semana:
+            classes = ["disp-dia"]
+            if data_calendario.month != mes:
+                classes.append("fora-mes")
+            if data_calendario.weekday() >= 5:
+                classes.append("fim-semana")
+            if data_calendario == hoje:
+                classes.append("hoje")
+
+            partes_html.append(
+                f'<div class="{" ".join(classes)}">'
+                f'<div class="disp-numero-dia">{data_calendario.day}</div>'
+            )
+            eventos_dia = eventos[
+                (eventos["Início"] <= data_calendario)
+                & (eventos["Fim"] >= data_calendario)
+            ]
+            for _, evento in eventos_dia.head(4).iterrows():
+                cor = CORES_DISPONIBILIDADE.get(evento["Tipo"], "#6B7280")
+                rotulo = escape(abreviar_nome_disponibilidade(evento["Técnico"]))
+                detalhe = escape(builtins.str(evento["Duração"]))
+                partes_html.append(
+                    '<div class="disp-evento" '
+                    f'style="border-left-color:{cor};">'
+                    f'<span>{rotulo}</span><small>{detalhe}</small>'
+                    "</div>"
+                )
+            if len(eventos_dia) > 4:
+                partes_html.append(
+                    f'<div class="disp-mais">+{len(eventos_dia) - 4} ocorrência(s)</div>'
+                )
+            partes_html.append("</div>")
+        partes_html.append("</div>")
+
+    partes_html.append("</div>")
+    return "".join(partes_html)
+
+
+def mostrar_gestao_disponibilidade(dataframe):
+    st.divider()
+    st.subheader("Gestão de Disponibilidade")
+
+    disponibilidade = dataframe_disponibilidade(dataframe)
+    if disponibilidade.empty:
+        st.info("Ainda não há férias, licenças ou ausências cadastradas.")
+        return
+
+    periodos = sorted(
+        {
+            (data_evento.year, data_evento.month)
+            for coluna_data in ["Início", "Fim"]
+            for data_evento in disponibilidade[coluna_data]
+        }
+    )
+    periodo_atual = (datetime.now(FUSO_HORARIO_APP).year, datetime.now(FUSO_HORARIO_APP).month)
+    periodo_padrao = periodo_atual if periodo_atual in periodos else periodos[0]
+    opcoes_periodo = {
+        nome_mes_ano(ano, mes): (ano, mes)
+        for ano, mes in periodos
+    }
+
+    col_mes, col_tecnico, col_nivel, col_tipo = st.columns([1.15, 1.35, 1, 1])
+    with col_mes:
+        periodo_label = st.selectbox(
+            "Mês",
+            list(opcoes_periodo),
+            index=list(opcoes_periodo.values()).index(periodo_padrao),
+            key="disponibilidade_mes",
+        )
+    ano_filtro, mes_filtro = opcoes_periodo[periodo_label]
+    inicio_mes = date(ano_filtro, mes_filtro, 1)
+    fim_mes = date(
+        ano_filtro,
+        mes_filtro,
+        calendar.monthrange(ano_filtro, mes_filtro)[1],
+    )
+
+    eventos_mes = disponibilidade[
+        (disponibilidade["Início"] <= fim_mes)
+        & (disponibilidade["Fim"] >= inicio_mes)
+    ].copy()
+    tecnicos_filtro = sorted(eventos_mes["Técnico"].unique())
+    niveis_filtro = sorted(eventos_mes["Nível"].unique())
+    tipos_filtro = sorted(eventos_mes["Tipo"].unique())
+
+    with col_tecnico:
+        tecnico_filtro = st.selectbox(
+            "Técnico",
+            ["Todos"] + tecnicos_filtro,
+            key="disponibilidade_tecnico",
+        )
+    with col_nivel:
+        nivel_filtro = st.selectbox(
+            "Nível",
+            ["Todos"] + niveis_filtro,
+            key="disponibilidade_nivel",
+        )
+    with col_tipo:
+        tipo_filtro = st.selectbox(
+            "Tipo",
+            ["Todos"] + tipos_filtro,
+            key="disponibilidade_tipo",
+        )
+
+    eventos_filtrados = eventos_mes.copy()
+    if tecnico_filtro != "Todos":
+        eventos_filtrados = eventos_filtrados[
+            eventos_filtrados["Técnico"] == tecnico_filtro
+        ]
+    if nivel_filtro != "Todos":
+        eventos_filtrados = eventos_filtrados[
+            eventos_filtrados["Nível"] == nivel_filtro
+        ]
+    if tipo_filtro != "Todos":
+        eventos_filtrados = eventos_filtrados[
+            eventos_filtrados["Tipo"] == tipo_filtro
+        ]
+
+    efetivo_mes = dataframe[
+        (dataframe["Data"].dt.year == ano_filtro)
+        & (dataframe["Data"].dt.month == mes_filtro)
+    ]["Técnico"].nunique()
+    total_ferias = eventos_mes[eventos_mes["Tipo"] == "Férias"]["Técnico"].nunique()
+    total_licencas = eventos_mes[
+        eventos_mes["Tipo"].str.contains("Licença", case=False, na=False)
+    ]["Técnico"].nunique()
+    total_ausencias = len(
+        eventos_mes[
+            ~eventos_mes["Tipo"].isin(["Férias", "Licença-maternidade"])
+        ]
+    )
+
+    st.markdown(
+        f"""
+        <div class="disp-resumo">
+            <div><span>Efetivo no mês</span><strong>{efetivo_mes}</strong></div>
+            <div><span>Em férias</span><strong>{total_ferias}</strong></div>
+            <div><span>Licenças</span><strong>{total_licencas}</strong></div>
+            <div><span>Ausências</span><strong>{total_ausencias}</strong></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    aba_calendario, aba_lista, aba_nivel = st.tabs(
+        ["Calendário", "Lista", "Resumo por nível"]
+    )
+    with aba_calendario:
+        if eventos_filtrados.empty:
+            st.info("Nenhuma ocorrência encontrada para os filtros selecionados.")
+        else:
+            st.markdown(
+                html_calendario_disponibilidade(
+                    ano_filtro,
+                    mes_filtro,
+                    eventos_filtrados,
+                ),
+                unsafe_allow_html=True,
+            )
+
+    with aba_lista:
+        lista_disponibilidade = eventos_filtrados.copy()
+        lista_disponibilidade["Início"] = lista_disponibilidade["Início"].map(
+            lambda valor: valor.strftime("%d/%m/%Y")
+        )
+        lista_disponibilidade["Fim"] = lista_disponibilidade["Fim"].map(
+            lambda valor: valor.strftime("%d/%m/%Y")
+        )
+        st.dataframe(
+            lista_disponibilidade[
+                [
+                    "Técnico",
+                    "Nível",
+                    "Tipo",
+                    "Início",
+                    "Fim",
+                    "Duração",
+                    "Observação",
+                ]
+            ],
+            hide_index=True,
+            use_container_width=True,
+        )
+
+    with aba_nivel:
+        if eventos_filtrados.empty:
+            st.info("Nenhuma ocorrência encontrada para os filtros selecionados.")
+        else:
+            resumo_nivel = (
+                eventos_filtrados.groupby(["Nível", "Tipo"])
+                .size()
+                .reset_index(name="Ocorrências")
+            )
+            grafico_nivel = px.bar(
+                resumo_nivel,
+                x="Nível",
+                y="Ocorrências",
+                color="Tipo",
+                barmode="group",
+                color_discrete_map=CORES_DISPONIBILIDADE,
+                text="Ocorrências",
+            )
+            grafico_nivel.update_layout(
+                height=360,
+                margin=dict(l=20, r=20, t=20, b=30),
+                plot_bgcolor="#FFFFFF",
+                paper_bgcolor="#FFFFFF",
+                legend_title_text="",
+                xaxis_title="",
+                yaxis_title="Ocorrências",
+            )
+            grafico_nivel.update_traces(textposition="outside")
+            st.plotly_chart(grafico_nivel, use_container_width=True)
+
+
 def salvar_env_local(atualizacoes):
     valores = carregar_env_local()
     for chave, valor in atualizacoes.items():
