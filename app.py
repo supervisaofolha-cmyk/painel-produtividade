@@ -4615,6 +4615,132 @@ st.markdown(
     border-radius:50%;
     flex:0 0 9px;
 }}
+.disp-resumo {{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:10px;
+    margin:14px 0 18px;
+}}
+.disp-resumo > div {{
+    background:#FFFFFF;
+    border:1px solid #E5E7EB;
+    border-radius:7px;
+    padding:12px 14px;
+}}
+.disp-resumo span {{
+    display:block;
+    color:#4B5563;
+    font-size:12px;
+}}
+.disp-resumo strong {{
+    display:block;
+    color:#111827;
+    font-size:24px;
+    margin-top:4px;
+}}
+.disp-calendario {{
+    border:1px solid #E5E7EB;
+    border-radius:7px;
+    overflow:hidden;
+    background:#FFFFFF;
+}}
+.disp-semana-cabecalho,
+.disp-semana {{
+    display:grid;
+    grid-template-columns:repeat(7,minmax(0,1fr));
+}}
+.disp-dia-semana {{
+    background:#F9FAFB;
+    border-bottom:1px solid #E5E7EB;
+    color:#4B5563;
+    font-size:11px;
+    font-weight:700;
+    padding:8px;
+    text-align:center;
+}}
+.disp-dia {{
+    min-height:116px;
+    border-right:1px solid #E5E7EB;
+    border-bottom:1px solid #E5E7EB;
+    padding:6px;
+    min-width:0;
+}}
+.disp-semana .disp-dia:last-child {{
+    border-right:0;
+}}
+.disp-dia.fora-mes {{
+    background:#FAFAFA;
+    color:#9CA3AF;
+}}
+.disp-dia.fim-semana {{
+    background:#F9FAFB;
+}}
+.disp-dia.hoje {{
+    box-shadow:inset 0 0 0 2px #F97316;
+}}
+.disp-numero-dia {{
+    color:#374151;
+    font-size:11px;
+    font-weight:700;
+    margin-bottom:5px;
+}}
+.disp-evento {{
+    background:#F9FAFB;
+    border-left:3px solid #6B7280;
+    border-radius:4px;
+    margin-bottom:4px;
+    padding:4px 5px;
+    overflow:hidden;
+}}
+.disp-evento span,
+.disp-evento small {{
+    display:block;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}}
+.disp-evento span {{
+    color:#111827;
+    font-size:10px;
+    font-weight:700;
+}}
+.disp-evento small {{
+    color:#6B7280;
+    font-size:9px;
+    margin-top:1px;
+}}
+.disp-mais {{
+    color:#6B7280;
+    font-size:9px;
+    padding:2px;
+}}
+.disp-proximo {{
+    background:#FFFFFF;
+    border:1px solid #E5E7EB;
+    border-left:4px solid #6B7280;
+    border-radius:6px;
+    margin-bottom:7px;
+    padding:8px 9px;
+}}
+.disp-proximo strong,
+.disp-proximo span,
+.disp-proximo small {{
+    display:block;
+}}
+.disp-proximo strong {{
+    color:#111827;
+    font-size:11px;
+}}
+.disp-proximo span {{
+    color:#4B5563;
+    font-size:10px;
+    margin-top:2px;
+}}
+.disp-proximo small {{
+    color:#6B7280;
+    font-size:9px;
+    margin-top:3px;
+}}
 .login-marca {{
     position:fixed;
     top:0;
@@ -4704,6 +4830,16 @@ st.markdown(
     }}
     .resultado-faixa {{
         grid-template-columns:1fr;
+    }}
+    .disp-resumo {{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }}
+    .disp-dia {{
+        min-height:82px;
+        padding:3px;
+    }}
+    .disp-evento small {{
+        display:none;
     }}
     .resultado-nome {{
         font-size:20px;
@@ -5308,6 +5444,7 @@ def montar_grafico_ranking(ranking, titulo, eixo_x, meta_referencia=None):
 
 if modo_gestao:
     mostrar_lista_apoio_gestao()
+    mostrar_gestao_disponibilidade(df)
 
     st.divider()
     st.subheader("📌 Legenda dos Status")
