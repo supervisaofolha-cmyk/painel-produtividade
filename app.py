@@ -5378,7 +5378,7 @@ st.sidebar.title("Painel")
 
 visao_gestao = None
 if modo_gestao:
-    visao_gestao = st.segmented_control(
+    visao_gestao = st.radio(
         "Navegação da gestão",
         [
             "Visão Geral",
@@ -5387,8 +5387,8 @@ if modo_gestao:
             "Lista de Apoio",
             "Atualizações",
         ],
-        selection_mode="single",
-        default="Visão Geral",
+        index=0,
+        horizontal=True,
         label_visibility="collapsed",
         key="visao_gestao",
     )
