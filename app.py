@@ -316,6 +316,11 @@ class FormularioSGDParser(HTMLParser):
 
 
 def carregar_env_local():
+    return _carregar_env_local_cache(assinatura_arquivo(".env"))
+
+
+@st.cache_data(show_spinner=False)
+def _carregar_env_local_cache(_assinatura_env):
     valores = {}
     if not os.path.exists(".env"):
         return valores
@@ -329,6 +334,12 @@ def carregar_env_local():
             valores[chave.strip()] = valor.strip().strip('"').strip("'")
 
     return valores
+
+
+def assinatura_arquivo(caminho):
+    if not os.path.exists(caminho):
+        return "ausente"
+    return builtins.str(os.path.getmtime(caminho))
 
 
 def arquivo_excel_integro(caminho):
@@ -362,7 +373,21 @@ def garantir_planilha_produtividade_integra():
 
 def ler_dataframe_produtividade():
     garantir_planilha_produtividade_integra()
+    return _ler_dataframe_produtividade_cache(assinatura_arquivo(ARQUIVO_PRODUTIVIDADE))
+
+
+@st.cache_data(show_spinner=False)
+def _ler_dataframe_produtividade_cache(_assinatura_produtividade):
     return pd.read_excel(ARQUIVO_PRODUTIVIDADE)
+
+
+def ler_dataframe_usuarios():
+    return _ler_dataframe_usuarios_cache(assinatura_arquivo(ARQUIVO_USUARIOS))
+
+
+@st.cache_data(show_spinner=False)
+def _ler_dataframe_usuarios_cache(_assinatura_usuarios):
+    return pd.read_excel(ARQUIVO_USUARIOS)
 
 
 def carregar_workbook_produtividade(**kwargs):
