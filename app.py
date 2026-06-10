@@ -1610,21 +1610,16 @@ def mostrar_lista_apoio_gestao():
     st.divider()
     st.subheader("Lista de Apoio")
 
-    if "filtro_data_lista_apoio_persistido" not in st.session_state:
-        st.session_state["filtro_data_lista_apoio_persistido"] = None
-    if (
-        "filtro_data_lista_apoio_widget" not in st.session_state
-        and st.session_state["filtro_data_lista_apoio_persistido"] is not None
-    ):
-        st.session_state["filtro_data_lista_apoio_widget"] = st.session_state[
+    chave_filtro_data = "filtro_data_lista_apoio_widget"
+    if chave_filtro_data not in st.session_state:
+        st.session_state[chave_filtro_data] = st.session_state.get(
             "filtro_data_lista_apoio_persistido"
-        ]
+        )
 
     col_atualizar_apoio, col_status_apoio = st.columns([1, 3])
     with col_atualizar_apoio:
         if st.button("Atualizar lista de ajuda", key="atualizar_lista_apoio"):
             st.session_state["versao_editor_lista_apoio"] = versao_lista_apoio()
-            st.rerun()
     with col_status_apoio:
         st.caption("Use o botão para atualizar a lista sem derrubar o login.")
 
@@ -1642,9 +1637,9 @@ def mostrar_lista_apoio_gestao():
     with col_filtro_data:
         filtro_data_apoio = st.date_input(
             "Filtrar ajudas por data",
-            value=st.session_state["filtro_data_lista_apoio_persistido"],
+            value=None,
             format="DD/MM/YYYY",
-            key="filtro_data_lista_apoio_widget",
+            key=chave_filtro_data,
         )
         st.session_state["filtro_data_lista_apoio_persistido"] = filtro_data_apoio
     with col_limpar_filtro:
@@ -1657,8 +1652,11 @@ def mostrar_lista_apoio_gestao():
 
     lista_exibida = lista_apoio.copy()
     if filtro_data_apoio:
+        if isinstance(filtro_data_apoio, datetime):
+            filtro_data_apoio = filtro_data_apoio.date()
         datas_apoio = pd.to_datetime(
             lista_exibida["Carimbo de data/hora"].astype(str).str.strip(),
+            format="%d/%m/%Y %H:%M:%S",
             dayfirst=True,
             errors="coerce",
         ).dt.date
