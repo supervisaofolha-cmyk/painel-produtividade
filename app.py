@@ -5902,7 +5902,7 @@ if not modo_gestao:
                 dias_meta_programados,
             )
             fonte_dias_meta = "Planilha"
-            detalhe_dias_meta = "Valor atualizado pela gestão a partir do PontoWeb."
+            detalhe_dias_meta = "Valor atualizado pela gestão."
     if dias_meta_valor.is_integer():
         dias_meta_exibicao = builtins.str(int(dias_meta_valor))
     else:
