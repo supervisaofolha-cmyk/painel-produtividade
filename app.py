@@ -4258,6 +4258,12 @@ if not st.session_state["auth_ok"]:
             border-color:#EA580C;
             color:#FFFFFF;
         }
+        .login-autoria {
+            margin-top:10px;
+            color:#9CA3AF;
+            font-size:12px;
+            text-align:center;
+        }
         </style>
         <div class="login-marca"></div>
         <div class="login-topo">Soft News · Folha</div>
@@ -4322,6 +4328,9 @@ if not st.session_state["auth_ok"]:
             </div>
             <div class="login-atualizacao">
                 Dados atualizados em {data_atualizacao_texto}
+            </div>
+            <div class="login-autoria">
+                Criado por Esther Alves Queiroz
             </div>
             """,
             unsafe_allow_html=True,
