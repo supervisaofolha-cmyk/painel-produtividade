@@ -5127,6 +5127,19 @@ st.markdown(
     margin-top:22px;
 }}
 @media (max-width: 900px) {{
+    .gestao-kpi-grid,
+    .gestao-grid-duplo,
+    .gestao-linha-inferior,
+    .gestao-resumo-faixa {{
+        grid-template-columns:1fr;
+    }}
+    .gestao-status-grid,
+    .gestao-resumo-grid {{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }}
+    .gestao-absorcao-linha {{
+        grid-template-columns:76px minmax(0,1fr) 42px;
+    }}
     .resultado-grid-principal {{
         grid-template-columns:1fr;
     }}
@@ -5138,9 +5151,6 @@ st.markdown(
     }}
     .disp-resumo {{
         grid-template-columns:repeat(2,minmax(0,1fr));
-    }}
-    .gestao-status-grid {{
-        grid-template-columns:1fr;
     }}
     .disp-dia {{
         min-height:82px;
@@ -5155,6 +5165,14 @@ st.markdown(
     }}
     .resultado-nome {{
         font-size:20px;
+    }}
+}}
+@media (max-width: 640px) {{
+    .gestao-kpi-grid,
+    .gestao-status-grid,
+    .gestao-resumo-grid,
+    .gestao-resumo-faixa {{
+        grid-template-columns:1fr;
     }}
 }}
 </style>
