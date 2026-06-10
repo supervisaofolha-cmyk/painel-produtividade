@@ -272,6 +272,7 @@ PROGRAMACAO_AUSENCIAS = [
     ("Maria Eduarda Sousa Costa", date(2026, 6, 9), "Atestado", None),
     ("Maria Eduarda Sousa Costa", date(2026, 6, 10), "Atestado", None),
     ("Sarah Steffanie de Lima Borges", date(2026, 6, 10), "Atestado", 4 * 60 + 30),
+    ("Daniel Gomes da Silva", date(2026, 6, 10), "Falta/Atraso", 3 * 60),
 ]
 
 
