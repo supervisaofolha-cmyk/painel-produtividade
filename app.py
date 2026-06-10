@@ -4104,7 +4104,7 @@ st.markdown(
     background:#F97316;
 }}
 .login-topo {{
-    color:#6B7280;
+    color:#374151;
     font-size:12px;
     text-align:right;
     margin:4px 2px 54px 0;
@@ -4132,7 +4132,7 @@ st.markdown(
     line-height:1.2;
 }}
 .login-subtitulo {{
-    color:#6B7280;
+    color:#374151;
     font-size:14px;
     margin-top:8px;
 }}
@@ -4144,7 +4144,7 @@ st.markdown(
     border-top:1px solid #E5E7EB;
 }}
 .login-indicador {{
-    color:#4B5563;
+    color:#374151;
     font-size:12px;
     text-align:center;
     padding:0 8px;
@@ -4160,7 +4160,7 @@ st.markdown(
     margin:0 auto 7px;
 }}
 .login-atualizacao {{
-    color:#9CA3AF;
+    color:#374151;
     font-size:11px;
     text-align:center;
     margin-top:22px;
@@ -4260,7 +4260,7 @@ if not st.session_state["auth_ok"]:
         }
         .login-autoria {
             margin-top:10px;
-            color:#9CA3AF;
+            color:#374151;
             font-size:12px;
             font-weight:700;
             text-align:center;
