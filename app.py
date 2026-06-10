@@ -1913,13 +1913,17 @@ def mostrar_gestao_disponibilidade(dataframe):
         st.info("Ainda não há férias, licenças ou ausências cadastradas.")
         return
 
-    periodos = sorted(
-        {
-            (data_evento.year, data_evento.month)
-            for coluna_data in ["Início", "Fim"]
-            for data_evento in disponibilidade[coluna_data]
-        }
-    )
+    menor_data = disponibilidade["Início"].min()
+    maior_data = disponibilidade["Fim"].max()
+    periodos = []
+    cursor_periodo = date(menor_data.year, menor_data.month, 1)
+    while cursor_periodo <= date(maior_data.year, maior_data.month, 1):
+        periodos.append((cursor_periodo.year, cursor_periodo.month))
+        cursor_periodo = (
+            date(cursor_periodo.year + 1, 1, 1)
+            if cursor_periodo.month == 12
+            else date(cursor_periodo.year, cursor_periodo.month + 1, 1)
+        )
     periodo_atual = (datetime.now(FUSO_HORARIO_APP).year, datetime.now(FUSO_HORARIO_APP).month)
     periodo_padrao = periodo_atual if periodo_atual in periodos else periodos[0]
     opcoes_periodo = {
@@ -1950,6 +1954,13 @@ def mostrar_gestao_disponibilidade(dataframe):
     tecnicos_filtro = sorted(eventos_mes["Técnico"].unique())
     niveis_filtro = sorted(eventos_mes["Nível"].unique())
     tipos_filtro = sorted(eventos_mes["Tipo"].unique())
+    for chave_estado, opcoes_validas in {
+        "disponibilidade_tecnico": ["Todos"] + tecnicos_filtro,
+        "disponibilidade_nivel": ["Todos"] + niveis_filtro,
+        "disponibilidade_tipo": ["Todos"] + tipos_filtro,
+    }.items():
+        if st.session_state.get(chave_estado) not in opcoes_validas:
+            st.session_state[chave_estado] = "Todos"
 
     with col_tecnico:
         tecnico_filtro = st.selectbox(
@@ -2017,14 +2028,44 @@ def mostrar_gestao_disponibilidade(dataframe):
         if eventos_filtrados.empty:
             st.info("Nenhuma ocorrência encontrada para os filtros selecionados.")
         else:
-            st.markdown(
-                html_calendario_disponibilidade(
-                    ano_filtro,
-                    mes_filtro,
-                    eventos_filtrados,
-                ),
-                unsafe_allow_html=True,
-            )
+            col_calendario, col_proximos = st.columns([4, 1.1])
+            with col_calendario:
+                st.markdown(
+                    html_calendario_disponibilidade(
+                        ano_filtro,
+                        mes_filtro,
+                        eventos_filtrados,
+                    ),
+                    unsafe_allow_html=True,
+                )
+            with col_proximos:
+                st.markdown("**Próximos afastamentos**")
+                referencia_proximos = max(
+                    datetime.now(FUSO_HORARIO_APP).date(),
+                    inicio_mes,
+                )
+                proximos = eventos_filtrados[
+                    eventos_filtrados["Fim"] >= referencia_proximos
+                ].sort_values(["Início", "Técnico"]).head(6)
+                if proximos.empty:
+                    st.caption("Nenhum afastamento futuro neste período.")
+                else:
+                    itens_proximos = []
+                    for _, evento in proximos.iterrows():
+                        cor = CORES_DISPONIBILIDADE.get(
+                            evento["Tipo"],
+                            "#6B7280",
+                        )
+                        itens_proximos.append(
+                            '<div class="disp-proximo" '
+                            f'style="border-left-color:{cor};">'
+                            f'<strong>{escape(abreviar_nome_disponibilidade(evento["Técnico"]))}</strong>'
+                            f'<span>{escape(evento["Tipo"])}</span>'
+                            f'<small>{evento["Início"].strftime("%d/%m")} a '
+                            f'{evento["Fim"].strftime("%d/%m")}</small>'
+                            "</div>"
+                        )
+                    st.markdown("".join(itens_proximos), unsafe_allow_html=True)
 
     with aba_lista:
         lista_disponibilidade = eventos_filtrados.copy()
