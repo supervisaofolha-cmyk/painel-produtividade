@@ -4516,6 +4516,22 @@ st.markdown(
     border-radius: 12px;
     box-shadow: 0px 2px 5px rgba(0,0,0,0.05);
 }}
+[data-testid="stRadio"] [role="radiogroup"] {{
+    display:flex;
+    gap:4px;
+    border-bottom:1px solid #E5E7EB;
+    margin-bottom:18px;
+}}
+[data-testid="stRadio"] [role="radiogroup"] label {{
+    padding:9px 12px;
+    margin:0;
+    border-bottom:2px solid transparent;
+}}
+[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {{
+    border-bottom-color:#F97316;
+    color:#111827;
+    font-weight:700;
+}}
 .card-tecnico {{
     padding:12px;
     border-radius:10px;
@@ -5717,7 +5733,9 @@ if modo_gestao and visao_gestao == "Visão Geral":
             use_container_width=True,
         )
 
-if modo_gestao:
+    st.stop()
+
+if modo_gestao and visao_gestao == "Resultados Individuais":
     tecnico = st.selectbox(
         "Selecione o Técnico",
         tecnicos_disponiveis,
