@@ -5836,184 +5836,392 @@ if modo_gestao and visao_gestao == "Disponibilidade":
     st.stop()
 
 if modo_gestao and visao_gestao == "Visão Geral":
+    def formatar_inteiro_gestao(valor):
+        return f"{int(valor):,}".replace(",", ".")
+
+    def formatar_percentual_gestao(valor, casas=2):
+        return f"{valor:.{casas}f}%".replace(".", ",")
+
+    periodos_gestao = sorted(
+        {
+            (data.year, data.month)
+            for data in df["Data"].dropna()
+        },
+        reverse=True,
+    )
+    opcoes_periodo_gestao = {
+        nome_mes_ano(ano_periodo, mes_periodo): (ano_periodo, mes_periodo)
+        for ano_periodo, mes_periodo in periodos_gestao
+    }
+    periodo_padrao_gestao = nome_mes_ano(ano_atual, mes_atual)
+    if periodo_padrao_gestao not in opcoes_periodo_gestao:
+        periodo_padrao_gestao = next(iter(opcoes_periodo_gestao))
+
+    col_periodo_gestao, _ = st.columns([0.22, 0.78])
+    with col_periodo_gestao:
+        periodo_gestao_label = st.selectbox(
+            "Mês da visão geral",
+            list(opcoes_periodo_gestao.keys()),
+            index=list(opcoes_periodo_gestao.keys()).index(periodo_padrao_gestao),
+            key="gestao_visao_geral_mes",
+            label_visibility="collapsed",
+        )
+
+    ano_visao_gestao, mes_visao_gestao = opcoes_periodo_gestao[periodo_gestao_label]
     dados_gestao_mes = df[
-        (df["Data"].dt.month == mes_atual)
-        & (df["Data"].dt.year == ano_atual)
-    ]
+        (df["Data"].dt.month == mes_visao_gestao)
+        & (df["Data"].dt.year == ano_visao_gestao)
+    ].copy()
+
     realizado_gestao = int(dados_gestao_mes["Realizado"].sum())
     esperado_gestao = int(dados_gestao_mes["Esperado"].sum())
     desvio_gestao = realizado_gestao - esperado_gestao
-    tecnicos_ativos_gestao = dados_gestao_mes["Técnico"].nunique()
-    col_realizado, col_esperado, col_desvio, col_ativos = st.columns(4)
-    col_realizado.metric("Realizado total", realizado_gestao)
-    col_esperado.metric("Esperado total", esperado_gestao)
-    col_desvio.metric("Desvio", desvio_gestao)
-    col_ativos.metric("Técnicos ativos", tecnicos_ativos_gestao)
+    desvio_percentual_gestao = (
+        (desvio_gestao / esperado_gestao) * 100 if esperado_gestao else 0
+    )
 
-    data_status = df["Data"].max()
+    data_status = dados_gestao_mes["Data"].max()
     status_atual = (
-        df[df["Data"] == data_status][["Técnico", "Nível", "Classificação"]]
+        dados_gestao_mes[dados_gestao_mes["Data"] == data_status][
+            ["Técnico", "Nível", "Classificação"]
+        ]
         .dropna(subset=["Técnico", "Classificação"])
         .sort_values(by=["Classificação", "Técnico"])
     )
+    tecnicos_ativos_gestao = int(status_atual["Técnico"].nunique())
     percentuais_absorcao_mes = percentuais_absorcao_por_mes(
         df,
-        ano_atual,
-        mes_atual,
+        ano_visao_gestao,
+        mes_visao_gestao,
     )
 
-    col_classificacao, col_absorcao = st.columns([1.15, 1])
-    with col_classificacao:
-        st.markdown("#### Distribuição por classificação")
-        blocos_status = []
-        descricoes_status = {
-            "CRÍTICO": "Desvio menor que -5",
-            "ATENÇÃO": "Desvio entre -5 e 0",
-            "BOM": "Desvio entre 0 e 5",
-            "EXCELENTE": "Desvio acima de 5",
-        }
-        for status in ["CRÍTICO", "ATENÇÃO", "BOM", "EXCELENTE"]:
-            quantidade = int(
-                (status_atual["Classificação"] == status).sum()
-            )
-            blocos_status.append(
-                '<div class="gestao-status-resumo" '
-                f'style="border-left-color:{CORES_STATUS[status]};">'
-                f"<span>{status}</span><strong>{quantidade}</strong>"
-                f"<small>{descricoes_status[status]}</small></div>"
-            )
-        st.markdown(
-            '<div class="gestao-status-grid">'
-            + "".join(blocos_status)
-            + "</div>",
-            unsafe_allow_html=True,
+    st.markdown(
+        f"""
+        <div class="gestao-kpi-grid">
+            <div class="gestao-kpi-card">
+                <div>
+                    <small>Realizado total</small>
+                    <strong>{formatar_inteiro_gestao(realizado_gestao)}</strong>
+                </div>
+                <div class="gestao-kpi-spark">▁▃▂▅▄▆▅▇</div>
+            </div>
+            <div class="gestao-kpi-card">
+                <div>
+                    <small>Esperado total</small>
+                    <strong>{formatar_inteiro_gestao(esperado_gestao)}</strong>
+                </div>
+                <div class="gestao-kpi-spark blue">▂▃▄▃▅▄▆▇</div>
+            </div>
+            <div class="gestao-kpi-card {'negative' if desvio_gestao < 0 else ''}">
+                <div>
+                    <small>Desvio</small>
+                    <strong>{desvio_gestao:+d}</strong>
+                </div>
+                <div class="gestao-kpi-extra">{formatar_percentual_gestao(desvio_percentual_gestao)}<br>vs esperado</div>
+            </div>
+            <div class="gestao-kpi-card">
+                <div>
+                    <small>Técnicos ativos</small>
+                    <strong>{formatar_inteiro_gestao(tecnicos_ativos_gestao)}</strong>
+                </div>
+                <div class="gestao-kpi-spark slate">◔</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    descricoes_status = {
+        "CRÍTICO": ("Técnicos", "≤ 21% da meta"),
+        "ATENÇÃO": ("Técnicos", "> 21% e ≤ 98%"),
+        "BOM": ("Técnicos", "> 98% e ≤ 120%"),
+        "EXCELENTE": ("Técnicos", "> 120% da meta"),
+    }
+    cores_texto_status = {
+        "CRÍTICO": "#DC2626",
+        "ATENÇÃO": "#F97316",
+        "BOM": "#2563EB",
+        "EXCELENTE": "#15803D",
+    }
+    blocos_status = []
+    for status in ["CRÍTICO", "ATENÇÃO", "BOM", "EXCELENTE"]:
+        quantidade = int((status_atual["Classificação"] == status).sum())
+        legenda, referencia = descricoes_status[status]
+        blocos_status.append(
+            '<div class="gestao-status-resumo" '
+            f'style="border-top-color:{CORES_STATUS[status]};">'
+            f"<span>{status}</span>"
+            f"<strong>{quantidade}</strong>"
+            f"<em>{legenda}</em>"
+            f'<small style="color:{cores_texto_status[status]};">{referencia}</small>'
+            "</div>"
         )
 
-    with col_absorcao:
-        st.markdown("#### Percentual de Absorção por Nível")
-        maior_percentual = max(percentuais_absorcao_mes.values(), default=1)
-        barras_absorcao = []
-        for nivel, percentual in percentuais_absorcao_mes.items():
-            largura = min(
-                (percentual / maior_percentual) * 100
-                if maior_percentual
-                else 0,
-                100,
-            )
-            barras_absorcao.append(
-                '<div class="gestao-absorcao-linha">'
-                f"<div><span>{escape(nivel)}</span>"
-                f"<strong>{percentual:.2f}%</strong></div>"
-                '<div class="gestao-absorcao-trilho">'
-                f'<i style="width:{largura:.2f}%;"></i></div></div>'
-            )
-        st.markdown(
-            '<div class="gestao-absorcao">'
-            + "".join(barras_absorcao)
-            + "</div>",
-            unsafe_allow_html=True,
+    maior_percentual = max(percentuais_absorcao_mes.values(), default=0)
+    largura_referencia = maior_percentual if maior_percentual > 0 else 1
+    barras_absorcao = []
+    for nivel, percentual in percentuais_absorcao_mes.items():
+        largura = min((percentual / largura_referencia) * 100, 100)
+        barras_absorcao.append(
+            '<div class="gestao-absorcao-linha">'
+            f"<span>{escape(nivel)}</span>"
+            f'<div class="gestao-absorcao-trilho"><i style="width:{largura:.2f}%;"></i></div>'
+            f"<strong>{formatar_percentual_gestao(percentual)}</strong>"
+            "</div>"
         )
+
+    st.markdown(
+        '<div class="gestao-grid-duplo">'
+        '<div class="gestao-card"><h4>Distribuição por classificação</h4>'
+        '<div class="gestao-status-grid">'
+        + "".join(blocos_status)
+        + "</div></div>"
+        '<div class="gestao-card"><h4>Percentual de Absorção por Nível</h4>'
+        '<div class="gestao-absorcao">'
+        + "".join(barras_absorcao)
+        + "</div></div></div>",
+        unsafe_allow_html=True,
+    )
 
     niveis_disponiveis = sorted(
-        [nivel for nivel in df["Nível"].dropna().unique() if builtins.str(nivel).strip()]
+        [
+            nivel
+            for nivel in dados_gestao_mes["Nível"].dropna().unique()
+            if builtins.str(nivel).strip()
+        ]
     )
     nivel_ranking_geral = st.selectbox(
         "Selecione o nível do ranking geral",
         ["Todos os níveis"] + niveis_disponiveis,
+        key="gestao_ranking_nivel",
     )
 
-    base_ranking_geral = df[
-        (df["Data"].dt.month == mes_atual)
-        & (df["Data"].dt.year == ano_atual)
-    ]
-
+    base_ranking_geral = dados_gestao_mes.copy()
     if nivel_ranking_geral != "Todos os níveis":
         base_ranking_geral = base_ranking_geral[
             base_ranking_geral["Nível"] == nivel_ranking_geral
         ]
 
     ranking_geral_mensal = (
-        base_ranking_geral.groupby("Técnico", as_index=False)["Realizado"]
+        base_ranking_geral.groupby("Técnico", as_index=False)[["Realizado", "Esperado"]]
         .sum()
-        .sort_values(by="Realizado", ascending=False)
         .reset_index(drop=True)
+    )
+    ranking_geral_mensal["Produtividade"] = ranking_geral_mensal.apply(
+        lambda linha: (
+            (linha["Realizado"] / linha["Esperado"]) * 100
+            if linha["Esperado"] > 0
+            else 0
+        ),
+        axis=1,
+    )
+    ranking_geral_mensal = ranking_geral_mensal.sort_values(
+        by="Produtividade",
+        ascending=False,
+    ).head(10)
+
+    def abreviar_nome_gestao(nome):
+        partes = builtins.str(nome or "").title().split()
+        if len(partes) <= 2:
+            return "<br>".join(partes)
+        return f"{partes[0]}<br>{partes[-1]}"
+
+    ranking_geral_mensal["Técnico Exibição"] = ranking_geral_mensal["Técnico"].map(
+        abreviar_nome_gestao
+    )
+    ranking_geral_mensal["Cor"] = [
+        COR_LARANJA if indice == 0 else "#4B5563"
+        for indice in range(len(ranking_geral_mensal))
+    ]
+    ranking_geral_mensal["Rótulo"] = ranking_geral_mensal["Produtividade"].map(
+        lambda valor: formatar_percentual_gestao(valor, 0)
+    )
+
+    grafico_geral = go.Figure()
+    grafico_geral.add_bar(
+        x=ranking_geral_mensal["Técnico Exibição"],
+        y=ranking_geral_mensal["Produtividade"],
+        marker_color=ranking_geral_mensal["Cor"],
+        text=ranking_geral_mensal["Rótulo"],
+        textposition="outside",
+        hovertemplate="<b>%{x}</b><br>Produtividade: %{y:.2f}%<extra></extra>",
+    )
+    grafico_geral.add_hline(
+        y=100,
+        line_dash="dash",
+        line_color="#9CA3AF",
+        annotation_text="Meta (100%)",
+        annotation_position="top right",
+    )
+    grafico_geral.update_layout(
+        title="Ranking Geral",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=10, r=10, t=52, b=10),
+        height=320,
+        showlegend=False,
+        xaxis=dict(title="", tickfont=dict(size=11)),
+        yaxis=dict(
+            title="Produtividade (%)",
+            gridcolor="#E5E7EB",
+            zeroline=False,
+        ),
     )
 
     tecnicos_abaixo_meta = int(
         status_atual["Classificação"].isin(["CRÍTICO", "ATENÇÃO"]).sum()
     )
+    tecnicos_em_atencao = int((status_atual["Classificação"] == "ATENÇÃO").sum())
     hoje_gestao = datetime.now(FUSO_HORARIO_APP).date()
+    ferias_hoje_set = {
+        normalizar_nome(nome)
+        for nome, inicio, fim in PROGRAMACAO_FERIAS
+        if inicio <= hoje_gestao <= fim
+    }
+    licencas_hoje_set = {
+        normalizar_nome(nome)
+        for nome, inicio, fim, _ in PROGRAMACAO_LICENCAS
+        if inicio <= hoje_gestao <= fim
+    }
+    ausencias_integral_hoje = {
+        normalizar_nome(nome)
+        for nome, data_ausencia, _, minutos in PROGRAMACAO_AUSENCIAS
+        if data_ausencia == hoje_gestao and minutos is None
+    }
+    ausencias_parciais_hoje = {
+        normalizar_nome(nome)
+        for nome, data_ausencia, _, minutos in PROGRAMACAO_AUSENCIAS
+        if data_ausencia == hoje_gestao and minutos is not None
+    }
     proximas_ferias = sum(
         1
         for _, inicio, _ in PROGRAMACAO_FERIAS
-        if hoje_gestao <= inicio <= hoje_gestao + timedelta(days=30)
+        if hoje_gestao <= inicio <= hoje_gestao + timedelta(days=15)
     )
-    afastados_hoje = len(
-        {
-            normalizar_nome(nome)
-            for nome, inicio, fim in PROGRAMACAO_FERIAS
-            if inicio <= hoje_gestao <= fim
-        }
-        | {
-            normalizar_nome(nome)
-            for nome, inicio, fim, _ in PROGRAMACAO_LICENCAS
-            if inicio <= hoje_gestao <= fim
-        }
+    tecnicos_base_hoje = {
+        normalizar_nome(nome)
+        for nome in status_atual["Técnico"].dropna().tolist()
+    }
+    afastados_integral_hoje = licencas_hoje_set | ausencias_integral_hoje
+    trabalhando_hoje = max(
+        len(tecnicos_base_hoje - ferias_hoje_set - afastados_integral_hoje),
+        0,
     )
+
     try:
-        lista_apoio_resumo = ler_lista_apoio()
-        ajudas_em_aberto = int(
+        lista_apoio_resumo = ler_lista_apoio().copy()
+        lista_apoio_resumo["Carimbo_dt"] = pd.to_datetime(
+            lista_apoio_resumo["Carimbo de data/hora"],
+            format="%d/%m/%Y %H:%M:%S",
+            errors="coerce",
+        )
+        lista_aberta = lista_apoio_resumo[
+            ~lista_apoio_resumo["Situação"].isin(
+                ["Finalizado", "Resolvido pelo técnico"]
+            )
+        ].copy()
+        agora_apoio = datetime.now(FUSO_HORARIO_APP).replace(tzinfo=None)
+        lista_aberta["Horas em aberto"] = (
+            agora_apoio - lista_aberta["Carimbo_dt"]
+        ).dt.total_seconds().div(3600).fillna(0)
+        ajudas_criticas = int((lista_aberta["Horas em aberto"] > 48).sum())
+        ajudas_em_analise = int(
             (
-                ~lista_apoio_resumo["Situação"].isin(
-                    ["Finalizado", "Resolvido pelo técnico"]
-                )
+                (lista_aberta["Situação"] == "Em análise")
+                & (lista_aberta["Horas em aberto"] <= 48)
             ).sum()
         )
+        ajudas_aguardando = int(
+            (
+                (lista_aberta["Situação"] == "Aberto")
+                & (lista_aberta["Horas em aberto"] <= 48)
+            ).sum()
+        )
+        ajudas_em_aberto = int(len(lista_aberta))
     except Exception:
+        ajudas_criticas = 0
+        ajudas_em_analise = 0
+        ajudas_aguardando = 0
         ajudas_em_aberto = 0
 
-    st.divider()
-    col_ranking, col_alertas = st.columns([3, 1])
+    alertas = [
+        ("#DC2626", "!", f"{tecnicos_abaixo_meta} técnicos abaixo da meta"),
+        ("#F97316", "!", f"{tecnicos_em_atencao} técnicos entre atenção e meta"),
+        ("#2563EB", "□", f"{proximas_ferias} técnicos com férias nos próximos 15 dias"),
+        ("#7C3AED", "◌", f"{ajudas_em_aberto} ajudas em aberto"),
+    ]
+    html_alertas = "".join(
+        '<div class="gestao-alerta">'
+        '<div class="gestao-alerta-label">'
+        f'<div class="gestao-alerta-icone" style="background:{cor};">{icone}</div>'
+        f"<span>{escape(texto)}</span>"
+        '</div><div class="gestao-alerta-seta">›</div></div>'
+        for cor, icone, texto in alertas
+    )
+
+    col_ranking, col_alertas = st.columns([1.85, 1.25])
     with col_ranking:
-        st.markdown("#### Ranking Geral")
         st.plotly_chart(
-            montar_grafico_ranking(
-                ranking_geral_mensal,
-                f"Ranking mensal - {nivel_ranking_geral}",
-                "Produtividade do mês",
-            ),
+            grafico_geral,
             use_container_width=True,
+            config={"displayModeBar": False},
         )
     with col_alertas:
-        st.markdown("#### Alertas do mês")
-        alertas = [
-            (
-                "#DC2626",
-                f"{tecnicos_abaixo_meta} técnico(s) abaixo da meta",
-            ),
-            (
-                "#2563EB",
-                f"{proximas_ferias} férias iniciam nos próximos 30 dias",
-            ),
-            (
-                "#7C3AED",
-                f"{afastados_hoje} técnico(s) afastados hoje",
-            ),
-            (
-                "#F97316",
-                f"{ajudas_em_aberto} ajuda(s) em aberto",
-            ),
-        ]
         st.markdown(
-            '<div class="gestao-alertas">'
-            + "".join(
-                '<div class="gestao-alerta" '
-                f'style="border-left-color:{cor};">{escape(texto)}</div>'
-                for cor, texto in alertas
-            )
-            + "</div>",
+            '<div class="gestao-card"><h4>Alertas do mês</h4>'
+            f'{html_alertas}</div>',
             unsafe_allow_html=True,
         )
+
+    st.markdown(
+        f"""
+        <div class="gestao-resumo-faixa">
+            <div class="gestao-resumo-card">
+                <h4>Disponibilidade hoje ({hoje_gestao.strftime('%d/%m/%Y')})</h4>
+                <div class="gestao-resumo-grid">
+                    <div class="gestao-resumo-item">
+                        <div class="gestao-resumo-bola" style="color:#16A34A;border:1px solid #16A34A;">○</div>
+                        <div class="gestao-resumo-texto"><strong>{trabalhando_hoje}</strong><span>Trabalhando</span></div>
+                    </div>
+                    <div class="gestao-resumo-item">
+                        <div class="gestao-resumo-bola" style="color:#F97316;border:1px solid #F97316;">◔</div>
+                        <div class="gestao-resumo-texto"><strong>{len(ferias_hoje_set)}</strong><span>Férias</span></div>
+                    </div>
+                    <div class="gestao-resumo-item">
+                        <div class="gestao-resumo-bola" style="color:#2563EB;border:1px solid #2563EB;">＋</div>
+                        <div class="gestao-resumo-texto"><strong>{len(afastados_integral_hoje)}</strong><span>Afastados</span></div>
+                    </div>
+                    <div class="gestao-resumo-item">
+                        <div class="gestao-resumo-bola" style="color:#7C3AED;border:1px solid #7C3AED;">◷</div>
+                        <div class="gestao-resumo-texto"><strong>{len(ausencias_parciais_hoje)}</strong><span>Saída antecipada</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="gestao-resumo-card">
+                <h4>Ajudas em aberto</h4>
+                <div class="gestao-resumo-grid">
+                    <div class="gestao-resumo-item">
+                        <div class="gestao-resumo-bola" style="color:#DC2626;border:1px solid #DC2626;">!</div>
+                        <div class="gestao-resumo-texto"><strong>{ajudas_criticas}</strong><span>Críticas (&gt; 48h)</span></div>
+                    </div>
+                    <div class="gestao-resumo-item">
+                        <div class="gestao-resumo-bola" style="color:#F97316;border:1px solid #F97316;">⌕</div>
+                        <div class="gestao-resumo-texto"><strong>{ajudas_em_analise}</strong><span>Em análise</span></div>
+                    </div>
+                    <div class="gestao-resumo-item">
+                        <div class="gestao-resumo-bola" style="color:#2563EB;border:1px solid #2563EB;">◌</div>
+                        <div class="gestao-resumo-texto"><strong>{ajudas_aguardando}</strong><span>Aguardando apoio</span></div>
+                    </div>
+                    <div class="gestao-resumo-item">
+                        <div class="gestao-resumo-bola" style="color:#111827;border:1px solid #CBD5E1;">#</div>
+                        <div class="gestao-resumo-texto"><strong>{ajudas_em_aberto}</strong><span>Total</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.stop()
 
