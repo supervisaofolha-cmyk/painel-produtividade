@@ -1787,6 +1787,24 @@ def licenca_ativa_tecnico(tecnico, data_referencia=None):
     return None
 
 
+def dias_uteis_licenca_no_mes(tecnico, ano, mes):
+    inicio_mes_referencia = date(ano, mes, 1)
+    fim_mes_referencia = date(ano, mes, calendar.monthrange(ano, mes)[1])
+    dias_licenca = set()
+
+    for inicio_licenca, fim_licenca, _ in periodos_licenca_tecnico(tecnico):
+        inicio = max(inicio_licenca, inicio_mes_referencia)
+        fim = min(fim_licenca, fim_mes_referencia)
+        if inicio > fim:
+            continue
+
+        for data_atual in datas_no_periodo(inicio, fim):
+            if data_atual.weekday() < 5 and not eh_feriado_federal(data_atual):
+                dias_licenca.add(data_atual)
+
+    return len(dias_licenca)
+
+
 def nivel_canonico(valor):
     nivel = normalizar_nome(valor)
     niveis = {
