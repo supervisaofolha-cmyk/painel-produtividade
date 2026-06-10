@@ -2676,18 +2676,6 @@ def extrair_valor_input(html, nome_campo):
     return unescape(match.group(1)) if match else ""
 
 
-def extrair_erro_login_pontoweb(html):
-    match = re.search(
-        r'<span[^>]*class="[^"]*field-validation-error[^"]*"[^>]*>(.*?)</span>',
-        html,
-        re.IGNORECASE | re.DOTALL,
-    )
-    if not match:
-        return ""
-    mensagem = re.sub(r"<[^>]+>", " ", match.group(1))
-    return re.sub(r"\s+", " ", unescape(mensagem)).strip()
-
-
 def login_pontoweb(email, senha):
     sessao = criar_sessao_http()
     resposta_login = sessao.get(PONTOWEB_AUTH_URL, timeout=30)
