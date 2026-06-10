@@ -251,7 +251,7 @@ PROGRAMACAO_LICENCAS = [
     ),
 ]
 
-CARGA_DIARIA_PADRAO_MINUTOS = 8 * 60
+CARGA_DIARIA_PADRAO_MINUTOS = 8 * 60 + 30
 
 PROGRAMACAO_AUSENCIAS = [
     ("Jessica Faria da Silveira", date(2026, 5, 29), "Atestado", None),
