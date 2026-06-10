@@ -251,6 +251,29 @@ PROGRAMACAO_LICENCAS = [
     ),
 ]
 
+CARGA_DIARIA_PADRAO_MINUTOS = 8 * 60
+
+PROGRAMACAO_AUSENCIAS = [
+    ("Jessica Faria da Silveira", date(2026, 5, 29), "Atestado", None),
+    ("Karina Gonçalves Martins", date(2026, 5, 29), "Falta/Atraso", None),
+    ("Karina Gonçalves Martins", date(2026, 6, 2), "Atestado", None),
+    ("Leandro de Souza Silva", date(2026, 6, 1), "Energia", 4 * 60 + 30),
+    ("Sarah Steffanie de Lima Borges", date(2026, 6, 1), "Atestado", None),
+    ("Milena Sales", date(2026, 6, 2), "Atestado", None),
+    ("Sarah Steffanie de Lima Borges", date(2026, 6, 2), "Atestado", None),
+    ("Sarah Steffanie de Lima Borges", date(2026, 6, 3), "Atestado", None),
+    ("Leandro de Souza Silva", date(2026, 6, 5), "Energia", 4 * 60),
+    ("Paulo Ricardo Santos", date(2026, 6, 5), "Falta/Atraso", None),
+    ("Carlos Mateus Cassimiro Nunes", date(2026, 6, 5), "Falta/Atraso", None),
+    ("Anna Luiza Rezende Tavares", date(2026, 6, 8), "Falta/Atraso", 4 * 60),
+    ("Leandro de Souza Silva", date(2026, 6, 8), "Atestado", None),
+    ("Milena Sales", date(2026, 6, 9), "Atestado", 4 * 60),
+    ("Leandro de Souza Silva", date(2026, 6, 9), "Atestado", None),
+    ("Maria Eduarda Sousa Costa", date(2026, 6, 9), "Atestado", None),
+    ("Maria Eduarda Sousa Costa", date(2026, 6, 10), "Atestado", None),
+    ("Sarah Steffanie de Lima Borges", date(2026, 6, 10), "Atestado", 4 * 60 + 30),
+]
+
 
 class FormularioSGDParser(HTMLParser):
     def __init__(self):
