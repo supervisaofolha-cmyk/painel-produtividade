@@ -1828,6 +1828,40 @@ def dias_uteis_licenca_no_mes(tecnico, ano, mes):
     return len(dias_licenca)
 
 
+def ausencia_programada_tecnico(tecnico, data_referencia):
+    tecnico_normalizado = normalizar_nome(tecnico)
+    for nome, data_ausencia, tipo, minutos in PROGRAMACAO_AUSENCIAS:
+        if (
+            normalizar_nome(nome) == tecnico_normalizado
+            and data_ausencia == data_referencia
+        ):
+            return tipo, minutos
+    return None
+
+
+def abatimento_ausencias_no_mes(tecnico, ano, mes):
+    tecnico_normalizado = normalizar_nome(tecnico)
+    abatimento = 0.0
+
+    for nome, data_ausencia, _, minutos in PROGRAMACAO_AUSENCIAS:
+        if normalizar_nome(nome) != tecnico_normalizado:
+            continue
+        if data_ausencia.year != ano or data_ausencia.month != mes:
+            continue
+        if data_ausencia.weekday() >= 5 or eh_feriado_federal(data_ausencia):
+            continue
+
+        if minutos is None:
+            abatimento += 1
+        else:
+            abatimento += min(
+                max(minutos / CARGA_DIARIA_PADRAO_MINUTOS, 0),
+                1,
+            )
+
+    return round(abatimento, 4)
+
+
 def nivel_canonico(valor):
     nivel = normalizar_nome(valor)
     niveis = {
@@ -3948,6 +3982,29 @@ def recalcular_colunas_derivadas(df):
         axis=1,
     )
     df.loc[linhas_em_afastamento, "Esperado"] = 0
+    for indice, linha in df.iterrows():
+        if pd.isna(linha["Data"]):
+            continue
+
+        ausencia = ausencia_programada_tecnico(
+            linha["Técnico"],
+            pd.Timestamp(linha["Data"]).date(),
+        )
+        if ausencia is None:
+            continue
+
+        _, minutos_ausentes = ausencia
+        if minutos_ausentes is None:
+            df.at[indice, "Esperado"] = 0
+            continue
+
+        proporcao_trabalhada = max(
+            1 - (minutos_ausentes / CARGA_DIARIA_PADRAO_MINUTOS),
+            0,
+        )
+        df.at[indice, "Esperado"] = arredondar_esperado(
+            df.at[indice, "Esperado"] * proporcao_trabalhada
+        )
     df["Desvio"] = df["Realizado"] - df["Esperado"]
     df["Classificação"] = df["Desvio"].apply(status_por_desvio)
     return df
