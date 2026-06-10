@@ -5141,11 +5141,29 @@ if modo_gestao and visao_gestao == "Atualizações":
     usuario_sgd_padrao = env_local.get("SGD_USUARIO", os.getenv("SGD_USUARIO", ""))
     senha_sgd_padrao = env_local.get("SGD_SENHA", os.getenv("SGD_SENHA", ""))
 
-    st.sidebar.divider()
-    st.sidebar.caption(f"Atualização para {data_referencia.strftime('%d/%m/%Y')}")
+    st.divider()
+    st.caption(f"Data de referência: {data_referencia.strftime('%d/%m/%Y')}")
     chat_local_disponivel = servico_local_disponivel()
 
-    if st.sidebar.button("Atualizar BI do dia anterior"):
+    col_bi, col_ro, col_chat = st.columns(3)
+    with col_bi:
+        atualizar_bi = st.button(
+            "Atualizar BI do dia anterior",
+            use_container_width=True,
+        )
+    with col_ro:
+        atualizar_ro = st.button(
+            "Atualizar RO do dia anterior",
+            use_container_width=True,
+        )
+    with col_chat:
+        atualizar_chat = st.button(
+            "Atualizar CHAT do dia anterior",
+            disabled=not chat_local_disponivel,
+            use_container_width=True,
+        )
+
+    if atualizar_bi:
         with st.spinner("Buscando dados no PowerBI e atualizando a planilha..."):
             try:
                 origem_atualizacao = "painel"
@@ -5155,27 +5173,27 @@ if modo_gestao and visao_gestao == "Atualizações":
                 except Exception:
                     resultado = atualizar_planilha_com_bi(data_referencia)
             except PermissionError:
-                st.sidebar.error("Feche a produtividade.xlsx no Excel e tente novamente.")
+                st.error("Feche a produtividade.xlsx no Excel e tente novamente.")
             except Exception as erro:
-                st.sidebar.error(f"Não foi possível atualizar o BI: {erro}")
+                st.error(f"Não foi possível atualizar o BI: {erro}")
             else:
-                st.sidebar.success(
+                st.success(
                     f"{resultado['atualizados']} técnicos atualizados em {resultado['data']}."
                 )
-                st.sidebar.caption(f"Origem da gravação: {origem_atualizacao}.")
+                st.caption(f"Origem da gravação: {origem_atualizacao}.")
                 if resultado["linhas_criadas"]:
-                    st.sidebar.info(
+                    st.info(
                         f"{resultado['linhas_criadas']} linhas foram criadas para essa data."
                     )
                 if resultado["sem_alias"]:
-                    st.sidebar.warning(
+                    st.warning(
                         "Revise a coluna Agente BI da aba Aliases para: "
                         + ", ".join(resultado["sem_alias"][:8])
                     )
                 st.cache_data.clear()
                 st.rerun()
 
-    if st.sidebar.button("Atualizar RO do dia anterior"):
+    if atualizar_ro:
         with st.spinner("Buscando dados do RO e atualizando a planilha..."):
             try:
                 origem_atualizacao = "painel"
@@ -5185,70 +5203,78 @@ if modo_gestao and visao_gestao == "Atualizações":
                 except Exception:
                     resultado = atualizar_planilha_com_ro(data_referencia)
             except PermissionError:
-                st.sidebar.error("Feche a produtividade.xlsx no Excel e tente novamente.")
+                st.error("Feche a produtividade.xlsx no Excel e tente novamente.")
             except Exception as erro:
-                st.sidebar.error(f"Não foi possível atualizar o RO: {erro}")
+                st.error(f"Não foi possível atualizar o RO: {erro}")
             else:
-                st.sidebar.success(
+                st.success(
                     f"{resultado['atualizados']} técnicos atualizados em {resultado['data']}."
                 )
-                st.sidebar.caption(f"Origem da gravação: {origem_atualizacao}.")
-                st.sidebar.info(
+                st.caption(f"Origem da gravação: {origem_atualizacao}.")
+                st.info(
                     f"Origem: {resultado['arquivo']}. Total de RO válidos: {resultado['fonte']}."
                 )
                 if resultado["linhas_criadas"]:
-                    st.sidebar.info(
+                    st.info(
                         f"{resultado['linhas_criadas']} linhas foram criadas para essa data."
                     )
                 st.cache_data.clear()
                 st.rerun()
 
     if not chat_local_disponivel:
-        st.sidebar.info(
+        st.info(
             "O CHAT só pode ser atualizado no painel local "
             "(http://localhost:8501) com o serviço local ativo, "
             "porque ele depende do navegador desta máquina logado no PLUG."
         )
 
-    if st.sidebar.button(
-        "Atualizar CHAT do dia anterior",
-        disabled=not chat_local_disponivel,
-    ):
+    if atualizar_chat:
         with st.spinner("Buscando chats fechados no PLUG e atualizando a planilha..."):
             try:
                 resultado = atualizar_via_servico_local("chat", data_referencia)["chat"]
                 origem_atualizacao = "planilha local"
             except PermissionError:
-                st.sidebar.error("Feche a produtividade.xlsx no Excel e tente novamente.")
+                st.error("Feche a produtividade.xlsx no Excel e tente novamente.")
             except Exception as erro:
-                st.sidebar.error(f"Não foi possível atualizar o CHAT: {erro}")
+                st.error(f"Não foi possível atualizar o CHAT: {erro}")
             else:
-                st.sidebar.success(
+                st.success(
                     f"{resultado['atualizados']} técnicos atualizados em {resultado['data']}."
                 )
-                st.sidebar.caption(f"Origem da gravação: {origem_atualizacao}.")
+                st.caption(f"Origem da gravação: {origem_atualizacao}.")
                 if resultado["linhas_criadas"]:
-                    st.sidebar.info(
+                    st.info(
                         f"{resultado['linhas_criadas']} linhas foram criadas para essa data."
                     )
                 if resultado["sem_alias"]:
-                    st.sidebar.warning(
+                    st.warning(
                         "Revise a coluna Agente Chat da aba Aliases para: "
                         + ", ".join(resultado["sem_alias"][:8])
                     )
                 st.cache_data.clear()
                 st.rerun()
 
-    usuario_sgd = st.sidebar.text_input("Usuário SGD", value=usuario_sgd_padrao)
-    senha_sgd = st.sidebar.text_input(
-        "Senha SGD",
-        value=senha_sgd_padrao,
-        type="password",
-    )
+    st.divider()
+    st.markdown("#### SGD")
+    col_usuario_sgd, col_senha_sgd, col_botao_sgd = st.columns([1, 1, 0.8])
+    with col_usuario_sgd:
+        usuario_sgd = st.text_input("Usuário SGD", value=usuario_sgd_padrao)
+    with col_senha_sgd:
+        senha_sgd = st.text_input(
+            "Senha SGD",
+            value=senha_sgd_padrao,
+            type="password",
+        )
+    with col_botao_sgd:
+        st.write("")
+        atualizar_sgd = st.button(
+            "Atualizar SGD do mês",
+            use_container_width=True,
+        )
 
-    if st.sidebar.button("Atualizar SGD do mês até ontem"):
+    if atualizar_sgd:
         if not usuario_sgd or not senha_sgd:
-            st.sidebar.error("Informe usuário e senha do SGD.")
+            st.error("Informe usuário e senha do SGD.")
         else:
             with st.spinner("Gerando relatório no SGD e atualizando a planilha..."):
                 try:
@@ -5263,34 +5289,34 @@ if modo_gestao and visao_gestao == "Atualizações":
                             senha_sgd,
                         )
                 except PermissionError:
-                    st.sidebar.error("Feche a produtividade.xlsx no Excel e tente novamente.")
+                    st.error("Feche a produtividade.xlsx no Excel e tente novamente.")
                 except Exception as erro:
-                    st.sidebar.error(f"Não foi possível atualizar o SGD: {erro}")
+                    st.error(f"Não foi possível atualizar o SGD: {erro}")
                 else:
-                    st.sidebar.success(
+                    st.success(
                         f"{resultado['atualizados']} registros atualizados em "
                         f"{resultado['dias_processados']} dias. "
                         f"Período: {resultado['periodo']}."
                     )
-                    st.sidebar.caption(f"Origem da gravação: {origem_atualizacao}.")
+                    st.caption(f"Origem da gravação: {origem_atualizacao}.")
                     if resultado["linhas_criadas"]:
-                        st.sidebar.info(
+                        st.info(
                             f"{resultado['linhas_criadas']} linhas foram criadas para essa data."
                         )
                     if resultado["sem_alias"]:
-                        st.sidebar.warning(
+                        st.warning(
                             "Revise a coluna Agente SGD da aba Aliases para: "
                             + ", ".join(resultado["sem_alias"][:8])
                         )
                     st.cache_data.clear()
                     st.rerun()
 
-else:
+if not modo_gestao:
     st.sidebar.success(f"Bem-vindo(a), {tecnico.title()}")
 
-if modo_gestao:
-    st.sidebar.divider()
-    with st.sidebar.expander("PontoWeb", expanded=False):
+if modo_gestao and visao_gestao == "Atualizações":
+    st.divider()
+    with st.expander("PontoWeb", expanded=False):
         pontoweb_email = st.text_input(
             "Usuário Ponto",
             value=pontoweb_email,
