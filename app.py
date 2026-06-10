@@ -242,6 +242,15 @@ PROGRAMACAO_FERIAS = [
     ("Isabella Borges de Oliveira", date(2026, 12, 21), date(2027, 1, 4)),
 ]
 
+PROGRAMACAO_LICENCAS = [
+    (
+        "Jessica Faria da Silveira",
+        date(2026, 5, 31),
+        date(2026, 9, 27),
+        "Licença-maternidade",
+    ),
+]
+
 
 class FormularioSGDParser(HTMLParser):
     def __init__(self):
@@ -1758,6 +1767,23 @@ def ferias_ativa_tecnico(tecnico, data_referencia=None):
     for inicio, fim in periodos_ferias_tecnico(tecnico):
         if inicio <= data_referencia <= fim:
             return inicio, fim
+    return None
+
+
+def periodos_licenca_tecnico(tecnico):
+    tecnico_normalizado = normalizar_nome(tecnico)
+    return [
+        (inicio, fim, motivo)
+        for nome, inicio, fim, motivo in PROGRAMACAO_LICENCAS
+        if normalizar_nome(nome) == tecnico_normalizado
+    ]
+
+
+def licenca_ativa_tecnico(tecnico, data_referencia=None):
+    data_referencia = data_referencia or datetime.now(FUSO_HORARIO_APP).date()
+    for inicio, fim, motivo in periodos_licenca_tecnico(tecnico):
+        if inicio <= data_referencia <= fim:
+            return inicio, fim, motivo
     return None
 
 
@@ -3862,18 +3888,25 @@ def recalcular_colunas_derivadas(df):
         arredondar_esperado
     )
     df.loc[linhas_sem_movimento, "Esperado"] = 0
-    linhas_em_ferias = df.apply(
+    linhas_em_afastamento = df.apply(
         lambda linha: (
             not pd.isna(linha["Data"])
-            and ferias_ativa_tecnico(
-                linha["Técnico"],
-                pd.Timestamp(linha["Data"]).date(),
+            and (
+                ferias_ativa_tecnico(
+                    linha["Técnico"],
+                    pd.Timestamp(linha["Data"]).date(),
+                )
+                is not None
+                or licenca_ativa_tecnico(
+                    linha["Técnico"],
+                    pd.Timestamp(linha["Data"]).date(),
+                )
+                is not None
             )
-            is not None
         ),
         axis=1,
     )
-    df.loc[linhas_em_ferias, "Esperado"] = 0
+    df.loc[linhas_em_afastamento, "Esperado"] = 0
     df["Desvio"] = df["Realizado"] - df["Esperado"]
     df["Classificação"] = df["Desvio"].apply(status_por_desvio)
     return df
