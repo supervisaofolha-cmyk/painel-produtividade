@@ -4527,6 +4527,9 @@ st.markdown(
     margin:0;
     border-bottom:2px solid transparent;
 }}
+[data-testid="stRadio"] [role="radiogroup"] label > div:first-child {{
+    display:none;
+}}
 [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {{
     border-bottom-color:#F97316;
     color:#111827;
