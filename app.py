@@ -1690,51 +1690,61 @@ def mostrar_lista_apoio_gestao():
         + st.session_state["versao_editor_lista_apoio"]
     )
 
-    lista_editada = st.data_editor(
-        lista_exibida,
-        use_container_width=True,
-        hide_index=True,
-        num_rows="fixed",
-        disabled=[
-            "Carimbo de data/hora",
-            "Nome do Técnico",
-            "Selecione o tópico",
-            "Descreva o problema/pedido em poucas palavras",
-        ],
-        column_config={
-            "Situação": st.column_config.SelectboxColumn(
-                "Situação",
-                options=["Aberto", "Em análise", "Resolvido pelo técnico", "Finalizado"],
-            ),
-            "Responsável/Apoio": st.column_config.SelectboxColumn(
-                "Responsável/Apoio",
-                options=["Brenda", "Luma"],
+    lista_exibida_editor = lista_exibida.copy()
+    for coluna_editor in ["Situação", "Responsável/Apoio"]:
+        if coluna_editor in lista_exibida_editor.columns:
+            lista_exibida_editor[coluna_editor] = (
+                lista_exibida_editor[coluna_editor].fillna("").astype("object")
             )
-        },
-        key=chave_editor_apoio,
-    )
 
-    col_apoio_1, col_apoio_2 = st.columns([1, 1])
-    with col_apoio_1:
-        if st.button("Salvar lista de apoio", key="salvar_lista_apoio"):
-            try:
-                salvar_lista_apoio(lista_editada)
-            except PermissionError:
-                st.error("Feche a lista_apoio.xlsx e tente salvar novamente.")
-            except Exception as erro_lista_apoio:
-                st.error(f"Não foi possível salvar a lista: {erro_lista_apoio}")
-            else:
-                st.success("Lista de apoio atualizada.")
-                st.session_state["versao_editor_lista_apoio"] = versao_lista_apoio()
-                st.rerun()
-    with col_apoio_2:
-        st.download_button(
-            "Baixar lista em Excel",
-            data=bytes_lista_apoio(),
-            file_name=ARQUIVO_LISTA_APOIO,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="baixar_lista_apoio",
+    with st.form(f"form_{chave_editor_apoio}", clear_on_submit=False):
+        lista_editada = st.data_editor(
+            lista_exibida_editor,
+            use_container_width=True,
+            hide_index=True,
+            num_rows="fixed",
+            disabled=[
+                "Carimbo de data/hora",
+                "Nome do Técnico",
+                "Selecione o tópico",
+                "Descreva o problema/pedido em poucas palavras",
+            ],
+            column_config={
+                "Situação": st.column_config.SelectboxColumn(
+                    "Situação",
+                    options=["Aberto", "Em análise", "Resolvido pelo técnico", "Finalizado"],
+                ),
+                "Responsável/Apoio": st.column_config.SelectboxColumn(
+                    "Responsável/Apoio",
+                    options=["Brenda", "Luma"],
+                )
+            },
+            key=chave_editor_apoio,
         )
+        st.caption(
+            "Depois de ajustar a situação ou o responsável, use o botão abaixo para gravar."
+        )
+        salvar_lista_apoio_submit = st.form_submit_button("Salvar lista de apoio")
+
+    if salvar_lista_apoio_submit:
+        try:
+            salvar_lista_apoio(lista_editada)
+        except PermissionError:
+            st.error("Feche a lista_apoio.xlsx e tente salvar novamente.")
+        except Exception as erro_lista_apoio:
+            st.error(f"Não foi possível salvar a lista: {erro_lista_apoio}")
+        else:
+            st.success("Lista de apoio atualizada.")
+            st.session_state["versao_editor_lista_apoio"] = versao_lista_apoio()
+            st.rerun()
+
+    st.download_button(
+        "Baixar lista em Excel",
+        data=bytes_lista_apoio(),
+        file_name=ARQUIVO_LISTA_APOIO,
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        key="baixar_lista_apoio",
+    )
 
 
 CORES_DISPONIBILIDADE = {
