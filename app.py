@@ -197,6 +197,9 @@ FERIADOS_ADICIONAIS = {
 }
 
 PROGRAMACAO_FERIAS = [
+    ("Davylla Rodrigues Freitas Silva", date(2026, 5, 18), date(2026, 6, 1)),
+    ("Damyllis Lorraine de Oliveira Goncalves", date(2026, 5, 18), date(2026, 6, 1)),
+    ("Francilene Ferreira de Jesus", date(2026, 5, 18), date(2026, 6, 16)),
     ("Janaina Lima dos Reis Urany", date(2026, 6, 1), date(2026, 6, 30)),
     ("Kerollen Cristielly de Jesus Siqueira", date(2026, 6, 1), date(2026, 6, 30)),
     ("Joao Frutuoso Machado Neto", date(2026, 6, 15), date(2026, 6, 29)),
