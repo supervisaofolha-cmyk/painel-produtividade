@@ -4536,6 +4536,87 @@ st.markdown(
     color:#111827;
     font-weight:700;
 }}
+.gestao-status-grid {{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px;
+}}
+.gestao-status-resumo {{
+    background:#FFFFFF;
+    border:1px solid #E5E7EB;
+    border-left:4px solid #6B7280;
+    border-radius:7px;
+    padding:11px 12px;
+}}
+.gestao-status-resumo span,
+.gestao-status-resumo small {{
+    display:block;
+}}
+.gestao-status-resumo span {{
+    color:#4B5563;
+    font-size:11px;
+    font-weight:700;
+}}
+.gestao-status-resumo strong {{
+    color:#111827;
+    font-size:23px;
+    line-height:1.1;
+}}
+.gestao-status-resumo small {{
+    color:#6B7280;
+    font-size:9px;
+    margin-top:4px;
+}}
+.gestao-absorcao {{
+    background:#FFFFFF;
+    border:1px solid #E5E7EB;
+    border-radius:7px;
+    padding:10px 14px;
+}}
+.gestao-absorcao-linha {{
+    margin-bottom:10px;
+}}
+.gestao-absorcao-linha:last-child {{
+    margin-bottom:0;
+}}
+.gestao-absorcao-linha > div:first-child {{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    color:#4B5563;
+    font-size:11px;
+    margin-bottom:4px;
+}}
+.gestao-absorcao-linha strong {{
+    color:#111827;
+}}
+.gestao-absorcao-trilho {{
+    height:7px;
+    background:#E5E7EB;
+    border-radius:4px;
+    overflow:hidden;
+}}
+.gestao-absorcao-trilho i {{
+    display:block;
+    height:100%;
+    background:#2563EB;
+    border-radius:4px;
+}}
+.gestao-alertas {{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}}
+.gestao-alerta {{
+    background:#FFFFFF;
+    border:1px solid #E5E7EB;
+    border-left:4px solid #6B7280;
+    border-radius:6px;
+    color:#374151;
+    font-size:11px;
+    line-height:1.35;
+    padding:10px;
+}}
 .card-tecnico {{
     padding:12px;
     border-radius:10px;
@@ -4896,6 +4977,9 @@ st.markdown(
     }}
     .disp-resumo {{
         grid-template-columns:repeat(2,minmax(0,1fr));
+    }}
+    .gestao-status-grid {{
+        grid-template-columns:1fr;
     }}
     .disp-dia {{
         min-height:82px;
@@ -5700,10 +5784,12 @@ if modo_gestao and visao_gestao == "Visão Geral":
     try:
         lista_apoio_resumo = ler_lista_apoio()
         ajudas_em_aberto = int(
-            ~lista_apoio_resumo["Situação"].isin(
-                ["Finalizado", "Resolvido pelo técnico"]
-            )
-        ).sum()
+            (
+                ~lista_apoio_resumo["Situação"].isin(
+                    ["Finalizado", "Resolvido pelo técnico"]
+                )
+            ).sum()
+        )
     except Exception:
         ajudas_em_aberto = 0
 
