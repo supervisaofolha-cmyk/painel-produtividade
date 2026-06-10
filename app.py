@@ -5146,8 +5146,13 @@ if not modo_gestao:
         ano_atual,
         mes_atual,
     )
+    dias_licenca_programados = dias_uteis_licenca_no_mes(
+        tecnico,
+        ano_atual,
+        mes_atual,
+    )
     dias_meta_programados = max(
-        dias_meta_valor - dias_ferias_programadas,
+        dias_meta_valor - dias_ferias_programadas - dias_licenca_programados,
         0,
     )
     dias_meta_valor = dias_meta_programados
@@ -5165,6 +5170,7 @@ if not modo_gestao:
         f"{dias_segunda_sexta} dias de segunda a sexta"
         f" - {feriados_em_dias_uteis} feriado(s)"
         f" - {dias_ferias_programadas} dia(s) de férias"
+        f" - {dias_licenca_programados} dia(s) de licença"
         f" = {dias_meta_valor:g} dias."
     )
     if COLUNA_DIAS_META in dados_tecnico.columns:
@@ -5201,7 +5207,8 @@ if not modo_gestao:
             detalhe_dias_meta = (
                 f"Dias base: {resumo_meta_pontoweb['dias_base']} | "
                 f"Abatimento: {resumo_meta_pontoweb['abatimento']} | "
-                f"Férias programadas: {dias_ferias_programadas} dia(s)"
+                f"Férias programadas: {dias_ferias_programadas} dia(s) | "
+                f"Licença: {dias_licenca_programados} dia(s)"
             )
         except Exception as erro_pontoweb:
             detalhe_dias_meta = f"PontoWeb indisponível: {erro_pontoweb}"
