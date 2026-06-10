@@ -5244,6 +5244,15 @@ if not modo_gestao:
             f"{fim_ferias.strftime('%d/%m/%Y')}"
         )
 
+    licenca_ativa = licenca_ativa_tecnico(tecnico)
+    if licenca_ativa:
+        inicio_licenca, fim_licenca, motivo_licenca = licenca_ativa
+        st.info(
+            f"{motivo_licenca}: "
+            f"{inicio_licenca.strftime('%d/%m/%Y')} a "
+            f"{fim_licenca.strftime('%d/%m/%Y')}"
+        )
+
     st.caption("Referência da classificação")
     col_leg_1, col_leg_2, col_leg_3, col_leg_4 = st.columns(4)
     for status, descricao, coluna in zip(
