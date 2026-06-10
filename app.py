@@ -4683,7 +4683,8 @@ st.markdown(
 .disp-calendario {{
     border:1px solid #E5E7EB;
     border-radius:7px;
-    overflow:hidden;
+    overflow-x:auto;
+    overflow-y:hidden;
     background:#FFFFFF;
 }}
 .disp-semana-cabecalho,
@@ -4879,6 +4880,10 @@ st.markdown(
     .disp-dia {{
         min-height:82px;
         padding:3px;
+    }}
+    .disp-semana-cabecalho,
+    .disp-semana {{
+        min-width:760px;
     }}
     .disp-evento small {{
         display:none;
