@@ -4660,6 +4660,26 @@ st.markdown(
     font-size:24px;
     margin-top:4px;
 }}
+.disp-legenda {{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:16px;
+    color:#4B5563;
+    font-size:11px;
+    margin:-6px 0 14px;
+}}
+.disp-legenda span {{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+}}
+.disp-legenda i {{
+    width:9px;
+    height:9px;
+    border-radius:2px;
+    display:inline-block;
+}}
 .disp-calendario {{
     border:1px solid #E5E7EB;
     border-radius:7px;
