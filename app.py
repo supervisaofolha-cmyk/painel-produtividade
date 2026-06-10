@@ -107,15 +107,6 @@ RO_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1O-1uJ6D9al9piHgOv
 RO_PLANILHAS_FIXAS = {
     (2026, 6): "https://docs.google.com/spreadsheets/d/1AZKhjWnIS_hys9B9oaeazcSUP0wS6ExX8U9wRdrktRs/edit?resourcekey#gid=148357412",
 }
-PONTOWEB_BASE_URL = "https://pontoweb.secullum.com.br/"
-PONTOWEB_CLIENT_ID = "3001"
-PONTOWEB_REDIRECT_URI = f"{PONTOWEB_BASE_URL}Auth"
-PONTOWEB_AUTH_URL = (
-    "https://autenticador.secullum.com.br/Authorization"
-    f"?response_type=code&client_id={PONTOWEB_CLIENT_ID}"
-    f"&redirect_uri={PONTOWEB_REDIRECT_URI}"
-)
-PONTOWEB_TOKEN_URL = "https://autenticador.secullum.com.br/Token"
 SERVICO_PLANILHA_LOCAL_URL = "http://127.0.0.1:8765"
 
 COR_LARANJA = "#F97316"
@@ -2621,24 +2612,6 @@ def localizar_funcionario_por_nome(funcionarios, nome_referencia):
             melhor_funcionario = funcionario
 
     return melhor_funcionario if melhor_score >= 0.6 else None
-
-
-def obter_alias_pontoweb(tecnico):
-    try:
-        wb = carregar_workbook_produtividade(read_only=True, data_only=True)
-    except Exception:
-        return ""
-
-    if ABA_ALIASES not in wb.sheetnames:
-        return ""
-
-    ws_aliases = wb[ABA_ALIASES]
-    for row in range(2, ws_aliases.max_row + 1):
-        tecnico_planilha = ws_aliases.cell(row=row, column=1).value
-        if normalizar_nome(tecnico_planilha) != normalizar_nome(tecnico):
-            continue
-        return builtins.str(ws_aliases.cell(row=row, column=4).value or "").strip()
-    return ""
 
 
 def data_dia_anterior():
@@ -5246,16 +5219,6 @@ for coluna_numerica in ["SSC", "Satisfação", "Votação"]:
         ).fillna(0)
 df = recalcular_colunas_derivadas(df)
 env_local = carregar_env_local()
-pontoweb_email = env_local.get("PONTOWEB_EMAIL", os.getenv("PONTOWEB_EMAIL", ""))
-pontoweb_senha = env_local.get("PONTOWEB_SENHA", os.getenv("PONTOWEB_SENHA", ""))
-pontoweb_banco_id = env_local.get(
-    "PONTOWEB_BANCO_ID", os.getenv("PONTOWEB_BANCO_ID", "")
-)
-pontoweb_banco_identificador = env_local.get(
-    "PONTOWEB_BANCO_IDENTIFICADOR",
-    os.getenv("PONTOWEB_BANCO_IDENTIFICADOR", ""),
-)
-
 for chave, valor_padrao in {
     "auth_ok": False,
     "auth_modo_gestao": False,
@@ -6390,32 +6353,6 @@ if not modo_gestao:
             )
             fonte_dias_meta = "Planilha"
             detalhe_dias_meta = "Valor atualizado pela gestão a partir do PontoWeb."
-    elif pontoweb_email and pontoweb_senha:
-        try:
-            resumo_meta_pontoweb = obter_resumo_meta_pontoweb(
-                tecnico,
-                ano_atual,
-                mes_atual,
-                pontoweb_email,
-                pontoweb_senha,
-                pontoweb_banco_id,
-                pontoweb_banco_identificador,
-            )
-            dias_meta_valor = min(
-                float(resumo_meta_pontoweb["dias_considerados"]),
-                dias_meta_programados,
-            )
-            fonte_dias_meta = "PontoWeb"
-            detalhe_dias_meta = (
-                f"Dias base: {resumo_meta_pontoweb['dias_base']} | "
-                f"Abatimento: {resumo_meta_pontoweb['abatimento']} | "
-                f"Férias programadas: {dias_ferias_programadas} dia(s) | "
-                f"Licença: {dias_licenca_programados} dia(s) | "
-                f"Ausências informadas: {abatimento_ausencias_programadas:g} dia(s)"
-            )
-        except Exception as erro_pontoweb:
-            detalhe_dias_meta = f"PontoWeb indisponível: {erro_pontoweb}"
-
     if dias_meta_valor.is_integer():
         dias_meta_exibicao = builtins.str(int(dias_meta_valor))
     else:
