@@ -4262,6 +4262,7 @@ if not st.session_state["auth_ok"]:
             margin-top:10px;
             color:#9CA3AF;
             font-size:12px;
+            font-weight:700;
             text-align:center;
         }
         </style>
