@@ -5349,17 +5349,17 @@ if modo_gestao and visao_gestao == "Atualizações":
                     }
                 )
             except Exception as erro_salvar_pontoweb:
-                st.sidebar.error(
+                st.error(
                     f"Não foi possível salvar as credenciais do PontoWeb: {erro_salvar_pontoweb}"
                 )
             else:
-                st.sidebar.success("Credenciais do PontoWeb salvas.")
+                st.success("Credenciais do PontoWeb salvas.")
                 st.cache_data.clear()
                 st.rerun()
 
         if st.button("Atualizar Ponto do mês", key="atualizar_pontoweb_mes"):
             if not pontoweb_email or not pontoweb_senha:
-                st.sidebar.error("Informe usuário e senha do PontoWeb.")
+                st.error("Informe usuário e senha do PontoWeb.")
             else:
                 with st.spinner("Buscando abatimentos no PontoWeb e atualizando a planilha..."):
                     try:
@@ -5372,16 +5372,16 @@ if modo_gestao and visao_gestao == "Atualizações":
                             pontoweb_banco_identificador,
                         )
                     except PermissionError:
-                        st.sidebar.error("Feche a produtividade.xlsx no Excel e tente novamente.")
+                        st.error("Feche a produtividade.xlsx no Excel e tente novamente.")
                     except Exception as erro:
-                        st.sidebar.error(f"Não foi possível atualizar o PontoWeb: {erro}")
+                        st.error(f"Não foi possível atualizar o PontoWeb: {erro}")
                     else:
-                        st.sidebar.success(
+                        st.success(
                             f"{resultado['tecnicos_processados']} técnicos processados. "
                             f"{resultado['linhas_atualizadas']} linhas atualizadas."
                         )
                         if resultado["erros"]:
-                            st.sidebar.warning(
+                            st.warning(
                                 "Sem retorno do PontoWeb para: "
                                 + ", ".join(list(resultado["erros"].keys())[:6])
                             )
@@ -5389,10 +5389,13 @@ if modo_gestao and visao_gestao == "Atualizações":
                         st.rerun()
 
     if not pontoweb_email or not pontoweb_senha:
-        st.sidebar.caption(
+        st.caption(
             "O quadro Dias Úteis para Meta usa o Ponto quando o usuário e a senha do PontoWeb são informados."
         )
 
+    st.stop()
+
+if modo_gestao:
     tecnicos_disponiveis = sorted(df["Técnico"].unique())
     tecnico = st.session_state.get("tecnico_gestao", tecnicos_disponiveis[0])
     if tecnico not in tecnicos_disponiveis:
