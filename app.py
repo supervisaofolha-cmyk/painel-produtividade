@@ -3862,6 +3862,18 @@ def recalcular_colunas_derivadas(df):
         arredondar_esperado
     )
     df.loc[linhas_sem_movimento, "Esperado"] = 0
+    linhas_em_ferias = df.apply(
+        lambda linha: (
+            not pd.isna(linha["Data"])
+            and ferias_ativa_tecnico(
+                linha["Técnico"],
+                pd.Timestamp(linha["Data"]).date(),
+            )
+            is not None
+        ),
+        axis=1,
+    )
+    df.loc[linhas_em_ferias, "Esperado"] = 0
     df["Desvio"] = df["Realizado"] - df["Esperado"]
     df["Classificação"] = df["Desvio"].apply(status_por_desvio)
     return df
