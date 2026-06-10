@@ -1930,6 +1930,13 @@ def mostrar_gestao_disponibilidade(dataframe):
         nome_mes_ano(ano, mes): (ano, mes)
         for ano, mes in periodos
     }
+    periodo_padrao_label = next(
+        nome
+        for nome, periodo in opcoes_periodo.items()
+        if periodo == periodo_padrao
+    )
+    if st.session_state.get("disponibilidade_mes") not in opcoes_periodo:
+        st.session_state["disponibilidade_mes"] = periodo_padrao_label
 
     col_mes, col_tecnico, col_nivel, col_tipo = st.columns([1.15, 1.35, 1, 1])
     with col_mes:
@@ -2018,6 +2025,21 @@ def mostrar_gestao_disponibilidade(dataframe):
             <div><span>Ausências</span><strong>{total_ausencias}</strong></div>
         </div>
         """,
+        unsafe_allow_html=True,
+    )
+    legenda_disponibilidade = [
+        ("Férias", CORES_DISPONIBILIDADE["Férias"]),
+        ("Licença", CORES_DISPONIBILIDADE["Licença-maternidade"]),
+        ("Atestado/Falta", CORES_DISPONIBILIDADE["Atestado"]),
+        ("Ausência parcial", CORES_DISPONIBILIDADE["Energia"]),
+    ]
+    st.markdown(
+        '<div class="disp-legenda">'
+        + "".join(
+            f'<span><i style="background:{cor};"></i>{rotulo}</span>'
+            for rotulo, cor in legenda_disponibilidade
+        )
+        + "</div>",
         unsafe_allow_html=True,
     )
 
