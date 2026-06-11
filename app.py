@@ -6060,20 +6060,72 @@ if modo_gestao and visao_gestao == "Visão Geral":
         ajudas_aguardando = 0
         ajudas_em_aberto = 0
 
+    detalhes_alerta = {
+        "critico": status_atual[
+            status_atual["Classificação"] == "CRÍTICO"
+        ][["Técnico", "Nível", "Classificação"]].reset_index(drop=True),
+        "atencao": status_atual[
+            status_atual["Classificação"] == "ATENÇÃO"
+        ][["Técnico", "Nível", "Classificação"]].reset_index(drop=True),
+        "ferias": pd.DataFrame(
+            [
+                {
+                    "Técnico": nome,
+                    "Início": inicio.strftime("%d/%m/%Y"),
+                    "Fim": fim.strftime("%d/%m/%Y"),
+                }
+                for nome, inicio, fim in sorted(
+                    [
+                        (nome, inicio, fim)
+                        for nome, inicio, fim in PROGRAMACAO_FERIAS
+                        if hoje_gestao <= inicio <= hoje_gestao + timedelta(days=15)
+                    ],
+                    key=lambda item: (item[1], normalizar_nome(item[0])),
+                )
+            ]
+        ),
+        "ajudas": (
+            lista_aberta[
+                [
+                    "Carimbo de data/hora",
+                    "Nome do Técnico",
+                    "Selecione o tópico",
+                    "Situação",
+                    "Responsável/Apoio",
+                ]
+            ].reset_index(drop=True)
+            if "lista_aberta" in locals() and not lista_aberta.empty
+            else pd.DataFrame()
+        ),
+    }
     alertas = [
-        ("#DC2626", "!", f"{tecnicos_abaixo_meta} técnicos abaixo da meta"),
-        ("#F97316", "!", f"{tecnicos_em_atencao} técnicos entre atenção e meta"),
-        ("#2563EB", "□", f"{proximas_ferias} técnicos com férias nos próximos 15 dias"),
-        ("#7C3AED", "◌", f"{ajudas_em_aberto} ajudas em aberto"),
+        ("critico", "#DC2626", "!", f"{tecnicos_abaixo_meta} técnicos abaixo da meta"),
+        (
+            "atencao",
+            "#F97316",
+            "!",
+            f"{tecnicos_em_atencao} técnicos entre atenção e meta",
+        ),
+        (
+            "ferias",
+            "#2563EB",
+            "□",
+            f"{proximas_ferias} técnicos com férias nos próximos 15 dias",
+        ),
+        ("ajudas", "#7C3AED", "◌", f"{ajudas_em_aberto} ajudas em aberto"),
     ]
-    html_alertas = "".join(
-        '<div class="gestao-alerta">'
-        '<div class="gestao-alerta-label">'
-        f'<div class="gestao-alerta-icone" style="background:{cor};">{icone}</div>'
-        f"<span>{escape(texto)}</span>"
-        '</div><div class="gestao-alerta-seta">›</div></div>'
-        for cor, icone, texto in alertas
-    )
+    titulos_alerta = {
+        "critico": "Técnicos abaixo da meta",
+        "atencao": "Técnicos em atenção",
+        "ferias": "Férias nos próximos 15 dias",
+        "ajudas": "Ajudas em aberto",
+    }
+    mensagem_alerta_vazio = {
+        "critico": "Nenhum técnico abaixo da meta neste momento.",
+        "atencao": "Nenhum técnico em atenção neste momento.",
+        "ferias": "Nenhuma férias programada para os próximos 15 dias.",
+        "ajudas": "Nenhuma ajuda em aberto neste momento.",
+    }
 
     col_ranking, col_alertas = st.columns([1.85, 1.25])
     with col_ranking:
@@ -6083,11 +6135,35 @@ if modo_gestao and visao_gestao == "Visão Geral":
             config={"displayModeBar": False},
         )
     with col_alertas:
-        st.markdown(
-            '<div class="gestao-card"><h4>Alertas do mês</h4>'
-            f'{html_alertas}</div>',
-            unsafe_allow_html=True,
-        )
+        st.markdown('<div class="gestao-card"><h4>Alertas do mês</h4>', unsafe_allow_html=True)
+        st.markdown('<div class="gestao-alertas-streamlit">', unsafe_allow_html=True)
+        for chave_alerta, _cor_alerta, icone_alerta, texto_alerta in alertas:
+            if st.button(
+                f"{icone_alerta}  {texto_alerta}    ›",
+                key=f"botao_alerta_{chave_alerta}",
+                use_container_width=True,
+            ):
+                alerta_atual = st.session_state.get("gestao_alerta_aberto")
+                st.session_state["gestao_alerta_aberto"] = (
+                    None if alerta_atual == chave_alerta else chave_alerta
+                )
+            if st.session_state.get("gestao_alerta_aberto") == chave_alerta:
+                st.markdown('<div class="gestao-alerta-detalhe">', unsafe_allow_html=True)
+                st.markdown(f"**{titulos_alerta[chave_alerta]}**")
+                detalhe_df = detalhes_alerta[chave_alerta]
+                if detalhe_df.empty:
+                    st.markdown(
+                        f'<p class="gestao-alerta-vazio">{mensagem_alerta_vazio[chave_alerta]}</p>',
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st.dataframe(
+                        detalhe_df,
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div></div>", unsafe_allow_html=True)
 
     st.markdown(
         f"""
