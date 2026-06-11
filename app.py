@@ -1,5 +1,6 @@
 import csv
 import base64
+import hashlib
 import json
 import locale
 import os
@@ -330,7 +331,14 @@ def _carregar_env_local_cache(_assinatura_env):
 def assinatura_arquivo(caminho):
     if not os.path.exists(caminho):
         return "ausente"
-    return builtins.str(os.path.getmtime(caminho))
+    hash_arquivo = hashlib.sha1()
+    with open(caminho, "rb") as arquivo:
+        while True:
+            bloco = arquivo.read(1024 * 1024)
+            if not bloco:
+                break
+            hash_arquivo.update(bloco)
+    return hash_arquivo.hexdigest()
 
 
 def arquivo_excel_integro(caminho):
