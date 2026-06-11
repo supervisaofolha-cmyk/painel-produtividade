@@ -5100,6 +5100,12 @@ st.markdown(
     .gestao-resumo-faixa {{
         grid-template-columns:1fr;
     }}
+    .disp-filtros,
+    .disp-grade-principal,
+    .disp-secundario,
+    .disp-resumo-novo {{
+        grid-template-columns:1fr;
+    }}
     .gestao-status-grid,
     .gestao-resumo-grid {{
         grid-template-columns:repeat(2,minmax(0,1fr));
@@ -5138,7 +5144,8 @@ st.markdown(
     .gestao-kpi-grid,
     .gestao-status-grid,
     .gestao-resumo-grid,
-    .gestao-resumo-faixa {{
+    .gestao-resumo-faixa,
+    .disp-resumo-novo {{
         grid-template-columns:1fr;
     }}
 }}
