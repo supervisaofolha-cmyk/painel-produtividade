@@ -2497,6 +2497,13 @@ def normalizar_nome(valor):
     return re.sub(r"\s+", " ", texto).strip()
 
 
+def eh_tecnico_sgd_web(nome):
+    return normalizar_nome(nome) in {
+        normalizar_nome(tecnico)
+        for tecnico in TECNICOS_SGD_WEB
+    }
+
+
 def periodos_ferias_tecnico(tecnico):
     tecnico_normalizado = normalizar_nome(tecnico)
     return [
@@ -2834,6 +2841,40 @@ def garantir_linhas_da_data(ws, colunas, data_referencia):
         nova_linha[col_nivel - 1] = nivel
         ws.append(nova_linha)
         criadas += 1
+
+    return criadas
+
+
+def garantir_linhas_tecnicos_sgd_web_periodo(ws, colunas, data_inicial, data_final):
+    col_data = coluna(colunas, "Data")
+    col_tecnico = coluna(colunas, "TÃ©cnico")
+    col_nivel = coluna(colunas, "NÃ­vel")
+
+    existentes = set()
+    for row in range(2, ws.max_row + 1):
+        data_linha = ws.cell(row=row, column=col_data).value
+        tecnico = ws.cell(row=row, column=col_tecnico).value
+        if not data_linha or not tecnico:
+            continue
+        data_linha = data_linha.date() if hasattr(data_linha, "date") else data_linha
+        existentes.add((data_linha, normalizar_nome(tecnico)))
+
+    criadas = 0
+    dia_atual = data_inicial
+    while dia_atual <= data_final:
+        if dia_atual.weekday() < 5 and not eh_feriado_federal(dia_atual):
+            for tecnico in TECNICOS_SGD_WEB:
+                chave = (dia_atual, normalizar_nome(tecnico))
+                if chave in existentes:
+                    continue
+                nova_linha = [None] * ws.max_column
+                nova_linha[col_data - 1] = dia_atual
+                nova_linha[col_tecnico - 1] = tecnico
+                nova_linha[col_nivel - 1] = NIVEL_TECNICO_SGD_WEB
+                ws.append(nova_linha)
+                existentes.add(chave)
+                criadas += 1
+        dia_atual += timedelta(days=1)
 
     return criadas
 
