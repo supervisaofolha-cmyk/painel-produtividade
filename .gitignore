@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+*.log
+backups_lista_apoio/
+.playwright-plug/
+auto_sync_github.log
