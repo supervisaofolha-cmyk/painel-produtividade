@@ -4622,6 +4622,123 @@ st.markdown(
     font-size:9px;
     margin-top:3px;
 }}
+.disp-painel {{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+}}
+.disp-filtros {{
+    display:grid;
+    grid-template-columns:1.1fr 1fr 0.9fr 0.9fr;
+    gap:12px;
+    align-items:end;
+}}
+.disp-card {{
+    background:#FFFFFF;
+    border:1px solid #D9E1EC;
+    border-radius:14px;
+    padding:16px 18px;
+    box-shadow:0 8px 24px rgba(15, 23, 42, 0.04);
+}}
+.disp-card h4 {{
+    color:#111827;
+    font-size:16px;
+    font-weight:700;
+    margin:0 0 14px 0;
+}}
+.disp-resumo-novo {{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:14px;
+}}
+.disp-resumo-card {{
+    background:#FFFFFF;
+    border:1px solid #D9E1EC;
+    border-radius:12px;
+    padding:14px 16px;
+}}
+.disp-resumo-card small {{
+    color:#4B5563;
+    display:block;
+    font-size:12px;
+    margin-bottom:8px;
+}}
+.disp-resumo-card strong {{
+    color:#111827;
+    display:block;
+    font-size:28px;
+    line-height:1;
+}}
+.disp-grade-principal {{
+    display:grid;
+    grid-template-columns:minmax(0,1.9fr) minmax(300px,0.95fr);
+    gap:16px;
+}}
+.disp-legenda-nova {{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:14px;
+}}
+.disp-legenda-chip {{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    border:1px solid #E5E7EB;
+    border-radius:999px;
+    padding:6px 10px;
+    color:#374151;
+    font-size:11px;
+    background:#FFFFFF;
+}}
+.disp-legenda-chip i {{
+    width:10px;
+    height:10px;
+    border-radius:999px;
+    display:inline-block;
+}}
+.disp-eventos-lista {{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}}
+.disp-evento-linha {{
+    border:1px solid #E5E7EB;
+    border-left:4px solid #6B7280;
+    border-radius:10px;
+    padding:12px 12px 12px 14px;
+    background:#FFFFFF;
+}}
+.disp-evento-linha strong {{
+    color:#111827;
+    display:block;
+    font-size:13px;
+    line-height:1.2;
+}}
+.disp-evento-linha span {{
+    color:#374151;
+    display:block;
+    font-size:11px;
+    margin-top:4px;
+}}
+.disp-evento-linha small {{
+    color:#6B7280;
+    display:block;
+    font-size:10px;
+    margin-top:4px;
+}}
+.disp-secundario {{
+    display:grid;
+    grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);
+    gap:16px;
+}}
+.disp-lista-titulo {{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+}}
 .login-marca {{
     position:fixed;
     top:0;
