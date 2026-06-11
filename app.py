@@ -2186,6 +2186,290 @@ def salvar_env_local(atualizacoes):
         arquivo.write("\n".join(linhas) + "\n")
 
 
+def mostrar_gestao_disponibilidade(dataframe):
+    st.divider()
+    st.subheader("Gestão de Disponibilidade")
+
+    disponibilidade = dataframe_disponibilidade(dataframe)
+    if disponibilidade.empty:
+        st.info("Ainda não há férias, licenças ou ausências cadastradas.")
+        return
+
+    menor_data = disponibilidade["Início"].min()
+    maior_data = disponibilidade["Fim"].max()
+    periodos = []
+    cursor_periodo = date(menor_data.year, menor_data.month, 1)
+    while cursor_periodo <= date(maior_data.year, maior_data.month, 1):
+        periodos.append((cursor_periodo.year, cursor_periodo.month))
+        cursor_periodo = (
+            date(cursor_periodo.year + 1, 1, 1)
+            if cursor_periodo.month == 12
+            else date(cursor_periodo.year, cursor_periodo.month + 1, 1)
+        )
+
+    periodo_atual = (
+        datetime.now(FUSO_HORARIO_APP).year,
+        datetime.now(FUSO_HORARIO_APP).month,
+    )
+    periodo_padrao = periodo_atual if periodo_atual in periodos else periodos[0]
+    opcoes_periodo = {nome_mes_ano(ano, mes): (ano, mes) for ano, mes in periodos}
+    periodo_padrao_label = next(
+        nome
+        for nome, periodo in opcoes_periodo.items()
+        if periodo == periodo_padrao
+    )
+    if st.session_state.get("disponibilidade_mes") not in opcoes_periodo:
+        st.session_state["disponibilidade_mes"] = periodo_padrao_label
+
+    col_mes, col_tecnico, col_nivel, col_tipo = st.columns([1.15, 1.35, 1, 1])
+    with col_mes:
+        periodo_label = st.selectbox(
+            "Mês",
+            list(opcoes_periodo),
+            index=list(opcoes_periodo.values()).index(periodo_padrao),
+            key="disponibilidade_mes",
+        )
+
+    ano_filtro, mes_filtro = opcoes_periodo[periodo_label]
+    inicio_periodo = date(ano_filtro, mes_filtro, 1)
+    fim_periodo = date(
+        ano_filtro,
+        mes_filtro,
+        calendar.monthrange(ano_filtro, mes_filtro)[1],
+    )
+
+    eventos_mes = disponibilidade[
+        (disponibilidade["Início"] <= fim_periodo)
+        & (disponibilidade["Fim"] >= inicio_periodo)
+    ].copy()
+    tecnicos_filtro = sorted(eventos_mes["Técnico"].unique())
+    niveis_filtro = sorted(eventos_mes["Nível"].unique())
+    tipos_filtro = sorted(eventos_mes["Tipo"].unique())
+
+    for chave_estado, opcoes_validas in {
+        "disponibilidade_tecnico": ["Todos"] + tecnicos_filtro,
+        "disponibilidade_nivel": ["Todos"] + niveis_filtro,
+        "disponibilidade_tipo": ["Todos"] + tipos_filtro,
+    }.items():
+        if st.session_state.get(chave_estado) not in opcoes_validas:
+            st.session_state[chave_estado] = "Todos"
+
+    with col_tecnico:
+        tecnico_filtro = st.selectbox(
+            "Técnico",
+            ["Todos"] + tecnicos_filtro,
+            key="disponibilidade_tecnico",
+        )
+    with col_nivel:
+        nivel_filtro = st.selectbox(
+            "Nível",
+            ["Todos"] + niveis_filtro,
+            key="disponibilidade_nivel",
+        )
+    with col_tipo:
+        tipo_filtro = st.selectbox(
+            "Tipo",
+            ["Todos"] + tipos_filtro,
+            key="disponibilidade_tipo",
+        )
+
+    eventos_filtrados = eventos_mes.copy()
+    if tecnico_filtro != "Todos":
+        eventos_filtrados = eventos_filtrados[
+            eventos_filtrados["Técnico"] == tecnico_filtro
+        ]
+    if nivel_filtro != "Todos":
+        eventos_filtrados = eventos_filtrados[
+            eventos_filtrados["Nível"] == nivel_filtro
+        ]
+    if tipo_filtro != "Todos":
+        eventos_filtrados = eventos_filtrados[
+            eventos_filtrados["Tipo"] == tipo_filtro
+        ]
+
+    efetivo_mes = dataframe[
+        (dataframe["Data"].dt.year == ano_filtro)
+        & (dataframe["Data"].dt.month == mes_filtro)
+    ]["Técnico"].nunique()
+    total_ferias = eventos_mes[eventos_mes["Tipo"] == "Férias"]["Técnico"].nunique()
+    total_licencas = eventos_mes[
+        eventos_mes["Tipo"].str.contains("Licença", case=False, na=False)
+    ]["Técnico"].nunique()
+    total_ausencias = int(
+        len(eventos_mes[~eventos_mes["Tipo"].isin(["Férias", "Licença-maternidade"])])
+    )
+
+    st.markdown(
+        f"""
+        <div class="disp-resumo-novo">
+            <div class="disp-resumo-card">
+                <small>Efetivo no mês</small>
+                <strong>{efetivo_mes}</strong>
+            </div>
+            <div class="disp-resumo-card">
+                <small>Em férias</small>
+                <strong>{total_ferias}</strong>
+            </div>
+            <div class="disp-resumo-card">
+                <small>Licenças</small>
+                <strong>{total_licencas}</strong>
+            </div>
+            <div class="disp-resumo-card">
+                <small>Ausências</small>
+                <strong>{total_ausencias}</strong>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    legenda_disponibilidade = [
+        ("Férias", CORES_DISPONIBILIDADE["Férias"]),
+        ("Licença", CORES_DISPONIBILIDADE["Licença-maternidade"]),
+        ("Atestado/Falta", CORES_DISPONIBILIDADE["Atestado"]),
+        ("Ausência parcial", CORES_DISPONIBILIDADE["Energia"]),
+    ]
+
+    referencia_proximos = max(
+        datetime.now(FUSO_HORARIO_APP).date(),
+        inicio_periodo,
+    )
+    proximos = eventos_filtrados[
+        eventos_filtrados["Fim"] >= referencia_proximos
+    ].sort_values(["Início", "Técnico"]).head(8)
+
+    col_calendario, col_eventos = st.columns([1.9, 0.95])
+    with col_calendario:
+        st.markdown(
+            '<div class="disp-card"><h4>Calendário do período</h4>',
+            unsafe_allow_html=True,
+        )
+        if eventos_filtrados.empty:
+            st.info("Nenhuma ocorrência encontrada para os filtros selecionados.")
+        else:
+            st.markdown(
+                html_calendario_disponibilidade(
+                    ano_filtro,
+                    mes_filtro,
+                    eventos_filtrados,
+                ),
+                unsafe_allow_html=True,
+            )
+        st.markdown(
+            '<div class="disp-legenda-nova">'
+            + "".join(
+                f'<span class="disp-legenda-chip"><i style="background:{cor};"></i>{rotulo}</span>'
+                for rotulo, cor in legenda_disponibilidade
+            )
+            + "</div></div>",
+            unsafe_allow_html=True,
+        )
+
+    with col_eventos:
+        st.markdown(
+            '<div class="disp-card"><h4>Eventos do período</h4>',
+            unsafe_allow_html=True,
+        )
+        if proximos.empty:
+            st.caption("Nenhum afastamento futuro neste período.")
+        else:
+            html_eventos = []
+            for _, evento in proximos.iterrows():
+                cor = CORES_DISPONIBILIDADE.get(evento["Tipo"], "#6B7280")
+                html_eventos.append(
+                    '<div class="disp-evento-linha" '
+                    f'style="border-left-color:{cor};">'
+                    f'<strong>{escape(abreviar_nome_disponibilidade(evento["Técnico"]))}</strong>'
+                    f'<span>{escape(evento["Tipo"])} | {escape(builtins.str(evento["Nível"]))}</span>'
+                    f'<small>{evento["Início"].strftime("%d/%m/%Y")} a {evento["Fim"].strftime("%d/%m/%Y")} | {escape(builtins.str(evento["Duração"]))}</small>'
+                    "</div>"
+                )
+            st.markdown(
+                '<div class="disp-eventos-lista">' + "".join(html_eventos) + "</div>",
+                unsafe_allow_html=True,
+            )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    col_lista, col_nivel = st.columns([1.2, 1])
+    with col_lista:
+        st.markdown(
+            '<div class="disp-card"><div class="disp-lista-titulo"><h4>Lista de ocorrências</h4></div>',
+            unsafe_allow_html=True,
+        )
+        lista_disponibilidade = eventos_filtrados.copy()
+        lista_disponibilidade["Início"] = lista_disponibilidade["Início"].map(
+            lambda valor: valor.strftime("%d/%m/%Y")
+        )
+        lista_disponibilidade["Fim"] = lista_disponibilidade["Fim"].map(
+            lambda valor: valor.strftime("%d/%m/%Y")
+        )
+        st.dataframe(
+            lista_disponibilidade[
+                [
+                    "Técnico",
+                    "Nível",
+                    "Tipo",
+                    "Início",
+                    "Fim",
+                    "Duração",
+                    "Observação",
+                ]
+            ],
+            hide_index=True,
+            use_container_width=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with col_nivel:
+        st.markdown(
+            '<div class="disp-card"><h4>Resumo por nível</h4>',
+            unsafe_allow_html=True,
+        )
+        if eventos_filtrados.empty:
+            st.info("Nenhuma ocorrência encontrada para os filtros selecionados.")
+        else:
+            resumo_nivel = (
+                eventos_filtrados.groupby(["Nível", "Tipo"])
+                .size()
+                .reset_index(name="Ocorrências")
+            )
+            grafico_nivel = px.bar(
+                resumo_nivel,
+                x="Nível",
+                y="Ocorrências",
+                color="Tipo",
+                barmode="group",
+                color_discrete_map=CORES_DISPONIBILIDADE,
+                text="Ocorrências",
+            )
+            grafico_nivel.update_layout(
+                height=360,
+                margin=dict(l=10, r=10, t=10, b=20),
+                plot_bgcolor="#FFFFFF",
+                paper_bgcolor="#FFFFFF",
+                legend_title_text="",
+                xaxis_title="",
+                yaxis_title="Ocorrências",
+            )
+            grafico_nivel.update_traces(textposition="outside")
+            st.plotly_chart(
+                grafico_nivel,
+                use_container_width=True,
+                config={"displayModeBar": False},
+            )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+def salvar_env_local(atualizacoes):
+    valores = carregar_env_local()
+    for chave, valor in atualizacoes.items():
+        valores[chave] = builtins.str(valor or "").strip()
+
+    linhas = [f"{chave}={valor}" for chave, valor in sorted(valores.items())]
+    with open(".env", "w", encoding="utf-8") as arquivo:
+        arquivo.write("\n".join(linhas) + "\n")
+
+
 def normalizar_nome(valor):
     texto = builtins.str(valor or "").strip().lower()
     texto = unicodedata.normalize("NFKD", texto)
