@@ -55,6 +55,13 @@ ABA_PRODUTIVIDADE = "Produtividade"
 ABA_ALIASES = "Aliases"
 COLUNA_DIAS_META = "Dias Meta"
 COLUNA_ABANDONADAS = "Abandonadas"
+TECNICOS_SGD_WEB = [
+    "isabella alves queiroz",
+    "joao frutuoso machado neto",
+]
+NIVEL_TECNICO_SGD_WEB = "Atendimento Web"
+META_SATISFACAO_SGD_WEB = 96
+META_VOTACAO_SGD_WEB = 41
 CABECALHOS_LISTA_APOIO = [
     "Carimbo de data/hora",
     "Nome do Técnico",
