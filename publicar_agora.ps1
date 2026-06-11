@@ -1,10 +1,10 @@
-$ErrorActionPreference = "Stop"
-
 param(
     [string]$RepoPath = "C:\Users\esther.queiroz\Desktop\PainelProdutividade",
     [string]$Branch = "main",
     [string]$Mensagem = ""
 )
+
+$ErrorActionPreference = "Stop"
 
 function Get-GitCommand {
     $comando = Get-Command git -ErrorAction SilentlyContinue
