@@ -2176,16 +2176,6 @@ def _mostrar_gestao_disponibilidade_legado(dataframe):
             st.plotly_chart(grafico_nivel, use_container_width=True)
 
 
-def salvar_env_local(atualizacoes):
-    valores = carregar_env_local()
-    for chave, valor in atualizacoes.items():
-        valores[chave] = builtins.str(valor or "").strip()
-
-    linhas = [f"{chave}={valor}" for chave, valor in sorted(valores.items())]
-    with open(".env", "w", encoding="utf-8") as arquivo:
-        arquivo.write("\n".join(linhas) + "\n")
-
-
 def mostrar_gestao_disponibilidade(dataframe):
     st.divider()
     st.subheader("Gestão de Disponibilidade")
