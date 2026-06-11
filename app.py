@@ -4576,6 +4576,36 @@ st.markdown(
     color:#6B7280;
     font-size:16px;
 }}
+.gestao-alertas-streamlit [data-testid="stButton"] {{
+    width:100%;
+}}
+.gestao-alertas-streamlit [data-testid="stButton"] button {{
+    width:100%;
+    min-height:52px;
+    border-radius:10px;
+    border:1px solid #E5E7EB;
+    background:#FFFFFF;
+    color:#111827;
+    justify-content:space-between;
+    padding:0 14px;
+    box-shadow:none;
+}}
+.gestao-alertas-streamlit [data-testid="stButton"] button:hover {{
+    border-color:#CBD5E1;
+    background:#F8FAFC;
+}}
+.gestao-alerta-detalhe {{
+    margin-top:12px;
+    border:1px solid #E5E7EB;
+    border-radius:12px;
+    padding:14px;
+    background:#FFFFFF;
+}}
+.gestao-alerta-vazio {{
+    color:#6B7280;
+    font-size:13px;
+    margin:0;
+}}
 .gestao-resumo-faixa {{
     display:grid;
     grid-template-columns:1fr 1fr;
