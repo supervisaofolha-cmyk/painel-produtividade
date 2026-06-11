@@ -1479,17 +1479,34 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
 
 
 def ler_lista_apoio():
-    garantir_lista_apoio()
-    dataframe_banco = ler_lista_apoio_do_banco()
-    if not dataframe_banco.empty:
-        return dataframe_banco
+    try:
+        garantir_lista_apoio()
+        dataframe_banco = ler_lista_apoio_do_banco()
+        if not dataframe_banco.empty:
+            return dataframe_banco
+    except Exception:
+        dataframe_banco = dataframe_lista_apoio_vazio()
+
     dataframe_historico = restaurar_lista_apoio_do_historico()
     if not dataframe_historico.empty:
-        salvar_registros_lista_apoio_no_banco(
-            dataframe_para_registros_lista_apoio(dataframe_historico)
-        )
+        try:
+            if backend_lista_apoio() == "postgres":
+                salvar_registros_lista_apoio_no_banco(
+                    dataframe_para_registros_lista_apoio(dataframe_historico)
+                )
+        except Exception:
+            pass
         return dataframe_historico
-    return dataframe_lista_apoio_vazio()
+
+    dataframe_principal = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO)
+    if not dataframe_principal.empty:
+        return dataframe_principal
+
+    dataframe_backup = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO_BACKUP)
+    if not dataframe_backup.empty:
+        return dataframe_backup
+
+    return dataframe_banco
 
 
 def texto_lista_apoio(valor):
