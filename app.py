@@ -4082,20 +4082,33 @@ st.markdown(
 }}
 [data-testid="stRadio"] [role="radiogroup"] {{
     display:flex;
-    gap:4px;
+    align-items:flex-end;
+    gap:18px;
     border-bottom:1px solid #E5E7EB;
-    margin-bottom:18px;
+    margin:0 0 22px;
+    padding-left:0;
+    width:fit-content;
 }}
 [data-testid="stRadio"] [role="radiogroup"] label {{
-    padding:9px 12px;
+    padding:0 10px 12px 10px;
     margin:0;
     border-bottom:2px solid transparent;
+    min-height:auto;
+    background:transparent;
 }}
 [data-testid="stRadio"] [role="radiogroup"] label > div:first-child {{
     display:none;
 }}
+[data-testid="stRadio"] [role="radiogroup"] label p {{
+    color:#374151;
+    font-size:13px;
+    font-weight:500;
+    line-height:1.2;
+}}
 [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {{
     border-bottom-color:#F97316;
+}}
+[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) p {{
     color:#111827;
     font-weight:700;
 }}
