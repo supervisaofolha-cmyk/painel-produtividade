@@ -1936,7 +1936,7 @@ def html_calendario_disponibilidade(ano, mes, eventos):
     return "".join(partes_html)
 
 
-def mostrar_gestao_disponibilidade(dataframe):
+def _mostrar_gestao_disponibilidade_legado(dataframe):
     st.divider()
     st.subheader("Gestão de Disponibilidade")
 
