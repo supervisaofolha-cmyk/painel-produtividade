@@ -2957,6 +2957,51 @@ def localizar_funcionario_por_nome(funcionarios, nome_referencia):
     return melhor_funcionario if melhor_score >= 0.6 else None
 
 
+def resolver_tecnico_painel(nome_login, dataframe):
+    nome_normalizado = normalizar_nome(nome_login)
+    tecnicos_disponiveis = [
+        builtins.str(v).strip()
+        for v in dataframe["Técnico"].dropna().unique()
+    ]
+    tecnicos_por_normalizado = {
+        normalizar_nome(tecnico): tecnico
+        for tecnico in tecnicos_disponiveis
+    }
+
+    if nome_normalizado in tecnicos_por_normalizado:
+        return tecnicos_por_normalizado[nome_normalizado]
+
+    try:
+        wb = openpyxl.load_workbook(ARQUIVO_PRODUTIVIDADE, data_only=True)
+        if ABA_ALIASES in wb.sheetnames:
+            ws_aliases = wb[ABA_ALIASES]
+            for row in range(2, ws_aliases.max_row + 1):
+                tecnico_planilha = ws_aliases.cell(row=row, column=1).value
+                aliases = [
+                    ws_aliases.cell(row=row, column=coluna_indice).value
+                    for coluna_indice in range(2, 7)
+                ]
+                if any(normalizar_nome(alias) == nome_normalizado for alias in aliases if alias):
+                    tecnico_resolvido = tecnicos_por_normalizado.get(
+                        normalizar_nome(tecnico_planilha)
+                    )
+                    if tecnico_resolvido:
+                        return tecnico_resolvido
+    except Exception:
+        pass
+
+    primeiro_token = nome_normalizado.split()[0] if nome_normalizado else ""
+    candidatos = [
+        tecnico
+        for tecnico in tecnicos_disponiveis
+        if primeiro_token and normalizar_nome(tecnico).startswith(primeiro_token)
+    ]
+    if len(candidatos) == 1:
+        return candidatos[0]
+
+    return builtins.str(nome_login).strip().lower()
+
+
 def data_dia_anterior():
     data_referencia = date.today() - timedelta(days=1)
     while data_referencia.weekday() >= 5:
