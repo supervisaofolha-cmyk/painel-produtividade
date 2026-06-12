@@ -6225,7 +6225,7 @@ if modo_gestao and visao_gestao == "Visão Geral":
             use_container_width=True,
             config={"displayModeBar": False},
         )
-with col_alertas:
+    with col_alertas:
         st.markdown("#### Alertas do mes")
         st.markdown('<div class="gestao-alertas-streamlit">', unsafe_allow_html=True)
         for chave_alerta, _cor_alerta, icone_alerta, texto_alerta in alertas:
