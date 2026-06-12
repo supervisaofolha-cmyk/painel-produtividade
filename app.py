@@ -5899,6 +5899,8 @@ if modo_gestao:
     tecnico = st.session_state.get("tecnico_gestao", tecnicos_disponiveis[0])
     if tecnico not in tecnicos_disponiveis:
         tecnico = tecnicos_disponiveis[0]
+else:
+    tecnico = resolver_tecnico_painel(tecnico, df)
 
 dados_tecnico = df[df["Técnico"] == tecnico]
 
