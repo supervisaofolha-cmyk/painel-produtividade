@@ -4559,6 +4559,26 @@ st.markdown(
     font-size:11px;
     line-height:1.5;
 }}
+.gestao-status-tecnico {{
+    padding:7px 0;
+}}
+.gestao-status-tecnico + .gestao-status-tecnico {{
+    border-top:1px dashed #E5E7EB;
+}}
+.gestao-status-tecnico strong {{
+    display:block;
+    color:#111827;
+    font-size:11px;
+    font-weight:700;
+    line-height:1.35;
+}}
+.gestao-status-tecnico small {{
+    display:block;
+    color:#6B7280;
+    font-size:10px;
+    line-height:1.35;
+    margin-top:2px;
+}}
 .gestao-absorcao {{
     display:flex;
     flex-direction:column;
@@ -6093,14 +6113,24 @@ if modo_gestao and visao_gestao == "Visão Geral":
     )
     base_status_exibicao = status_atual if modo_status_gestao == "Diário" else status_mensal
     for status in ["CRÍTICO", "ATENÇÃO", "BOM", "EXCELENTE"]:
-        tecnicos_status = base_status_exibicao[
+        dados_status = base_status_exibicao[
             base_status_exibicao["Classificação"] == status
-        ]["Técnico"].dropna().astype(str).sort_values().tolist()
-        quantidade = len(tecnicos_status)
+        ].copy()
+        dados_status["Técnico"] = dados_status["Técnico"].fillna("").astype(str)
+        if "Nível" in dados_status.columns:
+            dados_status["Nível"] = dados_status["Nível"].fillna("").astype(str)
+        dados_status = dados_status[dados_status["Técnico"].str.strip() != ""].sort_values("Técnico")
+        quantidade = len(dados_status)
         legenda, referencia = descricoes_status[status]
         nomes_status = (
-            "<br>".join(escape(nome.title()) for nome in tecnicos_status)
-            if tecnicos_status
+            "".join(
+                '<div class="gestao-status-tecnico">'
+                f'<strong>{escape(linha["Técnico"].title())}</strong>'
+                f'<small>{escape((linha["Nível"] or "Cargo não informado").title())}</small>'
+                "</div>"
+                for _, linha in dados_status.iterrows()
+            )
+            if not dados_status.empty
             else "Nenhum tecnico"
         )
         blocos_status.append(
