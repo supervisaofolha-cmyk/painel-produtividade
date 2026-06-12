@@ -58,9 +58,11 @@ COLUNA_ABANDONADAS = "Abandonadas"
 TECNICOS_SGD_WEB = [
     "isabella alves queiroz",
     "joao frutuoso machado neto",
+    "joao neto",
 ]
 TECNICOS_CHAT = [
     "matheus farias de souza",
+    "matheus",
 ]
 NIVEL_TECNICO_SGD_WEB = "Atendimento Web"
 META_SATISFACAO_SGD_WEB = 96
