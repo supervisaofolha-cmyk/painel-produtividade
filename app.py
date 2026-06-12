@@ -4983,6 +4983,7 @@ st.markdown(
     display:flex;
     flex-direction:column;
     gap:18px;
+    margin-top:6px;
 }}
 .disp-filtros {{
     display:grid;
@@ -4990,18 +4991,69 @@ st.markdown(
     gap:12px;
     align-items:end;
 }}
-.disp-card {{
-    background:#FFFFFF;
-    border:1px solid #D9E1EC;
+.disp-contexto {{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding:14px 16px;
+    border:1px solid #E5E7EB;
     border-radius:14px;
-    padding:16px 18px;
-    box-shadow:0 8px 24px rgba(15, 23, 42, 0.04);
+    background:linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%);
+}}
+.disp-contexto strong {{
+    color:#111827;
+    display:block;
+    font-size:14px;
+    font-weight:700;
+    margin-bottom:3px;
+}}
+.disp-contexto span {{
+    color:#4B5563;
+    font-size:12px;
+}}
+.disp-contexto-chips {{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+}}
+.disp-contexto-chips span {{
+    border:1px solid #D9E1EC;
+    border-radius:999px;
+    padding:6px 10px;
+    color:#374151;
+    font-size:11px;
+    font-weight:600;
+    background:#FFFFFF;
+}}
+.disp-card {{
+    background:linear-gradient(180deg, #FFFFFF 0%, #FCFDFE 100%);
+    border:1px solid #D9E1EC;
+    border-radius:16px;
+    padding:18px 20px;
+    box-shadow:0 10px 24px rgba(15, 23, 42, 0.05);
 }}
 .disp-card h4 {{
     color:#111827;
     font-size:16px;
     font-weight:700;
     margin:0 0 14px 0;
+}}
+.disp-card-topo {{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:14px;
+}}
+.disp-card-topo h4 {{
+    margin:0;
+}}
+.disp-card-topo span {{
+    color:#6B7280;
+    font-size:11px;
+    font-weight:600;
+    white-space:nowrap;
 }}
 .disp-resumo-novo {{
     display:grid;
@@ -5011,8 +5063,59 @@ st.markdown(
 .disp-resumo-card {{
     background:#FFFFFF;
     border:1px solid #D9E1EC;
-    border-radius:12px;
-    padding:14px 16px;
+    border-radius:16px;
+    padding:16px 16px 15px;
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 8px 20px rgba(15, 23, 42, 0.04);
+}}
+.disp-resumo-card::before {{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:4px;
+    background:#CBD5E1;
+}}
+.disp-resumo-faixa {{
+    display:inline-flex;
+    align-items:center;
+    border-radius:999px;
+    padding:4px 8px;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    margin-bottom:10px;
+}}
+.disp-resumo-efetivo::before {{
+    background:#2563EB;
+}}
+.disp-resumo-efetivo .disp-resumo-faixa {{
+    color:#1D4ED8;
+    background:#DBEAFE;
+}}
+.disp-resumo-ferias::before {{
+    background:#F97316;
+}}
+.disp-resumo-ferias .disp-resumo-faixa {{
+    color:#C2410C;
+    background:#FFEDD5;
+}}
+.disp-resumo-licencas::before {{
+    background:#7C3AED;
+}}
+.disp-resumo-licencas .disp-resumo-faixa {{
+    color:#6D28D9;
+    background:#EDE9FE;
+}}
+.disp-resumo-ausencias::before {{
+    background:#DC2626;
+}}
+.disp-resumo-ausencias .disp-resumo-faixa {{
+    color:#B91C1C;
+    background:#FEE2E2;
 }}
 .disp-resumo-card small {{
     color:#4B5563;
@@ -5023,7 +5126,7 @@ st.markdown(
 .disp-resumo-card strong {{
     color:#111827;
     display:block;
-    font-size:28px;
+    font-size:30px;
     line-height:1;
 }}
 .disp-grade-principal {{
@@ -5057,32 +5160,35 @@ st.markdown(
 .disp-eventos-lista {{
     display:flex;
     flex-direction:column;
-    gap:10px;
+    gap:12px;
 }}
 .disp-evento-linha {{
     border:1px solid #E5E7EB;
     border-left:4px solid #6B7280;
-    border-radius:10px;
-    padding:12px 12px 12px 14px;
-    background:#FFFFFF;
+    border-radius:14px;
+    padding:13px 13px 13px 15px;
+    background:linear-gradient(180deg, #FFFFFF 0%, #FAFBFC 100%);
+    box-shadow:0 4px 14px rgba(15, 23, 42, 0.04);
 }}
 .disp-evento-linha strong {{
     color:#111827;
     display:block;
     font-size:13px;
+    font-weight:700;
     line-height:1.2;
 }}
 .disp-evento-linha span {{
     color:#374151;
     display:block;
     font-size:11px;
+    font-weight:600;
     margin-top:4px;
 }}
 .disp-evento-linha small {{
     color:#6B7280;
     display:block;
     font-size:10px;
-    margin-top:4px;
+    margin-top:5px;
 }}
 .disp-secundario {{
     display:grid;
@@ -5188,6 +5294,11 @@ st.markdown(
     .disp-secundario,
     .disp-resumo-novo {{
         grid-template-columns:1fr;
+    }}
+    .disp-contexto,
+    .disp-card-topo {{
+        flex-direction:column;
+        align-items:flex-start;
     }}
     .gestao-status-grid,
     .gestao-resumo-grid {{
