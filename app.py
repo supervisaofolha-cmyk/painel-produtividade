@@ -59,6 +59,9 @@ TECNICOS_SGD_WEB = [
     "isabella alves queiroz",
     "joao frutuoso machado neto",
 ]
+TECNICOS_CHAT = [
+    "matheus farias de souza",
+]
 NIVEL_TECNICO_SGD_WEB = "Atendimento Web"
 META_SATISFACAO_SGD_WEB = 96
 META_VOTACAO_SGD_WEB = 41
@@ -2065,10 +2068,16 @@ def _mostrar_gestao_disponibilidade_legado(dataframe):
         (dataframe["Data"].dt.year == ano_filtro)
         & (dataframe["Data"].dt.month == mes_filtro)
     ].copy()
+    nomes_mes_normalizados = base_mes["Técnico"].map(normalizar_nome)
+    web_mes = base_mes[nomes_mes_normalizados.isin(TECNICOS_SGD_WEB)]["Técnico"].nunique()
+    chat_mes = base_mes[nomes_mes_normalizados.isin(TECNICOS_CHAT)]["Técnico"].nunique()
     estagios_mes = base_mes[
         base_mes["Nível"].astype(str).str.contains("Estágio|Estagio", case=False, na=False)
     ]["Técnico"].nunique()
-    efetivo_mes = max(base_mes["Técnico"].nunique() - estagios_mes, 0)
+    efetivo_mes = max(
+        base_mes["Técnico"].nunique() - estagios_mes - web_mes - chat_mes,
+        0,
+    )
     total_ferias = eventos_mes[eventos_mes["Tipo"] == "Férias"]["Técnico"].nunique()
     total_licencas = eventos_mes[
         eventos_mes["Tipo"].str.contains("Licença", case=False, na=False)
@@ -2341,6 +2350,16 @@ def mostrar_gestao_disponibilidade(dataframe):
                 <span class="disp-resumo-faixa">Base</span>
                 <small>Estágios</small>
                 <strong>{estagios_mes}</strong>
+            </div>
+            <div class="disp-resumo-card disp-resumo-web">
+                <span class="disp-resumo-faixa">Canal</span>
+                <small>WEB</small>
+                <strong>{web_mes}</strong>
+            </div>
+            <div class="disp-resumo-card disp-resumo-chat">
+                <span class="disp-resumo-faixa">Canal</span>
+                <small>CHAT</small>
+                <strong>{chat_mes}</strong>
             </div>
             <div class="disp-resumo-card disp-resumo-ferias">
                 <span class="disp-resumo-faixa">Planejado</span>
@@ -5070,7 +5089,7 @@ st.markdown(
 }}
 .disp-resumo-novo {{
     display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
     gap:14px;
 }}
 .disp-resumo-card {{
@@ -5115,6 +5134,20 @@ st.markdown(
 .disp-resumo-estagio .disp-resumo-faixa {{
     color:#0F766E;
     background:#CCFBF1;
+}}
+.disp-resumo-web::before {{
+    background:#7C3AED;
+}}
+.disp-resumo-web .disp-resumo-faixa {{
+    color:#6D28D9;
+    background:#EDE9FE;
+}}
+.disp-resumo-chat::before {{
+    background:#DB2777;
+}}
+.disp-resumo-chat .disp-resumo-faixa {{
+    color:#BE185D;
+    background:#FCE7F3;
 }}
 .disp-resumo-ferias::before {{
     background:#F97316;
