@@ -2061,10 +2061,14 @@ def _mostrar_gestao_disponibilidade_legado(dataframe):
             eventos_filtrados["Tipo"] == tipo_filtro
         ]
 
-    efetivo_mes = dataframe[
+    base_mes = dataframe[
         (dataframe["Data"].dt.year == ano_filtro)
         & (dataframe["Data"].dt.month == mes_filtro)
+    ].copy()
+    estagios_mes = base_mes[
+        base_mes["Nível"].astype(str).str.contains("Estágio|Estagio", case=False, na=False)
     ]["Técnico"].nunique()
+    efetivo_mes = max(base_mes["Técnico"].nunique() - estagios_mes, 0)
     total_ferias = eventos_mes[eventos_mes["Tipo"] == "Férias"]["Técnico"].nunique()
     total_licencas = eventos_mes[
         eventos_mes["Tipo"].str.contains("Licença", case=False, na=False)
@@ -2328,6 +2332,11 @@ def mostrar_gestao_disponibilidade(dataframe):
                 <span class="disp-resumo-faixa">Base</span>
                 <small>Efetivo no mês</small>
                 <strong>{efetivo_mes}</strong>
+            </div>
+            <div class="disp-resumo-card disp-resumo-estagio">
+                <span class="disp-resumo-faixa">Base</span>
+                <small>Estágios</small>
+                <strong>{estagios_mes}</strong>
             </div>
             <div class="disp-resumo-card disp-resumo-ferias">
                 <span class="disp-resumo-faixa">Planejado</span>
@@ -5095,6 +5104,13 @@ st.markdown(
 .disp-resumo-efetivo .disp-resumo-faixa {{
     color:#1D4ED8;
     background:#DBEAFE;
+}}
+.disp-resumo-estagio::before {{
+    background:#0F766E;
+}}
+.disp-resumo-estagio .disp-resumo-faixa {{
+    color:#0F766E;
+    background:#CCFBF1;
 }}
 .disp-resumo-ferias::before {{
     background:#F97316;
