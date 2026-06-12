@@ -4669,6 +4669,29 @@ st.markdown(
     padding:14px;
     background:#FFFFFF;
 }}
+.gestao-alerta-lista {{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:10px;
+}}
+.gestao-alerta-item {{
+    border:1px solid #E5E7EB;
+    border-radius:10px;
+    padding:10px 12px;
+    background:#F8FAFC;
+}}
+.gestao-alerta-item strong {{
+    color:#111827;
+    display:block;
+    font-size:13px;
+}}
+.gestao-alerta-item span {{
+    color:#4B5563;
+    display:block;
+    font-size:12px;
+    margin-top:3px;
+}}
 .gestao-alerta-vazio {{
     color:#6B7280;
     font-size:13px;
