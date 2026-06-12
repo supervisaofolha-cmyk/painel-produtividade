@@ -6908,7 +6908,12 @@ if not modo_gestao:
             )
 
 st.divider()
-st.subheader("📊 Produtividade Mensal")
+if tecnico_web:
+    st.subheader("📊 SSC WEB por Dia")
+elif tecnico_chat:
+    st.subheader("📊 Produção de Chat por Dia")
+else:
+    st.subheader("📊 Produtividade Mensal")
 
 dados_produtividade = dados_tecnico[
     (dados_tecnico["Data"].dt.month == mes_atual)
@@ -6950,153 +6955,256 @@ dados_produtividade = dados_produtividade[
     & ~dados_produtividade["Data"].dt.date.map(eh_feriado_federal)
 ]
 
-produtividade = (
-    dados_produtividade.groupby(["Data", "Data Formatada"])
-    .agg({"Realizado": "sum", "Esperado": "sum"})
-    .reset_index()
-    .sort_values(by="Data")
-)
-produtividade["Data Curta"] = produtividade["Data"].dt.strftime("%d/%m")
-produtividade["Desvio Diário"] = (
-    produtividade["Realizado"] - produtividade["Esperado"]
-)
-produtividade["Situação Meta"] = produtividade["Desvio Diário"].apply(
-    lambda desvio: (
-        "Acima da meta"
-        if desvio > 0
-        else "Na meta"
-        if desvio == 0
-        else "Abaixo da meta"
+if tecnico_web:
+    base_web_periodo = df[
+        df["Técnico"].map(eh_tecnico_sgd_web)
+        & (df["Data"].dt.month == mes_atual)
+        & (df["Data"].dt.year == ano_atual)
+        & (df["Data"].dt.date >= periodo_inicial)
+        & (df["Data"].dt.date <= periodo_final)
+    ].copy()
+    base_web_periodo = base_web_periodo[
+        (base_web_periodo["Data"].dt.weekday < 5)
+        & ~base_web_periodo["Data"].dt.date.map(eh_feriado_federal)
+    ]
+    produtividade = (
+        dados_produtividade.groupby(["Data", "Data Formatada"], as_index=False)["SSC"]
+        .sum()
+        .rename(columns={"SSC": "Seu SSC"})
+        .sort_values(by="Data")
     )
-)
+    produtividade_total_web = (
+        base_web_periodo.groupby("Data", as_index=False)["SSC"]
+        .sum()
+        .rename(columns={"SSC": "SSC Total WEB"})
+    )
+    produtividade = produtividade.merge(produtividade_total_web, on="Data", how="left").fillna(0)
+    produtividade["Data Curta"] = produtividade["Data"].dt.strftime("%d/%m")
 
-dias_acima_meta = int((produtividade["Desvio Diário"] > 0).sum())
-dias_na_meta = int((produtividade["Desvio Diário"] == 0).sum())
-dias_abaixo_meta = int((produtividade["Desvio Diário"] < 0).sum())
-
-st.markdown(
-    f"""
-    <div class="produtividade-resumo">
-        <div class="produtividade-resumo-item">
-            <span class="produtividade-resumo-ponto" style="background:#16A34A;"></span>
-            <strong>{dias_acima_meta}</strong> dia(s) acima da meta
-        </div>
-        <div class="produtividade-resumo-item">
-            <span class="produtividade-resumo-ponto" style="background:#6B7280;"></span>
-            <strong>{dias_na_meta}</strong> dia(s) na meta
-        </div>
-        <div class="produtividade-resumo-item">
-            <span class="produtividade-resumo-ponto" style="background:#DC2626;"></span>
-            <strong>{dias_abaixo_meta}</strong> dia(s) abaixo da meta
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-cores_realizado = produtividade["Desvio Diário"].apply(
-    lambda desvio: "#16A34A" if desvio >= 0 else "#EF4444"
-).tolist()
-rotulos_desvio = produtividade["Desvio Diário"].apply(
-    lambda desvio: f"+{int(desvio)}" if desvio > 0 else f"{int(desvio)}"
-).tolist()
-cores_desvio = produtividade["Desvio Diário"].apply(
-    lambda desvio: "#15803D" if desvio >= 0 else "#B91C1C"
-).tolist()
-
-grafico_produtividade = go.Figure()
-grafico_produtividade.add_trace(
-    go.Bar(
-        name="Realizado",
-        x=produtividade["Data Curta"],
-        y=produtividade["Realizado"],
-        marker_color=cores_realizado,
-        width=0.48,
-        text=produtividade["Realizado"].round().astype(int),
-        textposition="outside",
-        textfont=dict(color="#374151", size=12),
-        cliponaxis=False,
-        customdata=produtividade[
-            ["Esperado", "Desvio Diário", "Situação Meta"]
-        ].to_numpy(),
-        hovertemplate=(
-            "<b>%{x}</b><br>"
-            "Realizado: %{y}<br>"
-            "Esperado: %{customdata[0]}<br>"
-            "Desvio: %{customdata[1]:+}<br>"
-            "%{customdata[2]}<extra></extra>"
+    grafico_produtividade = go.Figure()
+    grafico_produtividade.add_trace(
+        go.Bar(
+            name="Seu realizado",
+            x=produtividade["Data Curta"],
+            y=produtividade["Seu SSC"],
+            marker_color="#2563EB",
+            width=0.46,
+            text=produtividade["Seu SSC"].round().astype(int),
+            textposition="outside",
+            textfont=dict(color="#374151", size=12),
+            cliponaxis=False,
+            customdata=produtividade[["SSC Total WEB"]].to_numpy(),
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Seu SSC: %{y}<br>"
+                "SSC total WEB: %{customdata[0]}<extra></extra>"
+            ),
+        )
+    )
+    grafico_produtividade.add_trace(
+        go.Scatter(
+            name="SSC total WEB",
+            x=produtividade["Data Curta"],
+            y=produtividade["SSC Total WEB"],
+            mode="lines+markers",
+            line=dict(color="#F97316", width=3),
+            marker=dict(color="#FFFFFF", line=dict(color="#F97316", width=2), size=8),
+            hovertemplate="<b>%{x}</b><br>SSC total WEB: %{y}<extra></extra>",
+        )
+    )
+    maior_valor_produtividade = max(
+        produtividade["Seu SSC"].max() if not produtividade.empty else 0,
+        produtividade["SSC Total WEB"].max() if not produtividade.empty else 0,
+        1,
+    )
+    grafico_produtividade.update_layout(
+        plot_bgcolor=COR_BRANCO,
+        paper_bgcolor=COR_BRANCO,
+        font_color="#4B5563",
+        height=430,
+        margin=dict(l=45, r=20, t=55, b=55),
+        bargap=0.45,
+        xaxis_title="Dia",
+        yaxis_title="SSC",
+        title=dict(
+            text="Seu realizado x SSC total WEB do dia",
+            x=0,
+            font=dict(size=15, color="#111827"),
         ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            title_text="",
+        ),
+        xaxis=dict(
+            type="category",
+            showgrid=False,
+            linecolor="#E5E7EB",
+            tickfont=dict(size=11, color="#4B5563"),
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor="#F3F4F6",
+            gridwidth=1,
+            zeroline=False,
+            rangemode="tozero",
+            range=[0, maior_valor_produtividade * 1.25],
+            tickfont=dict(size=11, color="#6B7280"),
+        ),
+        hovermode="x unified",
     )
-)
-grafico_produtividade.add_trace(
-    go.Scatter(
-        name="Esperado",
-        x=produtividade["Data Curta"],
-        y=produtividade["Esperado"],
-        mode="lines+markers",
-        line=dict(color="#4B5563", width=2),
-        marker=dict(color="#FFFFFF", line=dict(color="#4B5563", width=2), size=7),
-        text=produtividade["Esperado"].round().astype(int),
-        hovertemplate="<b>%{x}</b><br>Esperado: %{y}<extra></extra>",
+    st.plotly_chart(grafico_produtividade, use_container_width=True)
+else:
+    produtividade = (
+        dados_produtividade.groupby(["Data", "Data Formatada"])
+        .agg({"Realizado": "sum", "Esperado": "sum"})
+        .reset_index()
+        .sort_values(by="Data")
     )
-)
-
-maior_valor_produtividade = max(
-    produtividade["Realizado"].max() if not produtividade.empty else 0,
-    produtividade["Esperado"].max() if not produtividade.empty else 0,
-    1,
-)
-espaco_desvio = max(maior_valor_produtividade * 0.1, 2)
-for indice, linha in produtividade.reset_index(drop=True).iterrows():
-    grafico_produtividade.add_annotation(
-        x=linha["Data Curta"],
-        y=max(linha["Realizado"], linha["Esperado"]) + espaco_desvio,
-        text=rotulos_desvio[indice],
-        showarrow=False,
-        font=dict(color=cores_desvio[indice], size=11),
+    produtividade["Data Curta"] = produtividade["Data"].dt.strftime("%d/%m")
+    produtividade["Desvio Diário"] = (
+        produtividade["Realizado"] - produtividade["Esperado"]
+    )
+    produtividade["Situação Meta"] = produtividade["Desvio Diário"].apply(
+        lambda desvio: (
+            "Acima da meta"
+            if desvio > 0
+            else "Na meta"
+            if desvio == 0
+            else "Abaixo da meta"
+        )
     )
 
-grafico_produtividade.update_layout(
-    plot_bgcolor=COR_BRANCO,
-    paper_bgcolor=COR_BRANCO,
-    font_color="#4B5563",
-    height=430,
-    margin=dict(l=45, r=20, t=55, b=55),
-    bargap=0.45,
-    xaxis_title="Dia",
-    yaxis_title="Quantidade",
-    title=dict(
-        text="Produtividade do Mês",
-        x=0,
-        font=dict(size=15, color="#111827"),
-    ),
-    legend=dict(
-        orientation="h",
-        yanchor="bottom",
-        y=1.02,
-        xanchor="right",
-        x=1,
-        title_text="",
-    ),
-    xaxis=dict(
-        type="category",
-        showgrid=False,
-        linecolor="#E5E7EB",
-        tickfont=dict(size=11, color="#4B5563"),
-    ),
-    yaxis=dict(
-        showgrid=True,
-        gridcolor="#F3F4F6",
-        gridwidth=1,
-        zeroline=False,
-        rangemode="tozero",
-        range=[0, maior_valor_produtividade + (espaco_desvio * 2.5)],
-        tickfont=dict(size=11, color="#6B7280"),
-    ),
-    hovermode="x unified",
-)
+    dias_acima_meta = int((produtividade["Desvio Diário"] > 0).sum())
+    dias_na_meta = int((produtividade["Desvio Diário"] == 0).sum())
+    dias_abaixo_meta = int((produtividade["Desvio Diário"] < 0).sum())
 
-st.plotly_chart(grafico_produtividade, use_container_width=True)
+    st.markdown(
+        f"""
+        <div class="produtividade-resumo">
+            <div class="produtividade-resumo-item">
+                <span class="produtividade-resumo-ponto" style="background:#16A34A;"></span>
+                <strong>{dias_acima_meta}</strong> dia(s) acima da meta
+            </div>
+            <div class="produtividade-resumo-item">
+                <span class="produtividade-resumo-ponto" style="background:#6B7280;"></span>
+                <strong>{dias_na_meta}</strong> dia(s) na meta
+            </div>
+            <div class="produtividade-resumo-item">
+                <span class="produtividade-resumo-ponto" style="background:#DC2626;"></span>
+                <strong>{dias_abaixo_meta}</strong> dia(s) abaixo da meta
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    cores_realizado = produtividade["Desvio Diário"].apply(
+        lambda desvio: "#16A34A" if desvio >= 0 else "#EF4444"
+    ).tolist()
+    rotulos_desvio = produtividade["Desvio Diário"].apply(
+        lambda desvio: f"+{int(desvio)}" if desvio > 0 else f"{int(desvio)}"
+    ).tolist()
+    cores_desvio = produtividade["Desvio Diário"].apply(
+        lambda desvio: "#15803D" if desvio >= 0 else "#B91C1C"
+    ).tolist()
+
+    grafico_produtividade = go.Figure()
+    grafico_produtividade.add_trace(
+        go.Bar(
+            name="Realizado",
+            x=produtividade["Data Curta"],
+            y=produtividade["Realizado"],
+            marker_color=cores_realizado,
+            width=0.48,
+            text=produtividade["Realizado"].round().astype(int),
+            textposition="outside",
+            textfont=dict(color="#374151", size=12),
+            cliponaxis=False,
+            customdata=produtividade[
+                ["Esperado", "Desvio Diário", "Situação Meta"]
+            ].to_numpy(),
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Realizado: %{y}<br>"
+                "Esperado: %{customdata[0]}<br>"
+                "Desvio: %{customdata[1]:+}<br>"
+                "%{customdata[2]}<extra></extra>"
+            ),
+        )
+    )
+    grafico_produtividade.add_trace(
+        go.Scatter(
+            name="Esperado",
+            x=produtividade["Data Curta"],
+            y=produtividade["Esperado"],
+            mode="lines+markers",
+            line=dict(color="#4B5563", width=2),
+            marker=dict(color="#FFFFFF", line=dict(color="#4B5563", width=2), size=7),
+            text=produtividade["Esperado"].round().astype(int),
+            hovertemplate="<b>%{x}</b><br>Esperado: %{y}<extra></extra>",
+        )
+    )
+
+    maior_valor_produtividade = max(
+        produtividade["Realizado"].max() if not produtividade.empty else 0,
+        produtividade["Esperado"].max() if not produtividade.empty else 0,
+        1,
+    )
+    espaco_desvio = max(maior_valor_produtividade * 0.1, 2)
+    for indice, linha in produtividade.reset_index(drop=True).iterrows():
+        grafico_produtividade.add_annotation(
+            x=linha["Data Curta"],
+            y=max(linha["Realizado"], linha["Esperado"]) + espaco_desvio,
+            text=rotulos_desvio[indice],
+            showarrow=False,
+            font=dict(color=cores_desvio[indice], size=11),
+        )
+
+    grafico_produtividade.update_layout(
+        plot_bgcolor=COR_BRANCO,
+        paper_bgcolor=COR_BRANCO,
+        font_color="#4B5563",
+        height=430,
+        margin=dict(l=45, r=20, t=55, b=55),
+        bargap=0.45,
+        xaxis_title="Dia",
+        yaxis_title="Quantidade",
+        title=dict(
+            text="Produtividade do Mês",
+            x=0,
+            font=dict(size=15, color="#111827"),
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            title_text="",
+        ),
+        xaxis=dict(
+            type="category",
+            showgrid=False,
+            linecolor="#E5E7EB",
+            tickfont=dict(size=11, color="#4B5563"),
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor="#F3F4F6",
+            gridwidth=1,
+            zeroline=False,
+            rangemode="tozero",
+            range=[0, maior_valor_produtividade + (espaco_desvio * 2.5)],
+            tickfont=dict(size=11, color="#6B7280"),
+        ),
+        hovermode="x unified",
+    )
+
+    st.plotly_chart(grafico_produtividade, use_container_width=True)
 
 st.divider()
 st.subheader("SSC Atendido por Dia")
