@@ -5841,7 +5841,9 @@ if modo_gestao and visao_gestao == "Atualizações":
                     st.cache_data.clear()
                     st.rerun()
 
-if not modo_gestao and not (tecnico_web or tecnico_chat):
+if not modo_gestao and not (
+    eh_tecnico_sgd_web(tecnico) or eh_tecnico_chat(tecnico)
+):
     st.sidebar.success(f"Bem-vindo(a), {tecnico.title()}")
 
 if modo_gestao and visao_gestao == "Atualizações":
