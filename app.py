@@ -2498,6 +2498,13 @@ def eh_tecnico_sgd_web(nome):
     }
 
 
+def eh_tecnico_chat(nome):
+    return normalizar_nome(nome) in {
+        normalizar_nome(tecnico)
+        for tecnico in TECNICOS_CHAT
+    }
+
+
 def periodos_ferias_tecnico(tecnico):
     tecnico_normalizado = normalizar_nome(tecnico)
     return [
@@ -6516,11 +6523,37 @@ classificacao = (
 )
 
 atendidas_total = int(dados_mes_atual["Atendidas"].sum())
-realizado_total = int(dados_mes_atual["Realizado"].sum())
 esperado_total = int(dados_mes_atual["Esperado"].sum())
-desvio_total = realizado_total - esperado_total
 ssc_total = int(dados_mes_atual["SSC"].sum())
 ro_total = int(dados_mes_atual["RO"].sum())
+chat_total = int(dados_mes_atual["CHAT"].sum()) if "CHAT" in dados_mes_atual.columns else 0
+tecnico_web = eh_tecnico_sgd_web(tecnico)
+tecnico_chat = eh_tecnico_chat(tecnico)
+
+if tecnico_web:
+    realizado_total = ssc_total
+    desvio_total = realizado_total - esperado_total
+    classificacao = status_por_desvio(desvio_total)
+    label_realizado_secundario = "SSC"
+    valor_realizado_secundario = ssc_total
+    label_apoio_secundario = "Canal"
+    valor_apoio_secundario = "WEB"
+elif tecnico_chat:
+    realizado_total = chat_total
+    desvio_total = realizado_total - esperado_total
+    classificacao = status_por_desvio(desvio_total)
+    label_realizado_secundario = "Chats"
+    valor_realizado_secundario = chat_total
+    label_apoio_secundario = "Canal"
+    valor_apoio_secundario = "CHAT"
+else:
+    realizado_total = int(dados_mes_atual["Realizado"].sum())
+    desvio_total = realizado_total - esperado_total
+    label_realizado_secundario = "SSC"
+    valor_realizado_secundario = ssc_total
+    label_apoio_secundario = "RO"
+    valor_apoio_secundario = ro_total
+
 progresso_meta = (
     (realizado_total / esperado_total) * 100
     if esperado_total > 0
@@ -6581,12 +6614,12 @@ st.markdown(
             <div class="resultado-valor">{atendidas_total}</div>
         </div>
         <div class="resultado-card secundario">
-            <div class="resultado-label">SSC</div>
-            <div class="resultado-valor">{ssc_total}</div>
+            <div class="resultado-label">{escape(label_realizado_secundario)}</div>
+            <div class="resultado-valor">{escape(builtins.str(valor_realizado_secundario))}</div>
         </div>
         <div class="resultado-card secundario">
-            <div class="resultado-label">RO</div>
-            <div class="resultado-valor">{ro_total}</div>
+            <div class="resultado-label">{escape(label_apoio_secundario)}</div>
+            <div class="resultado-valor">{escape(builtins.str(valor_apoio_secundario))}</div>
         </div>
         <div class="resultado-card secundario">
             <div class="resultado-label">Votação Média</div>
