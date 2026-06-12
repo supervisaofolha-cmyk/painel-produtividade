@@ -5958,10 +5958,25 @@ if modo_gestao and visao_gestao == "Visão Geral":
         "BOM": "#2563EB",
         "EXCELENTE": "#15803D",
     }
+    status_mensal = (
+        dados_gestao_mes.groupby("Técnico", as_index=False)[["Realizado", "Esperado"]]
+        .sum()
+        .reset_index(drop=True)
+    )
+    status_mensal["Desvio"] = status_mensal["Realizado"] - status_mensal["Esperado"]
+    status_mensal["Classificação"] = status_mensal["Desvio"].apply(status_por_desvio)
     blocos_status = []
+    modo_status_gestao = st.radio(
+        "Distribuição por classificação",
+        ["Diário", "Mensal"],
+        key="gestao_status_modo",
+        horizontal=True,
+        label_visibility="collapsed",
+    )
+    base_status_exibicao = status_atual if modo_status_gestao == "Diário" else status_mensal
     for status in ["CRÍTICO", "ATENÇÃO", "BOM", "EXCELENTE"]:
-        tecnicos_status = status_atual[
-            status_atual["Classificação"] == status
+        tecnicos_status = base_status_exibicao[
+            base_status_exibicao["Classificação"] == status
         ]["Técnico"].dropna().astype(str).sort_values().tolist()
         quantidade = len(tecnicos_status)
         legenda, referencia = descricoes_status[status]
@@ -5994,18 +6009,23 @@ if modo_gestao and visao_gestao == "Visão Geral":
             "</div>"
         )
 
-    st.markdown(
-        '<div class="gestao-grid-duplo">'
-        '<div class="gestao-card"><h4>Distribuição por classificação</h4>'
-        '<div class="gestao-status-grid">'
-        + "".join(blocos_status)
-        + "</div></div>"
-        '<div class="gestao-card"><h4>Percentual de Absorção por Nível</h4>'
-        '<div class="gestao-absorcao">'
-        + "".join(barras_absorcao)
-        + "</div></div></div>",
-        unsafe_allow_html=True,
-    )
+    col_status_gestao, col_absorcao_gestao = st.columns(2)
+    with col_status_gestao:
+        st.markdown(
+            '<div class="gestao-card"><h4>Distribuição por classificação</h4>'
+            '<div class="gestao-status-grid">'
+            + "".join(blocos_status)
+            + "</div></div>",
+            unsafe_allow_html=True,
+        )
+    with col_absorcao_gestao:
+        st.markdown(
+            '<div class="gestao-card"><h4>Percentual de Absorção por Nível</h4>'
+            '<div class="gestao-absorcao">'
+            + "".join(barras_absorcao)
+            + "</div></div>",
+            unsafe_allow_html=True,
+        )
 
     niveis_disponiveis = sorted(
         [
