@@ -2315,25 +2315,50 @@ def mostrar_gestao_disponibilidade(dataframe):
     total_ausencias = int(
         len(eventos_mes[~eventos_mes["Tipo"].isin(["Férias", "Licença-maternidade"])])
     )
+    total_eventos_filtrados = len(eventos_filtrados)
+    tecnicos_afetados = eventos_filtrados["Técnico"].nunique()
+    tipos_ativos = eventos_filtrados["Tipo"].nunique()
+
+    st.markdown('<div class="disp-painel">', unsafe_allow_html=True)
 
     st.markdown(
         f"""
         <div class="disp-resumo-novo">
-            <div class="disp-resumo-card">
+            <div class="disp-resumo-card disp-resumo-efetivo">
+                <span class="disp-resumo-faixa">Base</span>
                 <small>Efetivo no mês</small>
                 <strong>{efetivo_mes}</strong>
             </div>
-            <div class="disp-resumo-card">
+            <div class="disp-resumo-card disp-resumo-ferias">
+                <span class="disp-resumo-faixa">Planejado</span>
                 <small>Em férias</small>
                 <strong>{total_ferias}</strong>
             </div>
-            <div class="disp-resumo-card">
+            <div class="disp-resumo-card disp-resumo-licencas">
+                <span class="disp-resumo-faixa">Afastamentos</span>
                 <small>Licenças</small>
                 <strong>{total_licencas}</strong>
             </div>
-            <div class="disp-resumo-card">
+            <div class="disp-resumo-card disp-resumo-ausencias">
+                <span class="disp-resumo-faixa">Ocorrências</span>
                 <small>Ausências</small>
                 <strong>{total_ausencias}</strong>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f"""
+        <div class="disp-contexto">
+            <div>
+                <strong>{escape(periodo_label)}</strong>
+                <span>{total_eventos_filtrados} ocorrência(s) no filtro atual</span>
+            </div>
+            <div class="disp-contexto-chips">
+                <span>{tecnicos_afetados} técnico(s)</span>
+                <span>{tipos_ativos} tipo(s)</span>
             </div>
         </div>
         """,
@@ -2351,7 +2376,7 @@ def mostrar_gestao_disponibilidade(dataframe):
     col_eventos, col_lista = st.columns([0.95, 1.45])
     with col_eventos:
         st.markdown(
-            '<div class="disp-card"><h4>Próximos eventos</h4>',
+            '<div class="disp-card"><div class="disp-card-topo"><h4>Próximos eventos</h4><span>Agenda do período</span></div>',
             unsafe_allow_html=True,
         )
         if proximos.empty:
@@ -2376,7 +2401,7 @@ def mostrar_gestao_disponibilidade(dataframe):
 
     with col_lista:
         st.markdown(
-            '<div class="disp-card"><div class="disp-lista-titulo"><h4>Ocorrências do período</h4></div>',
+            '<div class="disp-card"><div class="disp-lista-titulo"><div class="disp-card-topo"><h4>Ocorrências do período</h4><span>Visão rápida e organizada</span></div></div>',
             unsafe_allow_html=True,
         )
         if eventos_filtrados.empty:
@@ -2403,6 +2428,7 @@ def mostrar_gestao_disponibilidade(dataframe):
                 use_container_width=True,
             )
         st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def salvar_env_local(atualizacoes):
