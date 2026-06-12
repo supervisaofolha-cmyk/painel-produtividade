@@ -4565,6 +4565,14 @@ st.markdown(
     font-size:10px;
     line-height:1.35;
 }}
+.gestao-status-nomes {{
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px solid #E5E7EB;
+    color:#374151;
+    font-size:11px;
+    line-height:1.5;
+}}
 .gestao-absorcao {{
     display:flex;
     flex-direction:column;
