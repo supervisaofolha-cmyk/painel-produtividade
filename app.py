@@ -6203,7 +6203,7 @@ if modo_gestao and visao_gestao == "Visão Geral":
             config={"displayModeBar": False},
         )
     with col_alertas:
-        st.markdown('<div class="gestao-card"><h4>Alertas do mês</h4>', unsafe_allow_html=True)
+        st.markdown("#### Alertas do mês")
         st.markdown('<div class="gestao-alertas-streamlit">', unsafe_allow_html=True)
         for chave_alerta, _cor_alerta, icone_alerta, texto_alerta in alertas:
             if st.button(
@@ -6215,23 +6215,25 @@ if modo_gestao and visao_gestao == "Visão Geral":
                 st.session_state["gestao_alerta_aberto"] = (
                     None if alerta_atual == chave_alerta else chave_alerta
                 )
-            if st.session_state.get("gestao_alerta_aberto") == chave_alerta:
-                st.markdown('<div class="gestao-alerta-detalhe">', unsafe_allow_html=True)
-                st.markdown(f"**{titulos_alerta[chave_alerta]}**")
-                detalhe_df = detalhes_alerta[chave_alerta]
-                if detalhe_df.empty:
-                    st.markdown(
-                        f'<p class="gestao-alerta-vazio">{mensagem_alerta_vazio[chave_alerta]}</p>',
-                        unsafe_allow_html=True,
-                    )
-                else:
-                    st.dataframe(
-                        detalhe_df,
-                        use_container_width=True,
-                        hide_index=True,
-                    )
-                st.markdown("</div>", unsafe_allow_html=True)
-        st.markdown("</div></div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        alerta_aberto = st.session_state.get("gestao_alerta_aberto")
+        if alerta_aberto in detalhes_alerta:
+            st.markdown('<div class="gestao-alerta-detalhe">', unsafe_allow_html=True)
+            st.markdown(f"**{titulos_alerta[alerta_aberto]}**")
+            detalhe_df = detalhes_alerta[alerta_aberto]
+            if detalhe_df.empty:
+                st.markdown(
+                    f'<p class="gestao-alerta-vazio">{mensagem_alerta_vazio[alerta_aberto]}</p>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.dataframe(
+                    detalhe_df,
+                    use_container_width=True,
+                    hide_index=True,
+                )
+            st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown(
         f"""
