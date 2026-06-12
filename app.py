@@ -2340,13 +2340,6 @@ def mostrar_gestao_disponibilidade(dataframe):
         unsafe_allow_html=True,
     )
 
-    legenda_disponibilidade = [
-        ("Férias", CORES_DISPONIBILIDADE["Férias"]),
-        ("Licença", CORES_DISPONIBILIDADE["Licença-maternidade"]),
-        ("Atestado/Falta", CORES_DISPONIBILIDADE["Atestado"]),
-        ("Ausência parcial", CORES_DISPONIBILIDADE["Energia"]),
-    ]
-
     referencia_proximos = max(
         datetime.now(FUSO_HORARIO_APP).date(),
         inicio_periodo,
@@ -2355,36 +2348,10 @@ def mostrar_gestao_disponibilidade(dataframe):
         eventos_filtrados["Fim"] >= referencia_proximos
     ].sort_values(["Início", "Técnico"]).head(8)
 
-    col_calendario, col_eventos = st.columns([1.9, 0.95])
-    with col_calendario:
-        st.markdown(
-            '<div class="disp-card"><h4>Calendário do período</h4>',
-            unsafe_allow_html=True,
-        )
-        if eventos_filtrados.empty:
-            st.info("Nenhuma ocorrência encontrada para os filtros selecionados.")
-        else:
-            st.markdown(
-                html_calendario_disponibilidade(
-                    ano_filtro,
-                    mes_filtro,
-                    eventos_filtrados,
-                ),
-                unsafe_allow_html=True,
-            )
-        st.markdown(
-            '<div class="disp-legenda-nova">'
-            + "".join(
-                f'<span class="disp-legenda-chip"><i style="background:{cor};"></i>{rotulo}</span>'
-                for rotulo, cor in legenda_disponibilidade
-            )
-            + "</div></div>",
-            unsafe_allow_html=True,
-        )
-
+    col_eventos, col_lista = st.columns([0.95, 1.45])
     with col_eventos:
         st.markdown(
-            '<div class="disp-card"><h4>Eventos do período</h4>',
+            '<div class="disp-card"><h4>Próximos eventos</h4>',
             unsafe_allow_html=True,
         )
         if proximos.empty:
@@ -2407,72 +2374,33 @@ def mostrar_gestao_disponibilidade(dataframe):
             )
         st.markdown("</div>", unsafe_allow_html=True)
 
-    col_lista, col_nivel = st.columns([1.2, 1])
     with col_lista:
         st.markdown(
-            '<div class="disp-card"><div class="disp-lista-titulo"><h4>Lista de ocorrências</h4></div>',
-            unsafe_allow_html=True,
-        )
-        lista_disponibilidade = eventos_filtrados.copy()
-        lista_disponibilidade["Início"] = lista_disponibilidade["Início"].map(
-            lambda valor: valor.strftime("%d/%m/%Y")
-        )
-        lista_disponibilidade["Fim"] = lista_disponibilidade["Fim"].map(
-            lambda valor: valor.strftime("%d/%m/%Y")
-        )
-        st.dataframe(
-            lista_disponibilidade[
-                [
-                    "Técnico",
-                    "Nível",
-                    "Tipo",
-                    "Início",
-                    "Fim",
-                    "Duração",
-                    "Observação",
-                ]
-            ],
-            hide_index=True,
-            use_container_width=True,
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with col_nivel:
-        st.markdown(
-            '<div class="disp-card"><h4>Resumo por nível</h4>',
+            '<div class="disp-card"><div class="disp-lista-titulo"><h4>Ocorrências do período</h4></div>',
             unsafe_allow_html=True,
         )
         if eventos_filtrados.empty:
             st.info("Nenhuma ocorrência encontrada para os filtros selecionados.")
         else:
-            resumo_nivel = (
-                eventos_filtrados.groupby(["Nível", "Tipo"])
-                .size()
-                .reset_index(name="Ocorrências")
+            lista_disponibilidade = eventos_filtrados.copy()
+            lista_disponibilidade["Início"] = lista_disponibilidade["Início"].map(
+                lambda valor: valor.strftime("%d/%m/%Y")
             )
-            grafico_nivel = px.bar(
-                resumo_nivel,
-                x="Nível",
-                y="Ocorrências",
-                color="Tipo",
-                barmode="group",
-                color_discrete_map=CORES_DISPONIBILIDADE,
-                text="Ocorrências",
+            lista_disponibilidade["Fim"] = lista_disponibilidade["Fim"].map(
+                lambda valor: valor.strftime("%d/%m/%Y")
             )
-            grafico_nivel.update_layout(
-                height=360,
-                margin=dict(l=10, r=10, t=10, b=20),
-                plot_bgcolor="#FFFFFF",
-                paper_bgcolor="#FFFFFF",
-                legend_title_text="",
-                xaxis_title="",
-                yaxis_title="Ocorrências",
-            )
-            grafico_nivel.update_traces(textposition="outside")
-            st.plotly_chart(
-                grafico_nivel,
+            st.dataframe(
+                lista_disponibilidade[
+                    [
+                        "Técnico",
+                        "Tipo",
+                        "Início",
+                        "Fim",
+                        "Duração",
+                    ]
+                ],
+                hide_index=True,
                 use_container_width=True,
-                config={"displayModeBar": False},
             )
         st.markdown("</div>", unsafe_allow_html=True)
 
