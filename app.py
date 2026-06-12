@@ -5960,8 +5960,16 @@ if modo_gestao and visao_gestao == "Visão Geral":
     }
     blocos_status = []
     for status in ["CRÍTICO", "ATENÇÃO", "BOM", "EXCELENTE"]:
-        quantidade = int((status_atual["Classificação"] == status).sum())
+        tecnicos_status = status_atual[
+            status_atual["Classificação"] == status
+        ]["Técnico"].dropna().astype(str).sort_values().tolist()
+        quantidade = len(tecnicos_status)
         legenda, referencia = descricoes_status[status]
+        nomes_status = (
+            "<br>".join(escape(nome.title()) for nome in tecnicos_status)
+            if tecnicos_status
+            else "Nenhum tecnico"
+        )
         blocos_status.append(
             '<div class="gestao-status-resumo" '
             f'style="border-top-color:{CORES_STATUS[status]};">'
@@ -5969,6 +5977,7 @@ if modo_gestao and visao_gestao == "Visão Geral":
             f"<strong>{quantidade}</strong>"
             f"<em>{legenda}</em>"
             f'<small style="color:{cores_texto_status[status]};">{referencia}</small>'
+            f'<div class="gestao-status-nomes">{nomes_status}</div>'
             "</div>"
         )
 
