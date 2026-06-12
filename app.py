@@ -6529,30 +6529,39 @@ ro_total = int(dados_mes_atual["RO"].sum())
 chat_total = int(dados_mes_atual["CHAT"].sum()) if "CHAT" in dados_mes_atual.columns else 0
 tecnico_web = eh_tecnico_sgd_web(tecnico)
 tecnico_chat = eh_tecnico_chat(tecnico)
+cor_votacao = "#DC2626" if votacao_ultimo_dia < 21 else "#111827"
+cor_satisfacao = "#DC2626" if satisfacao_ultimo_dia < 98 else "#111827"
 
 if tecnico_web:
     realizado_total = ssc_total
     desvio_total = realizado_total - esperado_total
     classificacao = status_por_desvio(desvio_total)
-    label_realizado_secundario = "SSC"
-    valor_realizado_secundario = ssc_total
-    label_apoio_secundario = "Canal"
-    valor_apoio_secundario = "WEB"
+    cards_secundarios = [
+        ("Canal", "WEB", None),
+        ("SSC", builtins.str(ssc_total), None),
+        ("Votação Média", f"{votacao_ultimo_dia:.2f}%", cor_votacao),
+        ("Satisfação", f"{satisfacao_ultimo_dia:.2f}%", cor_satisfacao),
+    ]
 elif tecnico_chat:
     realizado_total = chat_total
     desvio_total = realizado_total - esperado_total
     classificacao = status_por_desvio(desvio_total)
-    label_realizado_secundario = "Chats"
-    valor_realizado_secundario = chat_total
-    label_apoio_secundario = "Canal"
-    valor_apoio_secundario = "CHAT"
+    cards_secundarios = [
+        ("Canal", "CHAT", None),
+        ("Chats", builtins.str(chat_total), None),
+        ("Votação Média", f"{votacao_ultimo_dia:.2f}%", cor_votacao),
+        ("Satisfação", f"{satisfacao_ultimo_dia:.2f}%", cor_satisfacao),
+    ]
 else:
     realizado_total = int(dados_mes_atual["Realizado"].sum())
     desvio_total = realizado_total - esperado_total
-    label_realizado_secundario = "SSC"
-    valor_realizado_secundario = ssc_total
-    label_apoio_secundario = "RO"
-    valor_apoio_secundario = ro_total
+    cards_secundarios = [
+        ("Atendidas", builtins.str(atendidas_total), None),
+        ("SSC", builtins.str(ssc_total), None),
+        ("RO", builtins.str(ro_total), None),
+        ("Votação Média", f"{votacao_ultimo_dia:.2f}%", cor_votacao),
+        ("Satisfação", f"{satisfacao_ultimo_dia:.2f}%", cor_satisfacao),
+    ]
 
 progresso_meta = (
     (realizado_total / esperado_total) * 100
@@ -6567,8 +6576,17 @@ nome_exibicao = escape(tecnico.title())
 nivel_exibicao = escape(builtins.str(nivel_tecnico or "Nível não informado"))
 classificacao_exibicao = escape(builtins.str(classificacao))
 sinal_desvio = "+" if desvio_total > 0 else ""
-cor_votacao = "#DC2626" if votacao_ultimo_dia < 21 else "#111827"
-cor_satisfacao = "#DC2626" if satisfacao_ultimo_dia < 98 else "#111827"
+cards_secundarios_html = "".join(
+    f'''
+        <div class="resultado-card secundario">
+            <div class="resultado-label">{escape(rotulo)}</div>
+            <div class="resultado-valor"{f' style="color:{cor};"' if cor else ""}>
+                {escape(valor)}
+            </div>
+        </div>
+    '''
+    for rotulo, valor, cor in cards_secundarios
+)
 
 st.markdown(
     f"""
@@ -6609,30 +6627,7 @@ st.markdown(
         </div>
     </div>
     <div class="resultado-grid-secundario">
-        <div class="resultado-card secundario">
-            <div class="resultado-label">Atendidas</div>
-            <div class="resultado-valor">{atendidas_total}</div>
-        </div>
-        <div class="resultado-card secundario">
-            <div class="resultado-label">{escape(label_realizado_secundario)}</div>
-            <div class="resultado-valor">{escape(builtins.str(valor_realizado_secundario))}</div>
-        </div>
-        <div class="resultado-card secundario">
-            <div class="resultado-label">{escape(label_apoio_secundario)}</div>
-            <div class="resultado-valor">{escape(builtins.str(valor_apoio_secundario))}</div>
-        </div>
-        <div class="resultado-card secundario">
-            <div class="resultado-label">Votação Média</div>
-            <div class="resultado-valor" style="color:{cor_votacao};">
-                {votacao_ultimo_dia:.2f}%
-            </div>
-        </div>
-        <div class="resultado-card secundario">
-            <div class="resultado-label">Satisfação</div>
-            <div class="resultado-valor" style="color:{cor_satisfacao};">
-                {satisfacao_ultimo_dia:.2f}%
-            </div>
-        </div>
+        {cards_secundarios_html}
     </div>
     """,
     unsafe_allow_html=True,
