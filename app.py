@@ -2321,10 +2321,16 @@ def mostrar_gestao_disponibilidade(dataframe):
         (dataframe["Data"].dt.year == ano_filtro)
         & (dataframe["Data"].dt.month == mes_filtro)
     ].copy()
+    nomes_mes_normalizados = base_mes["Técnico"].map(normalizar_nome)
+    web_mes = base_mes[nomes_mes_normalizados.isin(TECNICOS_SGD_WEB)]["Técnico"].nunique()
+    chat_mes = base_mes[nomes_mes_normalizados.isin(TECNICOS_CHAT)]["Técnico"].nunique()
     estagios_mes = base_mes[
         base_mes["Nível"].astype(str).str.contains("Estágio|Estagio", case=False, na=False)
     ]["Técnico"].nunique()
-    efetivo_mes = max(base_mes["Técnico"].nunique() - estagios_mes, 0)
+    efetivo_mes = max(
+        base_mes["Técnico"].nunique() - estagios_mes - web_mes - chat_mes,
+        0,
+    )
     total_ferias = eventos_mes[eventos_mes["Tipo"] == "Férias"]["Técnico"].nunique()
     total_licencas = eventos_mes[
         eventos_mes["Tipo"].str.contains("Licença", case=False, na=False)
