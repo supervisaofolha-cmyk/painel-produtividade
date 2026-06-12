@@ -56,15 +56,22 @@ ABA_ALIASES = "Aliases"
 COLUNA_DIAS_META = "Dias Meta"
 COLUNA_ABANDONADAS = "Abandonadas"
 TECNICOS_SGD_WEB = [
+    "Isabella Alves Queiroz",
+    "Joao Frutuoso Machado Neto",
+]
+TECNICOS_SGD_WEB_ALIASES = [
     "isabella alves queiroz",
     "joao frutuoso machado neto",
     "joao neto",
 ]
 TECNICOS_CHAT = [
+    "Matheus Farias De Souza",
+]
+TECNICOS_CHAT_ALIASES = [
     "matheus farias de souza",
     "matheus",
 ]
-NIVEL_TECNICO_SGD_WEB = "Atendimento Web"
+NIVEL_TECNICO_SGD_WEB = "Técnico III"
 META_SATISFACAO_SGD_WEB = 96
 META_VOTACAO_SGD_WEB = 41
 CABECALHOS_LISTA_APOIO = [
@@ -2494,14 +2501,14 @@ def normalizar_nome(valor):
 def eh_tecnico_sgd_web(nome):
     return normalizar_nome(nome) in {
         normalizar_nome(tecnico)
-        for tecnico in TECNICOS_SGD_WEB
+        for tecnico in TECNICOS_SGD_WEB_ALIASES
     }
 
 
 def eh_tecnico_chat(nome):
     return normalizar_nome(nome) in {
         normalizar_nome(tecnico)
-        for tecnico in TECNICOS_CHAT
+        for tecnico in TECNICOS_CHAT_ALIASES
     }
 
 
@@ -2989,15 +2996,6 @@ def resolver_tecnico_painel(nome_login, dataframe):
                         return tecnico_resolvido
     except Exception:
         pass
-
-    primeiro_token = nome_normalizado.split()[0] if nome_normalizado else ""
-    candidatos = [
-        tecnico
-        for tecnico in tecnicos_disponiveis
-        if primeiro_token and normalizar_nome(tecnico).startswith(primeiro_token)
-    ]
-    if len(candidatos) == 1:
-        return candidatos[0]
 
     return builtins.str(nome_login).strip().lower()
 
@@ -3867,6 +3865,12 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
     col_satisfacao = coluna(colunas, "Satisfação")
     col_votacao = coluna(colunas, "Votação")
     linhas_criadas = garantir_linhas_da_data(ws, colunas, data_referencia)
+    linhas_criadas += garantir_linhas_tecnicos_sgd_web_periodo(
+        ws,
+        colunas,
+        data_inicial,
+        data_referencia,
+    )
     tecnicos = tecnicos_da_planilha(ws, colunas)
     ws_aliases = garantir_aba_aliases(
         wb,
