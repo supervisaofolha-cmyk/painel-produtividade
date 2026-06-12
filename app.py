@@ -6225,12 +6225,12 @@ if modo_gestao and visao_gestao == "Visão Geral":
             use_container_width=True,
             config={"displayModeBar": False},
         )
-    with col_alertas:
-        st.markdown("#### Alertas do mês")
+with col_alertas:
+        st.markdown("#### Alertas do mes")
         st.markdown('<div class="gestao-alertas-streamlit">', unsafe_allow_html=True)
         for chave_alerta, _cor_alerta, icone_alerta, texto_alerta in alertas:
             if st.button(
-                f"{icone_alerta}  {texto_alerta}    ›",
+                f"{icone_alerta}  {texto_alerta}    >",
                 key=f"botao_alerta_{chave_alerta}",
                 use_container_width=True,
             ):
@@ -6243,18 +6243,63 @@ if modo_gestao and visao_gestao == "Visão Geral":
         alerta_aberto = st.session_state.get("gestao_alerta_aberto")
         if alerta_aberto in detalhes_alerta:
             st.markdown('<div class="gestao-alerta-detalhe">', unsafe_allow_html=True)
-            st.markdown(f"**{titulos_alerta[alerta_aberto]}**")
+            titulo_alerta = (
+                builtins.str(titulos_alerta[alerta_aberto])
+                .replace("Técnicos", "Tecnicos")
+                .replace("atenção", "atencao")
+                .replace("Férias", "Ferias")
+                .replace("próximos", "proximos")
+            )
+            st.markdown(f"**{titulo_alerta}**")
             detalhe_df = detalhes_alerta[alerta_aberto]
             if detalhe_df.empty:
+                mensagem_vazia = (
+                    builtins.str(mensagem_alerta_vazio[alerta_aberto])
+                    .replace("técnico", "tecnico")
+                    .replace("atenção", "atencao")
+                    .replace("férias", "ferias")
+                    .replace("próximos", "proximos")
+                )
                 st.markdown(
-                    f'<p class="gestao-alerta-vazio">{mensagem_alerta_vazio[alerta_aberto]}</p>',
+                    f'<p class="gestao-alerta-vazio">{mensagem_vazia}</p>',
                     unsafe_allow_html=True,
                 )
             else:
-                st.dataframe(
-                    detalhe_df,
-                    use_container_width=True,
-                    hide_index=True,
+                itens_html = []
+                if alerta_aberto in {"critico", "atencao"}:
+                    for _, linha in detalhe_df.head(12).iterrows():
+                        tecnico_alerta = escape(builtins.str(linha.iloc[0] or "").title())
+                        nivel_alerta = escape(builtins.str(linha.iloc[1] or "").strip())
+                        itens_html.append(
+                            f'<div class="gestao-alerta-item"><strong>{tecnico_alerta}</strong><span>{nivel_alerta}</span></div>'
+                        )
+                elif alerta_aberto == "ferias":
+                    for _, linha in detalhe_df.head(12).iterrows():
+                        tecnico_alerta = escape(builtins.str(linha.iloc[0] or "").title())
+                        periodo_alerta = escape(
+                            f"{builtins.str(linha.iloc[1] or '').strip()} a {builtins.str(linha.iloc[2] or '').strip()}"
+                        )
+                        itens_html.append(
+                            f'<div class="gestao-alerta-item"><strong>{tecnico_alerta}</strong><span>{periodo_alerta}</span></div>'
+                        )
+                else:
+                    for _, linha in detalhe_df.head(8).iterrows():
+                        tecnico_alerta = escape(builtins.str(linha.iloc[1] or "").title())
+                        descricao_alerta = escape(
+                            " | ".join(
+                                [
+                                    builtins.str(linha.iloc[2] or "").strip(),
+                                    builtins.str(linha.iloc[3] or "").strip(),
+                                    builtins.str(linha.iloc[4] or "Sem responsavel").strip(),
+                                ]
+                            )
+                        )
+                        itens_html.append(
+                            f'<div class="gestao-alerta-item"><strong>{tecnico_alerta}</strong><span>{descricao_alerta}</span></div>'
+                        )
+                st.markdown(
+                    f'<div class="gestao-alerta-lista">{"".join(itens_html)}</div>',
+                    unsafe_allow_html=True,
                 )
             st.markdown("</div>", unsafe_allow_html=True)
 
