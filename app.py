@@ -5841,7 +5841,7 @@ if modo_gestao and visao_gestao == "Atualizações":
                     st.cache_data.clear()
                     st.rerun()
 
-if not modo_gestao:
+if not modo_gestao and not (tecnico_web or tecnico_chat):
     st.sidebar.success(f"Bem-vindo(a), {tecnico.title()}")
 
 if modo_gestao and visao_gestao == "Atualizações":
@@ -6573,7 +6573,14 @@ cor_desvio = "#16A34A" if desvio_total >= 0 else "#DC2626"
 cor_progresso = "#16A34A" if progresso_meta >= 100 else COR_LARANJA
 cor_classificacao = CORES_STATUS.get(classificacao, "#6B7280")
 nome_exibicao = escape(tecnico.title())
-nivel_exibicao = escape(builtins.str(nivel_tecnico or "Nível não informado"))
+nivel_base_exibicao = builtins.str(nivel_tecnico or "Nível não informado")
+nivel_exibicao = escape(
+    f"{nivel_base_exibicao} • WEB"
+    if tecnico_web
+    else f"{nivel_base_exibicao} • CHAT"
+    if tecnico_chat
+    else nivel_base_exibicao
+)
 classificacao_exibicao = escape(builtins.str(classificacao))
 sinal_desvio = "+" if desvio_total > 0 else ""
 cards_secundarios_html = "".join(
@@ -6588,50 +6595,89 @@ cards_secundarios_html = "".join(
     for rotulo, valor, cor in cards_secundarios
 )
 
-st.markdown(
-    f"""
-    <div class="resultado-cabecalho">
-        <div class="resultado-identidade">
-            <div class="resultado-nome">{nome_exibicao}</div>
-            <div class="resultado-nivel">{nivel_exibicao}</div>
-        </div>
-        <div class="resultado-status" style="background:{cor_classificacao};">
-            {classificacao_exibicao}
-        </div>
-    </div>
-    <div class="resultado-grid-principal">
-        <div class="resultado-card destaque">
-            <div class="resultado-label">Realizado</div>
-            <div class="resultado-valor">{realizado_total}</div>
-        </div>
-        <div class="resultado-card destaque">
-            <div class="resultado-label">Esperado</div>
-            <div class="resultado-valor">{esperado_total}</div>
-        </div>
-        <div class="resultado-card destaque">
-            <div class="resultado-label">Desvio</div>
-            <div class="resultado-valor" style="color:{cor_desvio};">
-                {sinal_desvio}{desvio_total}
+if tecnico_web or tecnico_chat:
+    cor_canal = "#7C3AED" if tecnico_web else "#DB2777"
+    rotulo_realizado = "SSC Realizado" if tecnico_web else "Chats Realizados"
+    st.markdown(
+        f"""
+        <div class="resultado-cabecalho">
+            <div class="resultado-identidade">
+                <div class="resultado-nome">{nome_exibicao}</div>
+                <div class="resultado-nivel">{nivel_exibicao}</div>
+            </div>
+            <div class="resultado-status" style="background:{cor_canal};">
+                {"WEB" if tecnico_web else "CHAT"}
             </div>
         </div>
-    </div>
-    <div class="resultado-progresso-bloco">
-        <div class="resultado-progresso-texto">
-            <span>Progresso da meta mensal</span>
-            <strong>{progresso_meta:.0f}% da meta</strong>
-        </div>
-        <div class="resultado-progresso-trilho">
-            <div class="resultado-progresso-barra"
-                 style="width:{largura_progresso:.2f}%;background:{cor_progresso};">
+        <div class="resultado-grid-principal">
+            <div class="resultado-card destaque">
+                <div class="resultado-label">{rotulo_realizado}</div>
+                <div class="resultado-valor">{realizado_total}</div>
+            </div>
+            <div class="resultado-card destaque">
+                <div class="resultado-label">Votação Média</div>
+                <div class="resultado-valor" style="color:{cor_votacao};">
+                    {votacao_ultimo_dia:.2f}%
+                </div>
+            </div>
+            <div class="resultado-card destaque">
+                <div class="resultado-label">Satisfação</div>
+                <div class="resultado-valor" style="color:{cor_satisfacao};">
+                    {satisfacao_ultimo_dia:.2f}%
+                </div>
             </div>
         </div>
-    </div>
-    <div class="resultado-grid-secundario">
-        {cards_secundarios_html}
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+        <div class="resultado-grid-secundario">
+            {cards_secundarios_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+else:
+    st.markdown(
+        f"""
+        <div class="resultado-cabecalho">
+            <div class="resultado-identidade">
+                <div class="resultado-nome">{nome_exibicao}</div>
+                <div class="resultado-nivel">{nivel_exibicao}</div>
+            </div>
+            <div class="resultado-status" style="background:{cor_classificacao};">
+                {classificacao_exibicao}
+            </div>
+        </div>
+        <div class="resultado-grid-principal">
+            <div class="resultado-card destaque">
+                <div class="resultado-label">Realizado</div>
+                <div class="resultado-valor">{realizado_total}</div>
+            </div>
+            <div class="resultado-card destaque">
+                <div class="resultado-label">Esperado</div>
+                <div class="resultado-valor">{esperado_total}</div>
+            </div>
+            <div class="resultado-card destaque">
+                <div class="resultado-label">Desvio</div>
+                <div class="resultado-valor" style="color:{cor_desvio};">
+                    {sinal_desvio}{desvio_total}
+                </div>
+            </div>
+        </div>
+        <div class="resultado-progresso-bloco">
+            <div class="resultado-progresso-texto">
+                <span>Progresso da meta mensal</span>
+                <strong>{progresso_meta:.0f}% da meta</strong>
+            </div>
+            <div class="resultado-progresso-trilho">
+                <div class="resultado-progresso-barra"
+                     style="width:{largura_progresso:.2f}%;background:{cor_progresso};">
+                </div>
+            </div>
+        </div>
+        <div class="resultado-grid-secundario">
+            {cards_secundarios_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 if not modo_gestao:
     percentual_absorcao = percentual_absorcao_tecnico(
