@@ -2683,11 +2683,11 @@ def mostrar_gestao_disponibilidade(dataframe):
     ausencias_mes = ausencias_mes.sort_values(["Início", "Técnico"])
 
     icone_efetivo = """
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="9" cy="8" r="3.2"></circle>
-        <path d="M3.8 19v-.8a3.6 3.6 0 0 1 3.6-3.6h3.2a3.6 3.6 0 0 1 3.6 3.6v.8"></path>
-        <circle cx="17" cy="9" r="2.5"></circle>
-        <path d="M14.8 18.8c.4-1.8 1.5-2.9 3.2-2.9h1.1a3 3 0 0 1 3 3"></path>
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16.5 19v-1a3.5 3.5 0 0 0-3.5-3.5H7A3.5 3.5 0 0 0 3.5 18v1"></path>
+        <circle cx="10" cy="8" r="3"></circle>
+        <path d="M20.5 19v-.7a3 3 0 0 0-2.4-2.95"></path>
+        <path d="M15.8 5.3a3 3 0 0 1 0 5.4"></path>
     </svg>
     """
     icone_trabalhando = """
@@ -2721,7 +2721,7 @@ def mostrar_gestao_disponibilidade(dataframe):
                     <div class="disp-minimal-card-label">Efetivo no mês</div>
                     <div class="disp-minimal-card-value">{efetivo_mes}</div>
                 </div>
-                <div class="disp-minimal-card-icone">{icone_efetivo}</div>
+                <div class="disp-minimal-card-icone" style="color:#2563EB;">{icone_efetivo}</div>
             </div>
             <div class="disp-minimal-card">
                 <div class="disp-minimal-card-conteudo">
