@@ -6590,8 +6590,12 @@ ro_total = int(dados_mes_atual["RO"].sum())
 chat_total = int(dados_mes_atual["CHAT"].sum()) if "CHAT" in dados_mes_atual.columns else 0
 tecnico_web = eh_tecnico_sgd_web(tecnico)
 tecnico_chat = eh_tecnico_chat(tecnico)
-cor_votacao = "#DC2626" if votacao_ultimo_dia < 21 else "#111827"
-cor_satisfacao = "#DC2626" if satisfacao_ultimo_dia < 98 else "#111827"
+meta_votacao_visual = META_VOTACAO_SGD_WEB if tecnico_web else 21
+meta_satisfacao_visual = META_SATISFACAO_SGD_WEB if tecnico_web else 98
+cor_votacao = "#DC2626" if votacao_ultimo_dia < meta_votacao_visual else "#111827"
+cor_satisfacao = (
+    "#DC2626" if satisfacao_ultimo_dia < meta_satisfacao_visual else "#111827"
+)
 
 if tecnico_web:
     realizado_total = ssc_total
