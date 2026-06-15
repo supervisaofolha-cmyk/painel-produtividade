@@ -6770,8 +6770,6 @@ if tecnico_web:
             == "web",
             axis=1,
         )
-        & (df["Data"].dt.month == mes_atual)
-        & (df["Data"].dt.year == ano_atual)
     ].copy()
     ssc_total_web = int(base_web_mes_cards["SSC"].sum())
     try:
