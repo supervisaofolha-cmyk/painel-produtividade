@@ -6109,6 +6109,16 @@ dados_mes_atual = dados_tecnico[
     & (dados_tecnico["Data"].dt.year == ano_atual)
 ]
 dados_mes_atual_base = dados_mes_atual.copy()
+dados_mes_web = dados_mes_atual[
+    dados_mes_atual["Data"].dt.date.map(
+        lambda data_item: modalidade_tecnico_em_data(tecnico, data_item) == "web"
+    )
+].copy()
+dados_mes_fone = dados_mes_atual[
+    dados_mes_atual["Data"].dt.date.map(
+        lambda data_item: modalidade_tecnico_em_data(tecnico, data_item) == "fone"
+    )
+].copy()
 
 hoje_referencia_modalidade = datetime.now(FUSO_HORARIO_APP).date()
 if mes_atual == hoje_referencia_modalidade.month and ano_atual == hoje_referencia_modalidade.year:
@@ -6122,7 +6132,8 @@ else:
     )
 
 modalidade_atual_tecnico = modalidade_tecnico_em_data(tecnico, data_referencia_modalidade)
-if modalidade_atual_tecnico != "fone":
+tecnico_hibrido_web = not dados_mes_web.empty and not dados_mes_fone.empty
+if modalidade_atual_tecnico != "fone" and not tecnico_hibrido_web:
     dados_mes_atual = dados_mes_atual[
         dados_mes_atual["Data"].dt.date.map(
             lambda data_item: modalidade_tecnico_em_data(tecnico, data_item)
@@ -6132,6 +6143,10 @@ if modalidade_atual_tecnico != "fone":
     if dados_mes_atual.empty:
         dados_mes_atual = dados_mes_atual_base.copy()
         modalidade_atual_tecnico = "fone"
+
+if tecnico_hibrido_web and not dados_mes_fone.empty:
+    dados_mes_atual = dados_mes_fone.copy()
+    modalidade_atual_tecnico = "fone"
 
 ultima_data_mes = dados_mes_atual["Data"].max()
 ultima_data_produtividade = ultima_data_com_valor(dados_mes_atual, "Realizado")
