@@ -5146,6 +5146,128 @@ st.markdown(
     gap:10px;
     margin-top:12px;
 }}
+.resultado-toolbar {{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    margin:4px 0 18px;
+}}
+.resultado-toolbar-texto h2 {{
+    margin:0;
+    color:#111827;
+    font-size:18px;
+    font-weight:700;
+}}
+.resultado-toolbar-texto p {{
+    margin:4px 0 0;
+    color:#6B7280;
+    font-size:12px;
+}}
+.resultado-badges {{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:10px;
+}}
+.resultado-badge {{
+    border:1px solid #D6DAE1;
+    background:#FFFFFF;
+    color:#334155;
+    border-radius:999px;
+    padding:6px 10px;
+    font-size:12px;
+    font-weight:600;
+}}
+.resultado-badge.status {{
+    border-color:transparent;
+    color:#FFFFFF;
+}}
+.resultado-secao {{
+    margin-top:14px;
+}}
+.resultado-secao-titulo {{
+    color:#111827;
+    font-size:15px;
+    font-weight:700;
+    margin:0 0 10px;
+}}
+.resultado-layout {{
+    display:grid;
+    grid-template-columns:minmax(0,2.2fr) minmax(280px,0.9fr);
+    gap:16px;
+    align-items:start;
+}}
+.resultado-grid-performance {{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:12px;
+}}
+.resultado-grid-qualidade {{
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:12px;
+    margin-top:12px;
+}}
+.resultado-contexto {{
+    background:#FFFFFF;
+    border:1px solid #E5E7EB;
+    border-radius:12px;
+    padding:16px;
+}}
+.resultado-contexto h4 {{
+    margin:0 0 12px;
+    color:#111827;
+    font-size:15px;
+    font-weight:700;
+}}
+.resultado-contexto-item + .resultado-contexto-item {{
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px solid #EEF2F7;
+}}
+.resultado-contexto-label {{
+    color:#6B7280;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.02em;
+}}
+.resultado-contexto-valor {{
+    color:#111827;
+    font-size:14px;
+    font-weight:600;
+    margin-top:4px;
+    line-height:1.4;
+}}
+.resultado-card.gestao .resultado-label {{
+    font-size:12px;
+}}
+.resultado-card.gestao .resultado-valor {{
+    font-size:18px;
+    margin-top:8px;
+}}
+.resultado-card.gestao.destaque .resultado-valor {{
+    font-size:30px;
+}}
+@media (max-width: 1100px) {{
+    .resultado-layout {{
+        grid-template-columns:1fr;
+    }}
+    .resultado-grid-performance {{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }}
+    .resultado-grid-qualidade {{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }}
+}}
+@media (max-width: 700px) {{
+    .resultado-grid-performance,
+    .resultado-grid-qualidade {{
+        grid-template-columns:1fr;
+    }}
+}}
 .produtividade-resumo {{
     display:flex;
     align-items:center;
@@ -6879,6 +7001,78 @@ cor_votacao = "#DC2626" if votacao_ultimo_dia < meta_votacao_visual else "#11182
 cor_satisfacao = (
     "#DC2626" if satisfacao_ultimo_dia < meta_satisfacao_visual else "#111827"
 )
+percentual_absorcao = percentual_absorcao_tecnico(
+    df,
+    ano_atual,
+    mes_atual,
+    nivel_tecnico,
+)
+dias_base_calendario = float(dias_uteis_para_meta(ano_atual, mes_atual))
+dias_meta_valor = dias_base_calendario
+dias_ferias_programadas = dias_uteis_ferias_no_mes(
+    tecnico,
+    ano_atual,
+    mes_atual,
+)
+dias_licenca_programados = dias_uteis_licenca_no_mes(
+    tecnico,
+    ano_atual,
+    mes_atual,
+)
+abatimento_ausencias_programadas = abatimento_ausencias_no_mes(
+    tecnico,
+    ano_atual,
+    mes_atual,
+)
+dias_meta_programados = max(
+    (
+        dias_meta_valor
+        - dias_ferias_programadas
+        - dias_licenca_programados
+        - abatimento_ausencias_programadas
+    ),
+    0,
+)
+dias_meta_valor = dias_meta_programados
+fonte_dias_meta = "Calendário do mês"
+dias_segunda_sexta = sum(
+    1
+    for dia in range(
+        1,
+        calendar.monthrange(ano_atual, mes_atual)[1] + 1,
+    )
+    if date(ano_atual, mes_atual, dia).weekday() < 5
+)
+feriados_em_dias_uteis = int(dias_segunda_sexta - dias_base_calendario)
+detalhe_dias_meta = (
+    f"{dias_segunda_sexta} dias de segunda a sexta"
+    f" - {feriados_em_dias_uteis} feriado(s)"
+    f" - {dias_ferias_programadas} dia(s) de férias"
+    f" - {dias_licenca_programados} dia(s) de licença"
+    f" - {abatimento_ausencias_programadas:g} dia(s) de ausência"
+    f" = {dias_meta_valor:g} dias."
+)
+if COLUNA_DIAS_META in dados_tecnico.columns:
+    dias_meta_salvos = (
+        dados_tecnico[
+            (dados_tecnico["Data"].dt.month == mes_atual)
+            & (dados_tecnico["Data"].dt.year == ano_atual)
+        ][COLUNA_DIAS_META]
+        .dropna()
+    )
+    if not dias_meta_salvos.empty:
+        dias_meta_valor = min(
+            float(dias_meta_salvos.iloc[-1]),
+            dias_meta_programados,
+        )
+        fonte_dias_meta = "Planilha"
+        detalhe_dias_meta = "Valor atualizado pela gestão."
+if dias_meta_valor.is_integer():
+    dias_meta_exibicao = builtins.str(int(dias_meta_valor))
+else:
+    dias_meta_exibicao = f"{dias_meta_valor:.2f}".replace(".", ",")
+ferias_ativa = ferias_ativa_tecnico(tecnico)
+licenca_ativa = licenca_ativa_tecnico(tecnico)
 
 if tecnico_web:
     realizado_total = ssc_total
