@@ -5679,6 +5679,111 @@ st.markdown(
     gap:12px;
     margin-bottom:12px;
 }}
+.disp-minimal-filtro {{
+    max-width:320px;
+    margin:8px 0 18px;
+}}
+.disp-minimal-topo {{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:12px;
+    margin:8px 0 18px;
+}}
+.disp-minimal-card {{
+    background:#FFFFFF;
+    border:1px solid #E5E7EB;
+    border-radius:12px;
+    padding:16px 18px;
+    box-shadow:0 8px 24px rgba(15, 23, 42, 0.04);
+}}
+.disp-minimal-card-label {{
+    color:#6B7280;
+    font-size:12px;
+    line-height:1.3;
+}}
+.disp-minimal-card-value {{
+    color:#111827;
+    font-size:32px;
+    font-weight:700;
+    line-height:1.1;
+    margin-top:8px;
+}}
+.disp-minimal-layout {{
+    display:grid;
+    grid-template-columns:minmax(0,1.15fr) minmax(280px,0.85fr);
+    gap:16px;
+    margin-bottom:16px;
+}}
+.disp-minimal-panel {{
+    background:#FFFFFF;
+    border:1px solid #E5E7EB;
+    border-radius:14px;
+    padding:18px;
+    box-shadow:0 8px 24px rgba(15, 23, 42, 0.04);
+}}
+.disp-minimal-panel h4 {{
+    margin:0 0 14px;
+    color:#111827;
+    font-size:17px;
+    font-weight:700;
+}}
+.disp-minimal-grupo + .disp-minimal-grupo {{
+    margin-top:16px;
+    padding-top:16px;
+    border-top:1px solid #EEF2F7;
+}}
+.disp-minimal-grupo-titulo {{
+    color:#6B7280;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+    margin-bottom:8px;
+}}
+.disp-minimal-item {{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    padding:8px 0;
+}}
+.disp-minimal-dot {{
+    width:9px;
+    height:9px;
+    border-radius:999px;
+    margin-top:6px;
+    flex:0 0 9px;
+}}
+.disp-minimal-item strong {{
+    display:block;
+    color:#111827;
+    font-size:14px;
+    line-height:1.3;
+}}
+.disp-minimal-item span {{
+    display:block;
+    color:#6B7280;
+    font-size:12px;
+    line-height:1.35;
+    margin-top:2px;
+}}
+.disp-minimal-vazio {{
+    color:#94A3B8;
+    font-size:13px;
+    padding:4px 0 2px;
+}}
+.disp-minimal-tabela {{
+    background:#FFFFFF;
+    border:1px solid #E5E7EB;
+    border-radius:14px;
+    padding:18px;
+    box-shadow:0 8px 24px rgba(15, 23, 42, 0.04);
+}}
+.disp-minimal-tabela h4 {{
+    margin:0 0 14px;
+    color:#111827;
+    font-size:17px;
+    font-weight:700;
+}}
 .login-marca {{
     position:fixed;
     top:0;
@@ -5796,6 +5901,12 @@ st.markdown(
     .disp-resumo {{
         grid-template-columns:repeat(2,minmax(0,1fr));
     }}
+    .disp-minimal-topo {{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }}
+    .disp-minimal-layout {{
+        grid-template-columns:1fr;
+    }}
     .disp-dia {{
         min-height:82px;
         padding:3px;
@@ -5816,7 +5927,8 @@ st.markdown(
     .gestao-status-grid,
     .gestao-resumo-grid,
     .gestao-resumo-faixa,
-    .disp-resumo-novo {{
+    .disp-resumo-novo,
+    .disp-minimal-topo {{
         grid-template-columns:1fr;
     }}
 }}
