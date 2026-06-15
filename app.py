@@ -7141,7 +7141,153 @@ cards_secundarios_html = "".join(
     for rotulo, valor, cor in cards_secundarios
 )
 
-if tecnico_web or tecnico_chat:
+if modo_gestao:
+    canal_exibicao = "WEB" if tecnico_web else "CHAT" if tecnico_chat else "Fone + WEB" if tecnico_hibrido_web else "Fone"
+    status_atual_texto = "Ativo"
+    status_atual_cor = "#16A34A"
+    if ferias_ativa:
+        status_atual_texto = "Férias"
+        status_atual_cor = "#2563EB"
+    elif licenca_ativa:
+        status_atual_texto = builtins.str(licenca_ativa[2])
+        status_atual_cor = "#7C3AED"
+
+    observacoes_contexto = []
+    if tecnico_hibrido_web:
+        observacoes_contexto.append("Atuação híbrida no período: Fone e WEB.")
+    if tecnico_web:
+        observacoes_contexto.append("Indicadores baseados no relatório WEB do SGD.")
+    elif tecnico_chat:
+        observacoes_contexto.append("Indicadores baseados na operação de chat.")
+    else:
+        observacoes_contexto.append("Indicadores baseados na operação de fone.")
+
+    contexto_ferias = (
+        f"{ferias_ativa[0].strftime('%d/%m/%Y')} a {ferias_ativa[1].strftime('%d/%m/%Y')}"
+        if ferias_ativa
+        else "Sem férias ativas neste momento."
+    )
+    contexto_licenca = (
+        f"{licenca_ativa[2]}: {licenca_ativa[0].strftime('%d/%m/%Y')} a {licenca_ativa[1].strftime('%d/%m/%Y')}"
+        if licenca_ativa
+        else "Sem licença ativa neste momento."
+    )
+
+    if tecnico_web:
+        performance_cards = [
+            ("SSC Realizado", builtins.str(realizado_total), None),
+            ("Total SSC WEB", builtins.str(ssc_total_web or realizado_total), None),
+            ("Votação Média", f"{votacao_ultimo_dia:.2f}%", cor_votacao),
+            ("Satisfação", f"{satisfacao_ultimo_dia:.2f}%", cor_satisfacao),
+        ]
+        qualidade_cards = [
+            ("Canal", "WEB", None),
+            ("Classificação", builtins.str(classificacao), cor_classificacao),
+            ("Percentual de Absorção", f"{percentual_absorcao:.2f}%", None),
+            ("Dias para Meta", dias_meta_exibicao, None),
+            ("RO Total", builtins.str(ro_total), None),
+        ]
+    elif tecnico_chat:
+        performance_cards = [
+            ("Chats Realizados", builtins.str(realizado_total), None),
+            ("Esperado", builtins.str(esperado_total), None),
+            ("Desvio", f"{sinal_desvio}{desvio_total}", cor_desvio),
+            ("Classificação", builtins.str(classificacao), cor_classificacao),
+        ]
+        qualidade_cards = [
+            ("Canal", "CHAT", None),
+            ("Chats", builtins.str(chat_total), None),
+            ("Votação Média", f"{votacao_ultimo_dia:.2f}%", cor_votacao),
+            ("Satisfação", f"{satisfacao_ultimo_dia:.2f}%", cor_satisfacao),
+            ("Percentual de Absorção", f"{percentual_absorcao:.2f}%", None),
+        ]
+    else:
+        performance_cards = [
+            ("Realizado Total", builtins.str(realizado_total), None),
+            ("Esperado", builtins.str(esperado_total), None),
+            ("Desvio", f"{sinal_desvio}{desvio_total}", cor_desvio),
+            ("Classificação", builtins.str(classificacao), cor_classificacao),
+        ]
+        qualidade_cards = [
+            ("SSC Total", builtins.str(ssc_total), None),
+            ("RO Total", builtins.str(ro_total), None),
+            ("Votação Média", f"{votacao_ultimo_dia:.2f}%", cor_votacao),
+            ("Satisfação", f"{satisfacao_ultimo_dia:.2f}%", cor_satisfacao),
+            ("Percentual de Absorção", f"{percentual_absorcao:.2f}%", None),
+        ]
+
+    performance_cards_html = "".join(
+        f"""
+        <div class="resultado-card destaque gestao">
+            <div class="resultado-label">{escape(rotulo)}</div>
+            <div class="resultado-valor"{f' style="color:{cor};"' if cor else ""}>{escape(valor)}</div>
+        </div>
+        """
+        for rotulo, valor, cor in performance_cards
+    )
+    qualidade_cards_html = "".join(
+        f"""
+        <div class="resultado-card gestao">
+            <div class="resultado-label">{escape(rotulo)}</div>
+            <div class="resultado-valor"{f' style="color:{cor};"' if cor else ""}>{escape(valor)}</div>
+        </div>
+        """
+        for rotulo, valor, cor in qualidade_cards
+    )
+
+    st.markdown(
+        f"""
+        <div class="resultado-toolbar">
+            <div class="resultado-toolbar-texto">
+                <h2>Resultados Individuais</h2>
+                <p>Visão consolidada do técnico selecionado no período atual.</p>
+                <div class="resultado-badges">
+                    <span class="resultado-badge">{nome_exibicao}</span>
+                    <span class="resultado-badge">{escape(builtins.str(nivel_tecnico or 'Nível não informado'))}</span>
+                    <span class="resultado-badge">Canal: {escape(canal_exibicao)}</span>
+                    <span class="resultado-badge status" style="background:{status_atual_cor};">{escape(status_atual_texto)}</span>
+                </div>
+            </div>
+        </div>
+        <div class="resultado-layout">
+            <div>
+                <div class="resultado-secao">
+                    <div class="resultado-secao-titulo">Performance</div>
+                    <div class="resultado-grid-performance">{performance_cards_html}</div>
+                </div>
+                <div class="resultado-secao">
+                    <div class="resultado-secao-titulo">Qualidade e Capacidade</div>
+                    <div class="resultado-grid-qualidade">{qualidade_cards_html}</div>
+                </div>
+            </div>
+            <div class="resultado-contexto">
+                <h4>Contexto do Técnico</h4>
+                <div class="resultado-contexto-item">
+                    <div class="resultado-contexto-label">Férias / Ausências</div>
+                    <div class="resultado-contexto-valor">{escape(contexto_ferias)}</div>
+                </div>
+                <div class="resultado-contexto-item">
+                    <div class="resultado-contexto-label">Licenças</div>
+                    <div class="resultado-contexto-valor">{escape(contexto_licenca)}</div>
+                </div>
+                <div class="resultado-contexto-item">
+                    <div class="resultado-contexto-label">Canal de Atuação</div>
+                    <div class="resultado-contexto-valor">{escape(canal_exibicao)}</div>
+                </div>
+                <div class="resultado-contexto-item">
+                    <div class="resultado-contexto-label">Dias para Meta</div>
+                    <div class="resultado-contexto-valor">{escape(dias_meta_exibicao)} dia(s)</div>
+                </div>
+                <div class="resultado-contexto-item">
+                    <div class="resultado-contexto-label">Observações</div>
+                    <div class="resultado-contexto-valor">{escape(' '.join(observacoes_contexto))}</div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+elif tecnico_web or tecnico_chat:
     cor_canal = "#7C3AED" if tecnico_web else "#DB2777"
     rotulo_realizado = "SSC Realizado" if tecnico_web else "Chats Realizados"
     st.markdown(
