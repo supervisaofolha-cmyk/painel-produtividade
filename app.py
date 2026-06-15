@@ -282,8 +282,11 @@ PROGRAMACAO_AUSENCIAS = [
     ("Leandro de Souza Silva", date(2026, 6, 9), "Atestado", None),
     ("Maria Eduarda Sousa Costa", date(2026, 6, 9), "Atestado", None),
     ("Maria Eduarda Sousa Costa", date(2026, 6, 10), "Atestado", None),
+    ("Leandro de Souza Silva", date(2026, 6, 10), "Falta/Atraso", 3 * 60 + 30),
     ("Sarah Steffanie de Lima Borges", date(2026, 6, 10), "Atestado", 4 * 60 + 30),
     ("Daniel Gomes da Silva", date(2026, 6, 10), "Falta/Atraso", 3 * 60),
+    ("Milena da Silva Sales", date(2026, 6, 15), "Atestado", None),
+    ("Alisson de Freitas Silva", date(2026, 6, 15), "Internet", None),
 ]
 
 
@@ -1813,6 +1816,7 @@ CORES_DISPONIBILIDADE = {
     "Atestado": "#DC2626",
     "Falta/Atraso": "#DC2626",
     "Energia": "#F97316",
+    "Internet": "#F97316",
 }
 
 
