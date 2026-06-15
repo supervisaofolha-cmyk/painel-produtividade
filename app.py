@@ -6746,10 +6746,14 @@ if tecnico_web:
     classificacao = status_por_desvio(desvio_total)
     cards_secundarios = [
         ("Canal", "WEB", None),
-        ("Total de SSC WEB", builtins.str(ssc_total_web), None),
         ("Votação Média", f"{votacao_ultimo_dia:.2f}%", cor_votacao),
         ("Satisfação", f"{satisfacao_ultimo_dia:.2f}%", cor_satisfacao),
     ]
+    if ssc_total_web != realizado_total:
+        cards_secundarios.insert(
+            1,
+            ("Total de SSC WEB", builtins.str(ssc_total_web), None),
+        )
 elif tecnico_chat:
     realizado_total = chat_total
     desvio_total = realizado_total - esperado_total
