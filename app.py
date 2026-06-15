@@ -6921,7 +6921,8 @@ if modo_gestao and visao_gestao == "Resultados Individuais":
     )
 
 st.divider()
-st.subheader("Resultados Individuais")
+if not modo_gestao:
+    st.subheader("Resultados Individuais")
 
 nivel_mode = dados_mes_atual["Nível"].dropna().mode()
 nivel_tecnico = None if nivel_mode.empty else nivel_mode.iloc[0]
