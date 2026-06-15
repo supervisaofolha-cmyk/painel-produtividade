@@ -286,6 +286,10 @@ PROGRAMACAO_AUSENCIAS = [
     ("Sarah Steffanie de Lima Borges", date(2026, 6, 10), "Atestado", 4 * 60 + 30),
     ("Daniel Gomes da Silva", date(2026, 6, 10), "Falta/Atraso", 3 * 60),
     ("Milena da Silva Sales", date(2026, 6, 15), "Atestado", None),
+    ("Milena da Silva Sales", date(2026, 6, 16), "Atestado", None),
+    ("Milena da Silva Sales", date(2026, 6, 17), "Atestado", None),
+    ("Milena da Silva Sales", date(2026, 6, 18), "Atestado", None),
+    ("Milena da Silva Sales", date(2026, 6, 19), "Atestado", None),
     ("Alisson de Freitas Silva", date(2026, 6, 15), "Internet", None),
 ]
 
@@ -6590,6 +6594,14 @@ ro_total = int(dados_mes_atual["RO"].sum())
 chat_total = int(dados_mes_atual["CHAT"].sum()) if "CHAT" in dados_mes_atual.columns else 0
 tecnico_web = eh_tecnico_sgd_web(tecnico)
 tecnico_chat = eh_tecnico_chat(tecnico)
+ssc_total_web = 0
+if tecnico_web:
+    base_web_mes_cards = df[
+        df["Técnico"].map(eh_tecnico_sgd_web)
+        & (df["Data"].dt.month == mes_atual)
+        & (df["Data"].dt.year == ano_atual)
+    ].copy()
+    ssc_total_web = int(base_web_mes_cards["SSC"].sum())
 meta_votacao_visual = META_VOTACAO_SGD_WEB if tecnico_web else 21
 meta_satisfacao_visual = META_SATISFACAO_SGD_WEB if tecnico_web else 98
 cor_votacao = "#DC2626" if votacao_ultimo_dia < meta_votacao_visual else "#111827"
@@ -6603,7 +6615,7 @@ if tecnico_web:
     classificacao = status_por_desvio(desvio_total)
     cards_secundarios = [
         ("Canal", "WEB", None),
-        ("Total de SSC WEB", builtins.str(ssc_total), None),
+        ("Total de SSC WEB", builtins.str(ssc_total_web), None),
         ("Votação Média", f"{votacao_ultimo_dia:.2f}%", cor_votacao),
         ("Satisfação", f"{satisfacao_ultimo_dia:.2f}%", cor_satisfacao),
     ]
