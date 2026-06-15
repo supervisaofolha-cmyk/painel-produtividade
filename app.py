@@ -2533,6 +2533,276 @@ def mostrar_gestao_disponibilidade(dataframe):
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+def mostrar_gestao_disponibilidade(dataframe):
+    st.divider()
+    st.subheader("Disponibilidade")
+
+    disponibilidade = dataframe_disponibilidade(dataframe)
+    if disponibilidade.empty:
+        st.info("Ainda não há férias, licenças ou ausências cadastradas.")
+        return
+
+    menor_data = disponibilidade["Início"].min()
+    maior_data = disponibilidade["Fim"].max()
+    periodos = []
+    cursor_periodo = date(menor_data.year, menor_data.month, 1)
+    while cursor_periodo <= date(maior_data.year, maior_data.month, 1):
+        periodos.append((cursor_periodo.year, cursor_periodo.month))
+        cursor_periodo = (
+            date(cursor_periodo.year + 1, 1, 1)
+            if cursor_periodo.month == 12
+            else date(cursor_periodo.year, cursor_periodo.month + 1, 1)
+        )
+
+    periodo_atual = (
+        datetime.now(FUSO_HORARIO_APP).year,
+        datetime.now(FUSO_HORARIO_APP).month,
+    )
+    periodo_padrao = periodo_atual if periodo_atual in periodos else periodos[0]
+    opcoes_periodo = {nome_mes_ano(ano, mes): (ano, mes) for ano, mes in periodos}
+    periodo_padrao_label = next(
+        nome for nome, periodo in opcoes_periodo.items() if periodo == periodo_padrao
+    )
+    if st.session_state.get("disponibilidade_mes") not in opcoes_periodo:
+        st.session_state["disponibilidade_mes"] = periodo_padrao_label
+
+    st.markdown('<div class="disp-minimal-filtro">', unsafe_allow_html=True)
+    periodo_label = st.selectbox(
+        "Mês",
+        list(opcoes_periodo),
+        index=list(opcoes_periodo.values()).index(periodo_padrao),
+        key="disponibilidade_mes",
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    ano_filtro, mes_filtro = opcoes_periodo[periodo_label]
+    inicio_periodo = date(ano_filtro, mes_filtro, 1)
+    fim_periodo = date(
+        ano_filtro,
+        mes_filtro,
+        calendar.monthrange(ano_filtro, mes_filtro)[1],
+    )
+
+    eventos_mes = disponibilidade[
+        (disponibilidade["Início"] <= fim_periodo)
+        & (disponibilidade["Fim"] >= inicio_periodo)
+    ].copy()
+    base_mes = dataframe[
+        (dataframe["Data"].dt.year == ano_filtro)
+        & (dataframe["Data"].dt.month == mes_filtro)
+    ].copy()
+    tecnicos_mes = set(base_mes["Técnico"].dropna().tolist())
+    hoje = datetime.now(FUSO_HORARIO_APP).date()
+
+    ferias_hoje = sorted(
+        [
+            (nome, inicio, fim)
+            for nome, inicio, fim in PROGRAMACAO_FERIAS
+            if inicio <= hoje <= fim
+        ],
+        key=lambda item: normalizar_nome(item[0]),
+    )
+    licencas_hoje = sorted(
+        [
+            (nome, inicio, fim, motivo)
+            for nome, inicio, fim, motivo in PROGRAMACAO_LICENCAS
+            if inicio <= hoje <= fim
+        ],
+        key=lambda item: normalizar_nome(item[0]),
+    )
+    ausencias_integral_hoje = sorted(
+        [
+            (nome, tipo)
+            for nome, data_ausencia, tipo, minutos in PROGRAMACAO_AUSENCIAS
+            if data_ausencia == hoje and minutos is None
+        ],
+        key=lambda item: normalizar_nome(item[0]),
+    )
+    ausencias_parciais_hoje = sorted(
+        [
+            (nome, tipo, minutos)
+            for nome, data_ausencia, tipo, minutos in PROGRAMACAO_AUSENCIAS
+            if data_ausencia == hoje and minutos is not None
+        ],
+        key=lambda item: normalizar_nome(item[0]),
+    )
+
+    fora_hoje_normalizados = {
+        normalizar_nome(nome) for nome, _, _ in ferias_hoje
+    } | {
+        normalizar_nome(nome) for nome, _, _, _ in licencas_hoje
+    } | {
+        normalizar_nome(nome) for nome, _ in ausencias_integral_hoje
+    }
+    trabalhando_hoje = max(
+        len({normalizar_nome(nome) for nome in tecnicos_mes} - fora_hoje_normalizados),
+        0,
+    )
+
+    web_mes = base_mes[
+        base_mes.apply(
+            lambda linha: modalidade_tecnico_em_data(
+                linha["Técnico"],
+                linha["Data"],
+            )
+            == "web",
+            axis=1,
+        )
+    ]["Técnico"].nunique()
+    chat_mes = base_mes[
+        base_mes.apply(
+            lambda linha: modalidade_tecnico_em_data(
+                linha["Técnico"],
+                linha["Data"],
+            )
+            == "chat",
+            axis=1,
+        )
+    ]["Técnico"].nunique()
+    estagios_mes = base_mes[
+        base_mes["Nível"].astype(str).str.contains("Estágio|Estagio", case=False, na=False)
+    ]["Técnico"].nunique()
+    efetivo_mes = max(
+        base_mes["Técnico"].nunique() - estagios_mes - web_mes - chat_mes,
+        0,
+    )
+    total_ferias_hoje = len(ferias_hoje)
+    total_ausencias_hoje = (
+        len(licencas_hoje)
+        + len(ausencias_integral_hoje)
+        + len(ausencias_parciais_hoje)
+    )
+
+    ferias_mes = eventos_mes[eventos_mes["Tipo"] == "Férias"].copy()
+    ferias_mes = ferias_mes.sort_values(["Início", "Técnico"])
+    ausencias_mes = disponibilidade[
+        (disponibilidade["Início"] >= inicio_periodo)
+        & (disponibilidade["Início"] <= fim_periodo)
+        & (~disponibilidade["Tipo"].isin(["Férias", "Licença-maternidade"]))
+    ].copy()
+    ausencias_mes = ausencias_mes.sort_values(["Início", "Técnico"])
+
+    st.markdown(
+        f"""
+        <div class="disp-minimal-topo">
+            <div class="disp-minimal-card">
+                <div class="disp-minimal-card-label">Efetivo no mês</div>
+                <div class="disp-minimal-card-value">{efetivo_mes}</div>
+            </div>
+            <div class="disp-minimal-card">
+                <div class="disp-minimal-card-label">Trabalhando hoje</div>
+                <div class="disp-minimal-card-value">{trabalhando_hoje}</div>
+            </div>
+            <div class="disp-minimal-card">
+                <div class="disp-minimal-card-label">Férias</div>
+                <div class="disp-minimal-card-value">{total_ferias_hoje}</div>
+            </div>
+            <div class="disp-minimal-card">
+                <div class="disp-minimal-card-label">Ausências hoje</div>
+                <div class="disp-minimal-card-value">{total_ausencias_hoje}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    def montar_item_disponibilidade(nome, detalhe, cor):
+        return (
+            '<div class="disp-minimal-item">'
+            f'<span class="disp-minimal-dot" style="background:{cor};"></span>'
+            "<div>"
+            f"<strong>{escape(builtins.str(nome).title())}</strong>"
+            f"<span>{escape(builtins.str(detalhe))}</span>"
+            "</div></div>"
+        )
+
+    html_ferias = "".join(
+        montar_item_disponibilidade(
+            nome,
+            f"{inicio.strftime('%d/%m/%Y')} a {fim.strftime('%d/%m/%Y')}",
+            CORES_DISPONIBILIDADE["Férias"],
+        )
+        for nome, inicio, fim in ferias_hoje
+    )
+    html_afastados = "".join(
+        [
+            montar_item_disponibilidade(
+                nome,
+                f"{motivo} • {inicio.strftime('%d/%m/%Y')} a {fim.strftime('%d/%m/%Y')}",
+                CORES_DISPONIBILIDADE["Licença-maternidade"],
+            )
+            for nome, inicio, fim, motivo in licencas_hoje
+        ]
+        + [
+            montar_item_disponibilidade(
+                nome,
+                tipo,
+                CORES_DISPONIBILIDADE.get(builtins.str(tipo), "#2563EB"),
+            )
+            for nome, tipo in ausencias_integral_hoje
+        ]
+    )
+    html_parciais = "".join(
+        montar_item_disponibilidade(
+            nome,
+            f"{tipo} • {int(minutos // 60):02d}:{int(minutos % 60):02d}",
+            CORES_DISPONIBILIDADE.get(builtins.str(tipo), "#F97316"),
+        )
+        for nome, tipo, minutos in ausencias_parciais_hoje
+    )
+    html_programacao = "".join(
+        montar_item_disponibilidade(
+            linha["Técnico"],
+            f'{linha["Início"].strftime("%d/%m/%Y")} a {linha["Fim"].strftime("%d/%m/%Y")}',
+            CORES_DISPONIBILIDADE["Férias"],
+        )
+        for _, linha in ferias_mes.iterrows()
+    )
+
+    st.markdown(
+        f"""
+        <div class="disp-minimal-layout">
+            <div class="disp-minimal-panel">
+                <h4>Quem Está Fora Hoje</h4>
+                <div class="disp-minimal-grupo">
+                    <div class="disp-minimal-grupo-titulo">Férias</div>
+                    {html_ferias or '<div class="disp-minimal-vazio">Ninguém em férias hoje.</div>'}
+                </div>
+                <div class="disp-minimal-grupo">
+                    <div class="disp-minimal-grupo-titulo">Afastados</div>
+                    {html_afastados or '<div class="disp-minimal-vazio">Nenhum afastamento integral hoje.</div>'}
+                </div>
+                <div class="disp-minimal-grupo">
+                    <div class="disp-minimal-grupo-titulo">Ausências parciais</div>
+                    {html_parciais or '<div class="disp-minimal-vazio">Nenhuma ausência parcial hoje.</div>'}
+                </div>
+            </div>
+            <div class="disp-minimal-panel">
+                <h4>Programação de Férias</h4>
+                {html_programacao or '<div class="disp-minimal-vazio">Nenhuma programação de férias neste mês.</div>'}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="disp-minimal-tabela">', unsafe_allow_html=True)
+    st.markdown("<h4>Ausências Lançadas</h4>", unsafe_allow_html=True)
+    if ausencias_mes.empty:
+        st.caption("Nenhuma ausência lançada para o mês selecionado.")
+    else:
+        ausencias_tabela = ausencias_mes.copy()
+        ausencias_tabela["Data"] = ausencias_tabela["Início"].map(
+            lambda valor: valor.strftime("%d/%m/%Y")
+        )
+        st.dataframe(
+            ausencias_tabela[["Data", "Técnico", "Tipo", "Duração"]],
+            hide_index=True,
+            use_container_width=True,
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 def salvar_env_local(atualizacoes):
     valores = carregar_env_local()
     for chave, valor in atualizacoes.items():
