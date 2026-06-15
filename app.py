@@ -2820,7 +2820,7 @@ def garantir_linhas_da_data(ws, colunas, data_referencia):
     col_tecnico = coluna(colunas, "Técnico")
     col_nivel = coluna(colunas, "Nível")
 
-    linhas_existentes = []
+    tecnicos_existentes_data = set()
     datas_existentes = set()
     linhas_por_data = {}
 
@@ -2832,10 +2832,9 @@ def garantir_linhas_da_data(ws, colunas, data_referencia):
         datas_existentes.add(data_linha)
         linhas_por_data.setdefault(data_linha, []).append(row)
         if data_linha == data_referencia:
-            linhas_existentes.append(row)
-
-    if linhas_existentes:
-        return 0
+            tecnico_existente = ws.cell(row=row, column=col_tecnico).value
+            if tecnico_existente:
+                tecnicos_existentes_data.add(normalizar_nome(tecnico_existente))
 
     datas_anteriores = [data for data in datas_existentes if data < data_referencia]
     if not datas_anteriores:
@@ -2847,12 +2846,17 @@ def garantir_linhas_da_data(ws, colunas, data_referencia):
     for row_base in linhas_por_data[data_base]:
         tecnico = ws.cell(row=row_base, column=col_tecnico).value
         nivel = ws.cell(row=row_base, column=col_nivel).value
+        if not tecnico:
+            continue
+        if normalizar_nome(tecnico) in tecnicos_existentes_data:
+            continue
         nova_linha = [None] * ws.max_column
         nova_linha[col_data - 1] = data_referencia
         nova_linha[col_tecnico - 1] = tecnico
         nova_linha[col_nivel - 1] = nivel
         ws.append(nova_linha)
         criadas += 1
+        tecnicos_existentes_data.add(normalizar_nome(tecnico))
 
     return criadas
 
