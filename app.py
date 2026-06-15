@@ -6603,7 +6603,7 @@ if tecnico_web:
     classificacao = status_por_desvio(desvio_total)
     cards_secundarios = [
         ("Canal", "WEB", None),
-        ("SSC", builtins.str(ssc_total), None),
+        ("Total de SSC WEB", builtins.str(ssc_total), None),
         ("Votação Média", f"{votacao_ultimo_dia:.2f}%", cor_votacao),
         ("Satisfação", f"{satisfacao_ultimo_dia:.2f}%", cor_satisfacao),
     ]
@@ -7095,32 +7095,27 @@ if tecnico_web:
     grafico_produtividade = go.Figure()
     grafico_produtividade.add_trace(
         go.Bar(
-            name="Seu realizado",
+            name="SSC total WEB",
             x=produtividade["Data Curta"],
-            y=produtividade["Seu SSC"],
+            y=produtividade["SSC Total WEB"],
             marker_color="#2563EB",
             width=0.46,
-            text=produtividade["Seu SSC"].round().astype(int),
+            text=produtividade["SSC Total WEB"].round().astype(int),
             textposition="outside",
             textfont=dict(color="#374151", size=12),
             cliponaxis=False,
-            customdata=produtividade[["SSC Total WEB"]].to_numpy(),
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Seu SSC: %{y}<br>"
-                "SSC total WEB: %{customdata[0]}<extra></extra>"
-            ),
+            hovertemplate="<b>%{x}</b><br>SSC total WEB: %{y}<extra></extra>",
         )
     )
     grafico_produtividade.add_trace(
         go.Scatter(
-            name="SSC total WEB",
+            name="Seu realizado",
             x=produtividade["Data Curta"],
-            y=produtividade["SSC Total WEB"],
+            y=produtividade["Seu SSC"],
             mode="lines+markers",
             line=dict(color="#F97316", width=3),
             marker=dict(color="#FFFFFF", line=dict(color="#F97316", width=2), size=8),
-            hovertemplate="<b>%{x}</b><br>SSC total WEB: %{y}<extra></extra>",
+            hovertemplate="<b>%{x}</b><br>Seu realizado: %{y}<extra></extra>",
         )
     )
     maior_valor_produtividade = max(
