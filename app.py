@@ -65,7 +65,10 @@ TECNICOS_SGD_WEB_ALIASES = [
     "joao neto",
 ]
 PERIODOS_TECNICOS_SGD_WEB = [
-    ("Gabriel Gomes de Andrade", date(2026, 6, 15), date(2026, 6, 29)),
+    ("Gabriel Gomes de Andrade", date(2026, 6, 13), date(2026, 6, 29)),
+]
+DATAS_TECNICOS_SGD_WEB_E_FONE = [
+    ("Gabriel Gomes de Andrade", date(2026, 6, 12), date(2026, 6, 12)),
 ]
 TECNICOS_CHAT = [
     "Matheus Farias De Souza",
@@ -2570,6 +2573,13 @@ def eh_tecnico_sgd_web(nome, data_referencia=None):
         ):
             return True
 
+    for tecnico_periodo, inicio, fim in DATAS_TECNICOS_SGD_WEB_E_FONE:
+        if (
+            nome_normalizado == normalizar_nome(tecnico_periodo)
+            and inicio <= data_referencia <= fim
+        ):
+            return True
+
     return False
 
 
@@ -2584,6 +2594,17 @@ def modalidade_tecnico_em_data(nome, data_referencia=None):
     if eh_tecnico_chat(nome, data_referencia):
         return "chat"
     if eh_tecnico_sgd_web(nome, data_referencia):
+        nome_normalizado = normalizar_nome(nome)
+        if data_referencia is None:
+            data_referencia = datetime.now(FUSO_HORARIO_APP).date()
+        elif hasattr(data_referencia, "date"):
+            data_referencia = data_referencia.date()
+        for tecnico_periodo, inicio, fim in DATAS_TECNICOS_SGD_WEB_E_FONE:
+            if (
+                nome_normalizado == normalizar_nome(tecnico_periodo)
+                and inicio <= data_referencia <= fim
+            ):
+                return "hibrido"
         return "web"
     return "fone"
 
@@ -4070,10 +4091,22 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha, modo="todos"):
             continue
 
         tecnico = ws.cell(row=row, column=col_tecnico).value
-        tecnico_web = eh_tecnico_sgd_web(tecnico, data_linha)
-        if tecnico_web and not incluir_web:
+        modalidade_linha = modalidade_tecnico_em_data(tecnico, data_linha)
+        if (
+            modalidade_linha in {"web", "hibrido"}
+            and modalidade_linha not in {"hibrido"}
+            and not incluir_web
+        ):
             continue
-        if not tecnico_web and not incluir_fone:
+        if (
+            modalidade_linha == "fone"
+            and not incluir_fone
+        ):
+            continue
+        if (
+            modalidade_linha == "hibrido"
+            and not (incluir_fone or incluir_web)
+        ):
             continue
 
         chave_sgd = aliases.get(normalizar_nome(tecnico), normalizar_nome(tecnico))
@@ -6111,12 +6144,12 @@ dados_mes_atual = dados_tecnico[
 dados_mes_atual_base = dados_mes_atual.copy()
 dados_mes_web = dados_mes_atual[
     dados_mes_atual["Data"].dt.date.map(
-        lambda data_item: modalidade_tecnico_em_data(tecnico, data_item) == "web"
+        lambda data_item: modalidade_tecnico_em_data(tecnico, data_item) in {"web", "hibrido"}
     )
 ].copy()
 dados_mes_fone = dados_mes_atual[
     dados_mes_atual["Data"].dt.date.map(
-        lambda data_item: modalidade_tecnico_em_data(tecnico, data_item) == "fone"
+        lambda data_item: modalidade_tecnico_em_data(tecnico, data_item) in {"fone", "hibrido"}
     )
 ].copy()
 
@@ -6820,7 +6853,7 @@ if tecnico_web:
                 linha["Técnico"],
                 linha["Data"],
             )
-            == "web",
+            in {"web", "hibrido"},
             axis=1,
         )
     ].copy()
@@ -7411,7 +7444,7 @@ if tecnico_web:
                 linha["Técnico"],
                 linha["Data"],
             )
-            == "web",
+            in {"web", "hibrido"},
             axis=1,
         )
     ].copy()
