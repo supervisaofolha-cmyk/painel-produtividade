@@ -5959,7 +5959,7 @@ if modo_gestao and visao_gestao == "Atualizações":
 
     st.divider()
     st.markdown("#### SGD")
-    col_usuario_sgd, col_senha_sgd, col_botao_sgd = st.columns([1, 1, 0.8])
+    col_usuario_sgd, col_senha_sgd = st.columns(2)
     with col_usuario_sgd:
         usuario_sgd = st.text_input("Usuário SGD", value=usuario_sgd_padrao)
     with col_senha_sgd:
@@ -5968,33 +5968,37 @@ if modo_gestao and visao_gestao == "Atualizações":
             value=senha_sgd_padrao,
             type="password",
         )
-    with col_botao_sgd:
-        st.write("")
-        atualizar_sgd = st.button(
-            "Atualizar SGD do mês",
+    col_botao_sgd_fone, col_botao_sgd_web = st.columns(2)
+    with col_botao_sgd_fone:
+        atualizar_sgd_fone = st.button(
+            "Atualizar SGD Fone",
+            use_container_width=True,
+        )
+    with col_botao_sgd_web:
+        atualizar_sgd_web = st.button(
+            "Atualizar SGD WEB",
             use_container_width=True,
         )
 
-    if atualizar_sgd:
+    if atualizar_sgd_fone or atualizar_sgd_web:
         if not usuario_sgd or not senha_sgd:
             st.error("Informe usuário e senha do SGD.")
         else:
-            with st.spinner("Gerando relatório no SGD e atualizando a planilha..."):
+            modo_sgd = "web" if atualizar_sgd_web else "fone"
+            rotulo_sgd = "WEB" if modo_sgd == "web" else "Fone"
+            with st.spinner(f"Gerando relatório no SGD {rotulo_sgd} e atualizando a planilha..."):
                 try:
                     origem_atualizacao = "painel"
-                    try:
-                        resultado = atualizar_via_servico_local("sgd", data_referencia)["sgd"]
-                        origem_atualizacao = "planilha local"
-                    except Exception:
-                        resultado = atualizar_planilha_com_sgd(
-                            data_referencia,
-                            usuario_sgd,
-                            senha_sgd,
-                        )
+                    resultado = atualizar_planilha_com_sgd(
+                        data_referencia,
+                        usuario_sgd,
+                        senha_sgd,
+                        modo=modo_sgd,
+                    )
                 except PermissionError:
                     st.error("Feche a produtividade.xlsx no Excel e tente novamente.")
                 except Exception as erro:
-                    st.error(f"Não foi possível atualizar o SGD: {erro}")
+                    st.error(f"Não foi possível atualizar o SGD {rotulo_sgd}: {erro}")
                 else:
                     st.success(
                         f"{resultado['atualizados']} registros atualizados em "
