@@ -3708,7 +3708,13 @@ def login_sgd(usuario, senha):
     return sessao
 
 
-def montar_campos_sgd(html, data_inicial, data_final, extensao="EXCEL_XLSX"):
+def montar_campos_sgd(
+    html,
+    data_inicial,
+    data_final,
+    extensao="EXCEL_XLSX",
+    filtros=None,
+):
     parser = FormularioSGDParser()
     parser.feed(html)
     dados = []
@@ -3746,21 +3752,43 @@ def montar_campos_sgd(html, data_inicial, data_final, extensao="EXCEL_XLSX"):
         dados = [(chave, item) for chave, item in dados if chave != nome]
         dados.append((nome, valor))
 
+    def definir_multiplos(nome, valores):
+        nonlocal dados
+        grupo = f"{nome}Grupo"
+        dados = [
+            (chave, item)
+            for chave, item in dados
+            if chave not in {nome, grupo}
+        ]
+        for valor in valores:
+            dados.append((nome, valor))
+
     definir_unico("formFiltroRelatorio:dataInicial", data_inicial.strftime("%d/%m/%y"))
     definir_unico("formFiltroRelatorio:dataFinal", data_final.strftime("%d/%m/%y"))
     definir_unico("formFiltroRelatorio:extensao", extensao)
+    if filtros:
+        for nome, valor in filtros.items():
+            if isinstance(valor, (list, tuple, set)):
+                definir_multiplos(nome, [builtins.str(item) for item in valor])
+            else:
+                definir_unico(nome, builtins.str(valor))
     dados.append((submit_name, "Gerar Relatório"))
     return dados
 
 
-def gerar_relatorio_sgd(sessao, data_inicial, data_final):
+def gerar_relatorio_sgd(sessao, data_inicial, data_final, filtros=None):
     resposta = sessao.get(SGD_RELATORIO_URL, timeout=30)
     resposta.raise_for_status()
     html = resposta.text
 
     link_download = None
     for _ in range(10):
-        dados = montar_campos_sgd(html, data_inicial, data_final)
+        dados = montar_campos_sgd(
+            html,
+            data_inicial,
+            data_final,
+            filtros=filtros,
+        )
         ultima_excecao = None
         for tentativa in range(1, SGD_RELATORIO_TENTATIVAS + 1):
             try:
@@ -3828,13 +3856,18 @@ def extrair_registros_sgd(conteudo_xlsx):
     return registros
 
 
-def buscar_satisfacao_sgd(data_inicial, data_final, usuario, senha):
+def buscar_satisfacao_sgd(data_inicial, data_final, usuario, senha, filtros=None):
     sessao = login_sgd(usuario, senha)
-    conteudo = gerar_relatorio_sgd(sessao, data_inicial, data_final)
+    conteudo = gerar_relatorio_sgd(
+        sessao,
+        data_inicial,
+        data_final,
+        filtros=filtros,
+    )
     return extrair_registros_sgd(conteudo)
 
 
-def buscar_satisfacao_sgd_diaria(data_referencia, usuario, senha):
+def buscar_satisfacao_sgd_diaria(data_referencia, usuario, senha, filtros=None):
     sessao = login_sgd(usuario, senha)
     registros = []
 
@@ -3842,7 +3875,12 @@ def buscar_satisfacao_sgd_diaria(data_referencia, usuario, senha):
         return registros
 
     try:
-        conteudo = gerar_relatorio_sgd(sessao, data_referencia, data_referencia)
+        conteudo = gerar_relatorio_sgd(
+            sessao,
+            data_referencia,
+            data_referencia,
+            filtros=filtros,
+        )
     except ValueError:
         return registros
 
@@ -3851,6 +3889,25 @@ def buscar_satisfacao_sgd_diaria(data_referencia, usuario, senha):
         registros.append(registro)
 
     return registros
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def buscar_total_ssc_web_sgd_cache(
+    data_inicial_texto,
+    data_final_texto,
+    usuario,
+    senha,
+):
+    data_inicial = datetime.strptime(data_inicial_texto, "%d/%m/%Y").date()
+    data_final = datetime.strptime(data_final_texto, "%d/%m/%Y").date()
+    registros = buscar_satisfacao_sgd(
+        data_inicial,
+        data_final,
+        usuario,
+        senha,
+        filtros=SGD_FILTRO_WEB,
+    )
+    return int(sum(registro.get("ssc", 0) for registro in registros))
 
 
 def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
@@ -3866,14 +3923,39 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
         usuario,
         senha,
     )
+    registros_periodo_web = buscar_satisfacao_sgd(
+        data_inicial,
+        data_referencia,
+        usuario,
+        senha,
+        filtros=SGD_FILTRO_WEB,
+    )
+    registros_sgd_web = buscar_satisfacao_sgd_diaria(
+        data_referencia,
+        usuario,
+        senha,
+        filtros=SGD_FILTRO_WEB,
+    )
     registros_periodo_por_tecnico = {
         normalizar_nome(registro["tecnico"]): registro
         for registro in registros_periodo
     }
+    registros_periodo_por_tecnico.update(
+        {
+            normalizar_nome(registro["tecnico"]): registro
+            for registro in registros_periodo_web
+        }
+    )
     registros_por_chave = {
         (normalizar_nome(registro["tecnico"]), registro["data"]): registro
         for registro in registros_sgd
     }
+    registros_por_chave.update(
+        {
+            (normalizar_nome(registro["tecnico"]), registro["data"]): registro
+            for registro in registros_sgd_web
+        }
+    )
 
     wb = carregar_workbook_produtividade()
     ws = wb[ABA_PRODUTIVIDADE]
@@ -7459,24 +7541,4 @@ grafico_ssc.update_layout(
     showlegend=False,
     height=410,
     margin=dict(l=45, r=20, t=38, b=55),
-    xaxis_title="Dia",
-    yaxis_title="SSC Atendido",
-    xaxis=dict(
-        type="category",
-        showgrid=False,
-        linecolor="#E5E7EB",
-        tickfont=dict(size=11, color="#4B5563"),
-    ),
-    yaxis=dict(
-        showgrid=True,
-        gridcolor="#F3F4F6",
-        gridwidth=1,
-        zeroline=False,
-        rangemode="tozero",
-        range=[0, maior_ssc * 1.25],
-        tickfont=dict(size=11, color="#6B7280"),
-    ),
-    hovermode="x unified",
-)
-
-st.plotly_chart(grafico_ssc, use_container_width=True)
+    xax
