@@ -123,6 +123,13 @@ SGD_LOGIN_URL = f"{SGD_BASE_URL}/login"
 SGD_RELATORIO_URL = f"{SGD_BASE_URL}/sgsc/faces/rel-satisfacao.html"
 SGD_RELATORIO_TIMEOUT = 300
 SGD_RELATORIO_TENTATIVAS = 3
+SGD_FILTRO_WEB = {
+    "formFiltroRelatorio:unidades": ["7", "131", "140"],
+    "formFiltroRelatorio:gestores": ["1206900"],
+    "formFiltroRelatorio:meiosAcessos": ["1"],
+    "formFiltroRelatorio:responsavel": "0",
+    "formFiltroRelatorio:origemSuporteSemTopico": "false",
+}
 RO_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1O-1uJ6D9al9piHgOv_Ju0fpL-3Xbz3zK"
 RO_PLANILHAS_FIXAS = {
     (2026, 6): "https://docs.google.com/spreadsheets/d/1AZKhjWnIS_hys9B9oaeazcSUP0wS6ExX8U9wRdrktRs/edit?resourcekey#gid=148357412",
