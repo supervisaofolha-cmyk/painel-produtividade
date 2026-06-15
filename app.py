@@ -2682,24 +2682,67 @@ def mostrar_gestao_disponibilidade(dataframe):
     ].copy()
     ausencias_mes = ausencias_mes.sort_values(["Início", "Técnico"])
 
+    icone_efetivo = """
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+    </svg>
+    """
+    icone_trabalhando = """
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+    </svg>
+    """
+    icone_ferias = """
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 20h16"></path>
+        <path d="M6 20c0-6 3-10 8-12"></path>
+        <path d="M14 8c3 0 5 2 5 5"></path>
+        <path d="M14 8V4"></path>
+        <path d="M10 20l2-7"></path>
+    </svg>
+    """
+    icone_ausencias = """
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M12 7v6"></path>
+        <path d="M12 16h.01"></path>
+    </svg>
+    """
+
     st.markdown(
         f"""
         <div class="disp-minimal-topo">
             <div class="disp-minimal-card">
-                <div class="disp-minimal-card-label">Efetivo no mês</div>
-                <div class="disp-minimal-card-value">{efetivo_mes}</div>
+                <div class="disp-minimal-card-conteudo">
+                    <div class="disp-minimal-card-label">Efetivo no mês</div>
+                    <div class="disp-minimal-card-value">{efetivo_mes}</div>
+                </div>
+                <div class="disp-minimal-card-icone">{icone_efetivo}</div>
             </div>
             <div class="disp-minimal-card">
-                <div class="disp-minimal-card-label">Trabalhando hoje</div>
-                <div class="disp-minimal-card-value">{trabalhando_hoje}</div>
+                <div class="disp-minimal-card-conteudo">
+                    <div class="disp-minimal-card-label">Trabalhando hoje</div>
+                    <div class="disp-minimal-card-value">{trabalhando_hoje}</div>
+                </div>
+                <div class="disp-minimal-card-icone">{icone_trabalhando}</div>
             </div>
             <div class="disp-minimal-card">
-                <div class="disp-minimal-card-label">Férias</div>
-                <div class="disp-minimal-card-value">{total_ferias_hoje}</div>
+                <div class="disp-minimal-card-conteudo">
+                    <div class="disp-minimal-card-label">Férias</div>
+                    <div class="disp-minimal-card-value">{total_ferias_hoje}</div>
+                </div>
+                <div class="disp-minimal-card-icone">{icone_ferias}</div>
             </div>
             <div class="disp-minimal-card">
-                <div class="disp-minimal-card-label">Ausências hoje</div>
-                <div class="disp-minimal-card-value">{total_ausencias_hoje}</div>
+                <div class="disp-minimal-card-conteudo">
+                    <div class="disp-minimal-card-label">Ausências hoje</div>
+                    <div class="disp-minimal-card-value">{total_ausencias_hoje}</div>
+                </div>
+                <div class="disp-minimal-card-icone">{icone_ausencias}</div>
             </div>
         </div>
         """,
@@ -2719,7 +2762,7 @@ def mostrar_gestao_disponibilidade(dataframe):
     html_ferias = "".join(
         montar_item_disponibilidade(
             nome,
-            f"{inicio.strftime('%d/%m/%Y')} a {fim.strftime('%d/%m/%Y')}",
+            f"{inicio.strftime('%d/%m/%Y')} até {fim.strftime('%d/%m/%Y')}",
             CORES_DISPONIBILIDADE["Férias"],
         )
         for nome, inicio, fim in ferias_hoje
@@ -2728,7 +2771,7 @@ def mostrar_gestao_disponibilidade(dataframe):
         [
             montar_item_disponibilidade(
                 nome,
-                f"{motivo} • {inicio.strftime('%d/%m/%Y')} a {fim.strftime('%d/%m/%Y')}",
+                f"{motivo} • {inicio.strftime('%d/%m/%Y')} até {fim.strftime('%d/%m/%Y')}",
                 CORES_DISPONIBILIDADE["Licença-maternidade"],
             )
             for nome, inicio, fim, motivo in licencas_hoje
@@ -2753,7 +2796,7 @@ def mostrar_gestao_disponibilidade(dataframe):
     html_programacao = "".join(
         montar_item_disponibilidade(
             linha["Técnico"],
-            f'{linha["Início"].strftime("%d/%m/%Y")} a {linha["Fim"].strftime("%d/%m/%Y")}',
+            f'{linha["Início"].strftime("%d/%m/%Y")} até {linha["Fim"].strftime("%d/%m/%Y")}',
             CORES_DISPONIBILIDADE["Férias"],
         )
         for _, linha in ferias_mes.iterrows()
@@ -5965,6 +6008,13 @@ st.markdown(
     border-radius:12px;
     padding:16px 18px;
     box-shadow:0 8px 24px rgba(15, 23, 42, 0.04);
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:14px;
+}}
+.disp-minimal-card-conteudo {{
+    min-width:0;
 }}
 .disp-minimal-card-label {{
     color:#6B7280;
@@ -5977,6 +6027,23 @@ st.markdown(
     font-weight:700;
     line-height:1.1;
     margin-top:8px;
+}}
+.disp-minimal-card-icone {{
+    width:38px;
+    height:38px;
+    border-radius:999px;
+    border:1px solid #E5E7EB;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#475569;
+    flex:0 0 38px;
+    background:#F8FAFC;
+}}
+.disp-minimal-card-icone svg {{
+    width:20px;
+    height:20px;
+    stroke:currentColor;
 }}
 .disp-minimal-layout {{
     display:grid;
