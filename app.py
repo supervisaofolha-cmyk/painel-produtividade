@@ -2855,8 +2855,8 @@ def garantir_linhas_da_data(ws, colunas, data_referencia):
 
 def garantir_linhas_tecnicos_sgd_web_periodo(ws, colunas, data_inicial, data_final):
     col_data = coluna(colunas, "Data")
-    col_tecnico = coluna(colunas, "TÃ©cnico")
-    col_nivel = coluna(colunas, "NÃ­vel")
+    col_tecnico = coluna(colunas, "Técnico", "TÃ©cnico")
+    col_nivel = coluna(colunas, "Nível", "NÃ­vel")
 
     existentes = set()
     for row in range(2, ws.max_row + 1):
