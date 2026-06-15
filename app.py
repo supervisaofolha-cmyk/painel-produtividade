@@ -3910,52 +3910,68 @@ def buscar_total_ssc_web_sgd_cache(
     return int(sum(registro.get("ssc", 0) for registro in registros))
 
 
-def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
+def atualizar_planilha_com_sgd(data_referencia, usuario, senha, modo="todos"):
     data_inicial = inicio_mes(data_referencia)
-    registros_periodo = buscar_satisfacao_sgd(
-        data_inicial,
-        data_referencia,
-        usuario,
-        senha,
-    )
-    registros_sgd = buscar_satisfacao_sgd_diaria(
-        data_referencia,
-        usuario,
-        senha,
-    )
-    registros_periodo_web = buscar_satisfacao_sgd(
-        data_inicial,
-        data_referencia,
-        usuario,
-        senha,
-        filtros=SGD_FILTRO_WEB,
-    )
-    registros_sgd_web = buscar_satisfacao_sgd_diaria(
-        data_referencia,
-        usuario,
-        senha,
-        filtros=SGD_FILTRO_WEB,
-    )
-    registros_periodo_por_tecnico = {
-        normalizar_nome(registro["tecnico"]): registro
-        for registro in registros_periodo
-    }
-    registros_periodo_por_tecnico.update(
-        {
-            normalizar_nome(registro["tecnico"]): registro
-            for registro in registros_periodo_web
-        }
-    )
-    registros_por_chave = {
-        (normalizar_nome(registro["tecnico"]), registro["data"]): registro
-        for registro in registros_sgd
-    }
-    registros_por_chave.update(
-        {
-            (normalizar_nome(registro["tecnico"]), registro["data"]): registro
-            for registro in registros_sgd_web
-        }
-    )
+    incluir_fone = modo in {"todos", "fone"}
+    incluir_web = modo in {"todos", "web"}
+
+    registros_periodo_por_tecnico = {}
+    registros_por_chave = {}
+    total_fonte = 0
+
+    if incluir_fone:
+        registros_periodo = buscar_satisfacao_sgd(
+            data_inicial,
+            data_referencia,
+            usuario,
+            senha,
+        )
+        registros_sgd = buscar_satisfacao_sgd_diaria(
+            data_referencia,
+            usuario,
+            senha,
+        )
+        registros_periodo_por_tecnico.update(
+            {
+                normalizar_nome(registro["tecnico"]): registro
+                for registro in registros_periodo
+            }
+        )
+        registros_por_chave.update(
+            {
+                (normalizar_nome(registro["tecnico"]), registro["data"]): registro
+                for registro in registros_sgd
+            }
+        )
+        total_fonte += len(registros_sgd)
+
+    if incluir_web:
+        registros_periodo_web = buscar_satisfacao_sgd(
+            data_inicial,
+            data_referencia,
+            usuario,
+            senha,
+            filtros=SGD_FILTRO_WEB,
+        )
+        registros_sgd_web = buscar_satisfacao_sgd_diaria(
+            data_referencia,
+            usuario,
+            senha,
+            filtros=SGD_FILTRO_WEB,
+        )
+        registros_periodo_por_tecnico.update(
+            {
+                normalizar_nome(registro["tecnico"]): registro
+                for registro in registros_periodo_web
+            }
+        )
+        registros_por_chave.update(
+            {
+                (normalizar_nome(registro["tecnico"]), registro["data"]): registro
+                for registro in registros_sgd_web
+            }
+        )
+        total_fonte += len(registros_sgd_web)
 
     wb = carregar_workbook_produtividade()
     ws = wb[ABA_PRODUTIVIDADE]
@@ -3993,6 +4009,12 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
             continue
 
         tecnico = ws.cell(row=row, column=col_tecnico).value
+        tecnico_web = eh_tecnico_sgd_web(tecnico)
+        if tecnico_web and not incluir_web:
+            continue
+        if not tecnico_web and not incluir_fone:
+            continue
+
         chave_sgd = aliases.get(normalizar_nome(tecnico), normalizar_nome(tecnico))
         registro_periodo = registros_periodo_por_tecnico.get(chave_sgd)
         registro = registros_por_chave.get((chave_sgd, data_linha))
@@ -4019,11 +4041,12 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha):
     return {
         "data": data_referencia.strftime("%d/%m/%Y"),
         "periodo": f"{data_inicial.strftime('%d/%m/%Y')} a {data_referencia.strftime('%d/%m/%Y')}",
-        "fonte": len(registros_sgd),
+        "fonte": total_fonte,
         "dias_processados": 1,
         "linhas_criadas": linhas_criadas,
         "atualizados": len(atualizados),
         "sem_alias": sorted(set(sem_alias)),
+        "modo": modo,
     }
 
 
