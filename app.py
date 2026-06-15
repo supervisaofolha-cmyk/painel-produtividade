@@ -7214,6 +7214,86 @@ if not modo_gestao:
             hide_index=True,
         )
 
+if tecnico_hibrido_web and not dados_mes_web.empty:
+    coluna_votacao_web = nome_coluna_dataframe(
+        dados_mes_web,
+        "Votação",
+        "VotaÃ§Ã£o",
+        "Vota??o",
+    )
+    coluna_satisfacao_web = nome_coluna_dataframe(
+        dados_mes_web,
+        "Satisfação",
+        "SatisfaÃ§Ã£o",
+        "Satisfa??o",
+    )
+    votacao_web = round(dados_mes_web[coluna_votacao_web].dropna().mean(), 2)
+    satisfacao_web = round(dados_mes_web[coluna_satisfacao_web].dropna().mean(), 2)
+    ssc_realizado_web = int(dados_mes_web["SSC"].sum())
+    cor_votacao_web = "#DC2626" if votacao_web < META_VOTACAO_SGD_WEB else "#111827"
+    cor_satisfacao_web = (
+        "#DC2626" if satisfacao_web < META_SATISFACAO_SGD_WEB else "#111827"
+    )
+    total_ssc_web_periodo = ssc_realizado_web
+    try:
+        env_local_sgd = carregar_env_local()
+        usuario_sgd_web = env_local_sgd.get("SGD_USUARIO", os.getenv("SGD_USUARIO", ""))
+        senha_sgd_web = env_local_sgd.get("SGD_SENHA", os.getenv("SGD_SENHA", ""))
+        if usuario_sgd_web and senha_sgd_web:
+            total_ssc_web_periodo = buscar_total_ssc_web_sgd_cache(
+                dados_mes_web["Data"].min().strftime("%d/%m/%Y"),
+                dados_mes_web["Data"].max().strftime("%d/%m/%Y"),
+                usuario_sgd_web,
+                senha_sgd_web,
+            )
+    except Exception:
+        pass
+
+    st.divider()
+    st.markdown("#### Indicadores WEB")
+    st.markdown(
+        f"""
+        <div class="resultado-cabecalho">
+            <div class="resultado-identidade">
+                <div class="resultado-nome">{escape(tecnico.title())}</div>
+                <div class="resultado-nivel">{escape((builtins.str(nivel_tecnico or 'Nível não informado')) + ' • WEB')}</div>
+            </div>
+            <div class="resultado-status" style="background:#7C3AED;">
+                WEB
+            </div>
+        </div>
+        <div class="resultado-grid-principal">
+            <div class="resultado-card destaque">
+                <div class="resultado-label">SSC Realizado</div>
+                <div class="resultado-valor">{ssc_realizado_web}</div>
+            </div>
+            <div class="resultado-card destaque">
+                <div class="resultado-label">Votação Média</div>
+                <div class="resultado-valor" style="color:{cor_votacao_web};">
+                    {votacao_web:.2f}%
+                </div>
+            </div>
+            <div class="resultado-card destaque">
+                <div class="resultado-label">Satisfação</div>
+                <div class="resultado-valor" style="color:{cor_satisfacao_web};">
+                    {satisfacao_web:.2f}%
+                </div>
+            </div>
+        </div>
+        <div class="resultado-grid-secundario">
+            <div class="resultado-card secundario">
+                <div class="resultado-label">Canal</div>
+                <div class="resultado-valor">WEB</div>
+            </div>
+            <div class="resultado-card secundario">
+                <div class="resultado-label">Total de SSC WEB</div>
+                <div class="resultado-valor">{total_ssc_web_periodo}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 if not modo_gestao:
     if nivel_tecnico:
         base_ranking_nivel = df[
@@ -7572,6 +7652,128 @@ else:
     )
 
     st.plotly_chart(grafico_produtividade, use_container_width=True)
+
+if tecnico_hibrido_web and not dados_mes_web.empty:
+    st.divider()
+    st.subheader("📊 SSC WEB por Dia")
+
+    dados_produtividade_web = dados_mes_web[
+        (dados_mes_web["Data"].dt.date >= periodo_inicial)
+        & (dados_mes_web["Data"].dt.date <= periodo_final)
+    ].copy()
+    dados_produtividade_web = dados_produtividade_web[
+        (dados_produtividade_web["Data"].dt.weekday < 5)
+        & ~dados_produtividade_web["Data"].dt.date.map(eh_feriado_federal)
+    ]
+
+    base_web_periodo_hibrido = df[
+        (df["Data"].dt.month == mes_atual)
+        & (df["Data"].dt.year == ano_atual)
+        & (df["Data"].dt.date >= periodo_inicial)
+        & (df["Data"].dt.date <= periodo_final)
+        & df.apply(
+            lambda linha: modalidade_tecnico_em_data(
+                linha["Técnico"],
+                linha["Data"],
+            )
+            == "web",
+            axis=1,
+        )
+    ].copy()
+    base_web_periodo_hibrido = base_web_periodo_hibrido[
+        (base_web_periodo_hibrido["Data"].dt.weekday < 5)
+        & ~base_web_periodo_hibrido["Data"].dt.date.map(eh_feriado_federal)
+    ]
+
+    produtividade_web = (
+        dados_produtividade_web.groupby(["Data", "Data Formatada"], as_index=False)["SSC"]
+        .sum()
+        .rename(columns={"SSC": "Seu SSC"})
+        .sort_values(by="Data")
+    )
+    produtividade_total_web_hibrido = (
+        base_web_periodo_hibrido.groupby("Data", as_index=False)["SSC"]
+        .sum()
+        .rename(columns={"SSC": "SSC Total WEB"})
+    )
+    produtividade_web = produtividade_web.merge(
+        produtividade_total_web_hibrido,
+        on="Data",
+        how="left",
+    ).fillna(0)
+    produtividade_web["Data Curta"] = produtividade_web["Data"].dt.strftime("%d/%m")
+
+    grafico_produtividade_web = go.Figure()
+    grafico_produtividade_web.add_trace(
+        go.Bar(
+            name="SSC total WEB",
+            x=produtividade_web["Data Curta"],
+            y=produtividade_web["SSC Total WEB"],
+            marker_color="#2563EB",
+            width=0.46,
+            text=produtividade_web["SSC Total WEB"].round().astype(int),
+            textposition="outside",
+            textfont=dict(color="#374151", size=12),
+            cliponaxis=False,
+            hovertemplate="<b>%{x}</b><br>SSC total WEB: %{y}<extra></extra>",
+        )
+    )
+    grafico_produtividade_web.add_trace(
+        go.Scatter(
+            name="Seu realizado",
+            x=produtividade_web["Data Curta"],
+            y=produtividade_web["Seu SSC"],
+            mode="lines+markers",
+            line=dict(color="#F97316", width=3),
+            marker=dict(color="#FFFFFF", line=dict(color="#F97316", width=2), size=8),
+            hovertemplate="<b>%{x}</b><br>Seu realizado: %{y}<extra></extra>",
+        )
+    )
+    maior_valor_produtividade_web = max(
+        produtividade_web["Seu SSC"].max() if not produtividade_web.empty else 0,
+        produtividade_web["SSC Total WEB"].max() if not produtividade_web.empty else 0,
+        1,
+    )
+    grafico_produtividade_web.update_layout(
+        plot_bgcolor=COR_BRANCO,
+        paper_bgcolor=COR_BRANCO,
+        font_color="#4B5563",
+        height=430,
+        margin=dict(l=45, r=20, t=55, b=55),
+        bargap=0.45,
+        xaxis_title="Dia",
+        yaxis_title="SSC",
+        title=dict(
+            text="Seu realizado x SSC total WEB do dia",
+            x=0,
+            font=dict(size=15, color="#111827"),
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            title_text="",
+        ),
+        xaxis=dict(
+            type="category",
+            showgrid=False,
+            linecolor="#E5E7EB",
+            tickfont=dict(size=11, color="#4B5563"),
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor="#F3F4F6",
+            gridwidth=1,
+            zeroline=False,
+            rangemode="tozero",
+            range=[0, maior_valor_produtividade_web * 1.25],
+            tickfont=dict(size=11, color="#6B7280"),
+        ),
+        hovermode="x unified",
+    )
+    st.plotly_chart(grafico_produtividade_web, use_container_width=True)
 
 st.divider()
 st.subheader("SSC Atendido por Dia")
