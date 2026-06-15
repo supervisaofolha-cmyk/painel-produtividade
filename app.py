@@ -2684,32 +2684,32 @@ def mostrar_gestao_disponibilidade(dataframe):
 
     icone_efetivo = """
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-        <circle cx="9" cy="7" r="4"></circle>
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        <circle cx="9" cy="8" r="3.2"></circle>
+        <path d="M3.8 19v-.8a3.6 3.6 0 0 1 3.6-3.6h3.2a3.6 3.6 0 0 1 3.6 3.6v.8"></path>
+        <circle cx="17" cy="9" r="2.5"></circle>
+        <path d="M14.8 18.8c.4-1.8 1.5-2.9 3.2-2.9h1.1a3 3 0 0 1 3 3"></path>
     </svg>
     """
     icone_trabalhando = """
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-        <circle cx="12" cy="7" r="4"></circle>
+        <circle cx="12" cy="8" r="3.4"></circle>
+        <path d="M5 19v-1a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v1"></path>
     </svg>
     """
     icone_ferias = """
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 20h16"></path>
-        <path d="M6 20c0-6 3-10 8-12"></path>
-        <path d="M14 8c3 0 5 2 5 5"></path>
-        <path d="M14 8V4"></path>
-        <path d="M10 20l2-7"></path>
+        <path d="M4.5 19.5h15"></path>
+        <path d="M7 19.5c0-4.8 2.3-8.3 7.4-10.9"></path>
+        <path d="M14.4 8.6c3 0 4.8 1.8 4.8 4.7"></path>
+        <path d="M14.4 8.6V4.7"></path>
+        <path d="M10.2 19.5l1.8-5.9"></path>
     </svg>
     """
     icone_ausencias = """
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="9"></circle>
-        <path d="M12 7v6"></path>
-        <path d="M12 16h.01"></path>
+        <circle cx="12" cy="12" r="8"></circle>
+        <path d="M12 8v5"></path>
+        <path d="M12 16.6h.01"></path>
     </svg>
     """
 
@@ -6004,12 +6004,13 @@ st.markdown(
 }}
 .disp-minimal-card {{
     background:#FFFFFF;
-    border:1px solid #E5E7EB;
-    border-radius:12px;
-    padding:16px 18px;
-    box-shadow:0 8px 24px rgba(15, 23, 42, 0.04);
+    border:1px solid #D9E0EA;
+    border-radius:14px;
+    padding:14px 18px;
+    min-height:78px;
+    box-shadow:none;
     display:flex;
-    align-items:flex-start;
+    align-items:center;
     justify-content:space-between;
     gap:14px;
 }}
@@ -6017,32 +6018,32 @@ st.markdown(
     min-width:0;
 }}
 .disp-minimal-card-label {{
-    color:#6B7280;
-    font-size:12px;
+    color:#7A8597;
+    font-size:11px;
     line-height:1.3;
 }}
 .disp-minimal-card-value {{
-    color:#111827;
-    font-size:32px;
+    color:#0F172A;
+    font-size:19px;
     font-weight:700;
-    line-height:1.1;
-    margin-top:8px;
+    line-height:1.15;
+    margin-top:10px;
 }}
 .disp-minimal-card-icone {{
-    width:38px;
-    height:38px;
+    width:34px;
+    height:34px;
     border-radius:999px;
-    border:1px solid #E5E7EB;
+    border:1px solid #D9E0EA;
     display:flex;
     align-items:center;
     justify-content:center;
-    color:#475569;
-    flex:0 0 38px;
-    background:#F8FAFC;
+    color:#64748B;
+    flex:0 0 34px;
+    background:#FFFFFF;
 }}
 .disp-minimal-card-icone svg {{
-    width:20px;
-    height:20px;
+    width:18px;
+    height:18px;
     stroke:currentColor;
 }}
 .disp-minimal-layout {{
