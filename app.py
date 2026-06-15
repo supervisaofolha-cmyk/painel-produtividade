@@ -64,6 +64,9 @@ TECNICOS_SGD_WEB_ALIASES = [
     "joao frutuoso machado neto",
     "joao neto",
 ]
+PERIODOS_TECNICOS_SGD_WEB = [
+    ("Gabriel Gomes de Andrade", date(2026, 6, 15), date(2026, 6, 29)),
+]
 TECNICOS_CHAT = [
     "Matheus Farias De Souza",
 ]
@@ -2513,18 +2516,42 @@ def normalizar_nome(valor):
     return re.sub(r"\s+", " ", texto).strip()
 
 
-def eh_tecnico_sgd_web(nome):
-    return normalizar_nome(nome) in {
+def eh_tecnico_sgd_web(nome, data_referencia=None):
+    nome_normalizado = normalizar_nome(nome)
+    if nome_normalizado in {
         normalizar_nome(tecnico)
         for tecnico in TECNICOS_SGD_WEB_ALIASES
-    }
+    }:
+        return True
+
+    if data_referencia is None:
+        data_referencia = datetime.now(FUSO_HORARIO_APP).date()
+    elif hasattr(data_referencia, "date"):
+        data_referencia = data_referencia.date()
+
+    for tecnico_periodo, inicio, fim in PERIODOS_TECNICOS_SGD_WEB:
+        if (
+            nome_normalizado == normalizar_nome(tecnico_periodo)
+            and inicio <= data_referencia <= fim
+        ):
+            return True
+
+    return False
 
 
-def eh_tecnico_chat(nome):
+def eh_tecnico_chat(nome, data_referencia=None):
     return normalizar_nome(nome) in {
         normalizar_nome(tecnico)
         for tecnico in TECNICOS_CHAT_ALIASES
     }
+
+
+def modalidade_tecnico_em_data(nome, data_referencia=None):
+    if eh_tecnico_chat(nome, data_referencia):
+        return "chat"
+    if eh_tecnico_sgd_web(nome, data_referencia):
+        return "web"
+    return "fone"
 
 
 def periodos_ferias_tecnico(tecnico):
@@ -4009,7 +4036,7 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha, modo="todos"):
             continue
 
         tecnico = ws.cell(row=row, column=col_tecnico).value
-        tecnico_web = eh_tecnico_sgd_web(tecnico)
+        tecnico_web = eh_tecnico_sgd_web(tecnico, data_linha)
         if tecnico_web and not incluir_web:
             continue
         if not tecnico_web and not incluir_fone:
@@ -6048,6 +6075,26 @@ dados_mes_atual = dados_tecnico[
     & (dados_tecnico["Data"].dt.year == ano_atual)
 ]
 
+hoje_referencia_modalidade = datetime.now(FUSO_HORARIO_APP).date()
+if mes_atual == hoje_referencia_modalidade.month and ano_atual == hoje_referencia_modalidade.year:
+    data_referencia_modalidade = hoje_referencia_modalidade
+else:
+    ultima_data_modalidade = dados_mes_atual["Data"].max()
+    data_referencia_modalidade = (
+        ultima_data_modalidade.date()
+        if hasattr(ultima_data_modalidade, "date")
+        else hoje_referencia_modalidade
+    )
+
+modalidade_atual_tecnico = modalidade_tecnico_em_data(tecnico, data_referencia_modalidade)
+if modalidade_atual_tecnico != "fone":
+    dados_mes_atual = dados_mes_atual[
+        dados_mes_atual["Data"].dt.date.map(
+            lambda data_item: modalidade_tecnico_em_data(tecnico, data_item)
+            == modalidade_atual_tecnico
+        )
+    ].copy()
+
 ultima_data_mes = dados_mes_atual["Data"].max()
 ultima_data_produtividade = ultima_data_com_valor(dados_mes_atual, "Realizado")
 if pd.isna(ultima_data_produtividade):
@@ -6708,12 +6755,21 @@ esperado_total = int(dados_mes_atual["Esperado"].sum())
 ssc_total = int(dados_mes_atual["SSC"].sum())
 ro_total = int(dados_mes_atual["RO"].sum())
 chat_total = int(dados_mes_atual["CHAT"].sum()) if "CHAT" in dados_mes_atual.columns else 0
-tecnico_web = eh_tecnico_sgd_web(tecnico)
-tecnico_chat = eh_tecnico_chat(tecnico)
+tecnico_web = modalidade_atual_tecnico == "web"
+tecnico_chat = modalidade_atual_tecnico == "chat"
 ssc_total_web = 0
 if tecnico_web:
     base_web_mes_cards = df[
-        df["Técnico"].map(eh_tecnico_sgd_web)
+        (df["Data"].dt.month == mes_atual)
+        & (df["Data"].dt.year == ano_atual)
+        & df.apply(
+            lambda linha: modalidade_tecnico_em_data(
+                linha["Técnico"],
+                linha["Data"],
+            )
+            == "web",
+            axis=1,
+        )
         & (df["Data"].dt.month == mes_atual)
         & (df["Data"].dt.year == ano_atual)
     ].copy()
