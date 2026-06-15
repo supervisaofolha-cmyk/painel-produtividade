@@ -6691,6 +6691,21 @@ if tecnico_web:
         & (df["Data"].dt.year == ano_atual)
     ].copy()
     ssc_total_web = int(base_web_mes_cards["SSC"].sum())
+    try:
+        env_local_sgd = carregar_env_local()
+        usuario_sgd_web = env_local_sgd.get("SGD_USUARIO", os.getenv("SGD_USUARIO", ""))
+        senha_sgd_web = env_local_sgd.get("SGD_SENHA", os.getenv("SGD_SENHA", ""))
+        if usuario_sgd_web and senha_sgd_web:
+            data_inicial_web = dados_mes_atual["Data"].min()
+            data_final_web = dados_mes_atual["Data"].max()
+            ssc_total_web = buscar_total_ssc_web_sgd_cache(
+                data_inicial_web.strftime("%d/%m/%Y"),
+                data_final_web.strftime("%d/%m/%Y"),
+                usuario_sgd_web,
+                senha_sgd_web,
+            )
+    except Exception:
+        pass
 meta_votacao_visual = META_VOTACAO_SGD_WEB if tecnico_web else 21
 meta_satisfacao_visual = META_SATISFACAO_SGD_WEB if tecnico_web else 98
 cor_votacao = "#DC2626" if votacao_ultimo_dia < meta_votacao_visual else "#111827"
@@ -7541,4 +7556,24 @@ grafico_ssc.update_layout(
     showlegend=False,
     height=410,
     margin=dict(l=45, r=20, t=38, b=55),
-    xax
+    xaxis_title="Dia",
+    yaxis_title="SSC Atendido",
+    xaxis=dict(
+        type="category",
+        showgrid=False,
+        linecolor="#E5E7EB",
+        tickfont=dict(size=11, color="#4B5563"),
+    ),
+    yaxis=dict(
+        showgrid=True,
+        gridcolor="#F3F4F6",
+        gridwidth=1,
+        zeroline=False,
+        rangemode="tozero",
+        range=[0, maior_ssc * 1.25],
+        tickfont=dict(size=11, color="#6B7280"),
+    ),
+    hovermode="x unified",
+)
+
+st.plotly_chart(grafico_ssc, use_container_width=True)
