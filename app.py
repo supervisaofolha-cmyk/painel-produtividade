@@ -2095,9 +2095,26 @@ def _mostrar_gestao_disponibilidade_legado(dataframe):
         (dataframe["Data"].dt.year == ano_filtro)
         & (dataframe["Data"].dt.month == mes_filtro)
     ].copy()
-    nomes_mes_normalizados = base_mes["Técnico"].map(normalizar_nome)
-    web_mes = base_mes[nomes_mes_normalizados.isin(TECNICOS_SGD_WEB)]["Técnico"].nunique()
-    chat_mes = base_mes[nomes_mes_normalizados.isin(TECNICOS_CHAT)]["Técnico"].nunique()
+    web_mes = base_mes[
+        base_mes.apply(
+            lambda linha: modalidade_tecnico_em_data(
+                linha["Técnico"],
+                linha["Data"],
+            )
+            == "web",
+            axis=1,
+        )
+    ]["Técnico"].nunique()
+    chat_mes = base_mes[
+        base_mes.apply(
+            lambda linha: modalidade_tecnico_em_data(
+                linha["Técnico"],
+                linha["Data"],
+            )
+            == "chat",
+            axis=1,
+        )
+    ]["Técnico"].nunique()
     estagios_mes = base_mes[
         base_mes["Nível"].astype(str).str.contains("Estágio|Estagio", case=False, na=False)
     ]["Técnico"].nunique()
@@ -2348,9 +2365,26 @@ def mostrar_gestao_disponibilidade(dataframe):
         (dataframe["Data"].dt.year == ano_filtro)
         & (dataframe["Data"].dt.month == mes_filtro)
     ].copy()
-    nomes_mes_normalizados = base_mes["Técnico"].map(normalizar_nome)
-    web_mes = base_mes[nomes_mes_normalizados.isin(TECNICOS_SGD_WEB)]["Técnico"].nunique()
-    chat_mes = base_mes[nomes_mes_normalizados.isin(TECNICOS_CHAT)]["Técnico"].nunique()
+    web_mes = base_mes[
+        base_mes.apply(
+            lambda linha: modalidade_tecnico_em_data(
+                linha["Técnico"],
+                linha["Data"],
+            )
+            == "web",
+            axis=1,
+        )
+    ]["Técnico"].nunique()
+    chat_mes = base_mes[
+        base_mes.apply(
+            lambda linha: modalidade_tecnico_em_data(
+                linha["Técnico"],
+                linha["Data"],
+            )
+            == "chat",
+            axis=1,
+        )
+    ]["Técnico"].nunique()
     estagios_mes = base_mes[
         base_mes["Nível"].astype(str).str.contains("Estágio|Estagio", case=False, na=False)
     ]["Técnico"].nunique()
@@ -6074,6 +6108,7 @@ dados_mes_atual = dados_tecnico[
     (dados_tecnico["Data"].dt.month == mes_atual)
     & (dados_tecnico["Data"].dt.year == ano_atual)
 ]
+dados_mes_atual_base = dados_mes_atual.copy()
 
 hoje_referencia_modalidade = datetime.now(FUSO_HORARIO_APP).date()
 if mes_atual == hoje_referencia_modalidade.month and ano_atual == hoje_referencia_modalidade.year:
@@ -6094,6 +6129,9 @@ if modalidade_atual_tecnico != "fone":
             == modalidade_atual_tecnico
         )
     ].copy()
+    if dados_mes_atual.empty:
+        dados_mes_atual = dados_mes_atual_base.copy()
+        modalidade_atual_tecnico = "fone"
 
 ultima_data_mes = dados_mes_atual["Data"].max()
 ultima_data_produtividade = ultima_data_com_valor(dados_mes_atual, "Realizado")
@@ -7269,11 +7307,18 @@ dados_produtividade = dados_produtividade[
 
 if tecnico_web:
     base_web_periodo = df[
-        df["Técnico"].map(eh_tecnico_sgd_web)
-        & (df["Data"].dt.month == mes_atual)
+        (df["Data"].dt.month == mes_atual)
         & (df["Data"].dt.year == ano_atual)
         & (df["Data"].dt.date >= periodo_inicial)
         & (df["Data"].dt.date <= periodo_final)
+        & df.apply(
+            lambda linha: modalidade_tecnico_em_data(
+                linha["Técnico"],
+                linha["Data"],
+            )
+            == "web",
+            axis=1,
+        )
     ].copy()
     base_web_periodo = base_web_periodo[
         (base_web_periodo["Data"].dt.weekday < 5)
