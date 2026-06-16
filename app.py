@@ -7838,6 +7838,10 @@ if modo_gestao and visao_gestao == "Analise":
                 <small>Abandonadas</small>
                 <strong>{abandonadas_total_analise:,}</strong>
             </div>
+            <div class="analise-card">
+                <small>TME</small>
+                <strong>00:02:00</strong>
+            </div>
         </div>
         """.replace(",", "."),
         unsafe_allow_html=True,
