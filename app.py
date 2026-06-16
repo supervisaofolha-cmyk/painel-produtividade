@@ -7816,6 +7816,7 @@ if modo_gestao and visao_gestao == "Analise":
         f"{data_final_analise.strftime('%d/%m/%Y')}"
     )
     atendidas_total_analise = int(analitico_analise["Atendidas"].fillna(0).sum())
+    abandonadas_total_analise = int(base_analise["Abandonadas"].fillna(0).sum()) if "Abandonadas" in base_analise.columns else 0
 
     st.caption(f"Período analisado: {periodo_texto}")
     st.markdown(
@@ -7824,6 +7825,10 @@ if modo_gestao and visao_gestao == "Analise":
             <div class="analise-card">
                 <small>Atendidas</small>
                 <strong>{atendidas_total_analise:,}</strong>
+            </div>
+            <div class="analise-card">
+                <small>Abandonadas</small>
+                <strong>{abandonadas_total_analise:,}</strong>
             </div>
         </div>
         """.replace(",", "."),
