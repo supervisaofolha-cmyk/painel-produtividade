@@ -4275,6 +4275,15 @@ def formatar_segundos_hhmmss(valor):
     return f"{horas:02d}:{minutos:02d}:{segundos:02d}"
 
 
+def formatar_tempo_powerbi_hhmmss(valor):
+    valor_inteiro = max(int(round(float(valor or 0))), 0)
+    segundos = valor_inteiro % 100
+    minutos_total = valor_inteiro // 100
+    minutos = minutos_total % 100
+    horas = minutos_total // 100
+    return f"{horas:02d}:{minutos:02d}:{segundos:02d}"
+
+
 def buscar_tmea_periodo_powerbi(datas_referencia):
     if not datas_referencia:
         return {"atendidas": 0, "tmea_segundos": 0}
@@ -8035,7 +8044,7 @@ if modo_gestao and visao_gestao == "Analise":
             </div>
             <div class="analise-card">
                 <small>TME Realizado</small>
-                <strong>{formatar_segundos_hhmmss(tme_realizado_segundos)}</strong>
+                <strong>{formatar_tempo_powerbi_hhmmss(tme_realizado_segundos)}</strong>
             </div>
         </div>
         """.replace(",", "."),
