@@ -1953,11 +1953,26 @@ def faixa_periodo_analise(ano, mes, modo_periodo):
 
 def construir_analise_gestao(dataframe, ano, mes, modo_periodo):
     data_inicial, data_final = faixa_periodo_analise(ano, mes, modo_periodo)
+    coluna_tecnico = nome_coluna_dataframe(dataframe, "Técnico", "Tecnico")
+    coluna_data = nome_coluna_dataframe(dataframe, "Data")
     base = dataframe[
-        (dataframe["Data"].dt.date >= data_inicial)
-        & (dataframe["Data"].dt.date <= data_final)
+        (dataframe[coluna_data].dt.date >= data_inicial)
+        & (dataframe[coluna_data].dt.date <= data_final)
     ].copy()
-    base = filtrar_dataframe_tecnicos_ativos(base)
+    base = base[
+        base[coluna_tecnico].notna()
+        & base[coluna_data].notna()
+        & base[coluna_tecnico].astype(str).str.strip().ne("")
+    ].copy()
+    base = base[
+        base.apply(
+            lambda linha: tecnico_ativo_na_data(
+                linha[coluna_tecnico],
+                pd.Timestamp(linha[coluna_data]).date(),
+            ),
+            axis=1,
+        )
+    ].copy()
 
     if base.empty:
         return data_inicial, data_final, base, pd.DataFrame()
@@ -1987,13 +2002,13 @@ def construir_analise_gestao(dataframe, ano, mes, modo_periodo):
         coluna_satisfacao = None
 
     registros = []
-    for tecnico_nome, dados_tecnico_periodo in base.groupby("Técnico"):
-        dados_tecnico_periodo = dados_tecnico_periodo.sort_values("Data").copy()
+    for tecnico_nome, dados_tecnico_periodo in base.groupby(coluna_tecnico):
+        dados_tecnico_periodo = dados_tecnico_periodo.sort_values(coluna_data).copy()
         if dados_tecnico_periodo.empty:
             continue
 
         ultima_linha = dados_tecnico_periodo.iloc[-1]
-        data_referencia = pd.Timestamp(ultima_linha["Data"]).date()
+        data_referencia = pd.Timestamp(ultima_linha[coluna_data]).date()
         canal = modalidade_tecnico_em_data(tecnico_nome, data_referencia)
         nivel = nivel_tecnico_no_mes(dataframe, tecnico_nome, ano, mes)
 
@@ -7736,6 +7751,12 @@ if modo_gestao and visao_gestao == "Analise":
         )
 
     ano_analise, mes_analise = opcoes_periodo_analise[periodo_analise_label]
+    data_maxima_mes_analise = pd.Timestamp(
+        df[
+            (df["Data"].dt.year == ano_analise)
+            & (df["Data"].dt.month == mes_analise)
+        ]["Data"].max()
+    )
     (
         data_inicial_analise,
         data_final_analise,
@@ -7744,11 +7765,26 @@ if modo_gestao and visao_gestao == "Analise":
     ) = construir_analise_gestao(df, ano_analise, mes_analise, modo_periodo_analise)
 
     if analitico_analise.empty:
+        coluna_data_analise = nome_coluna_dataframe(df, "Data")
+        coluna_tecnico_analise = nome_coluna_dataframe(df, "Técnico", "Tecnico")
         base_mes_analise = df[
-            (df["Data"].dt.year == ano_analise)
-            & (df["Data"].dt.month == mes_analise)
+            (df[coluna_data_analise].dt.year == ano_analise)
+            & (df[coluna_data_analise].dt.month == mes_analise)
         ].copy()
-        base_mes_analise = filtrar_dataframe_tecnicos_ativos(base_mes_analise)
+        base_mes_analise = base_mes_analise[
+            base_mes_analise[coluna_tecnico_analise].notna()
+            & base_mes_analise[coluna_data_analise].notna()
+            & base_mes_analise[coluna_tecnico_analise].astype(str).str.strip().ne("")
+        ].copy()
+        base_mes_analise = base_mes_analise[
+            base_mes_analise.apply(
+                lambda linha: tecnico_ativo_na_data(
+                    linha[coluna_tecnico_analise],
+                    pd.Timestamp(linha[coluna_data_analise]).date(),
+                ),
+                axis=1,
+            )
+        ].copy()
         if not base_mes_analise.empty:
             ultima_data_disponivel = pd.Timestamp(base_mes_analise["Data"].max()).date()
             primeira_data_disponivel = pd.Timestamp(base_mes_analise["Data"].min()).date()
@@ -7767,6 +7803,13 @@ if modo_gestao and visao_gestao == "Analise":
         else:
             st.info("Nao encontrei dados para esse periodo.")
             st.stop()
+    if pd.notna(data_maxima_mes_analise):
+        ultimo_dia_mes_analise = calendar.monthrange(ano_analise, mes_analise)[1]
+        if data_maxima_mes_analise.date() < date(ano_analise, mes_analise, ultimo_dia_mes_analise):
+            st.info(
+                "Mes parcial carregado ate "
+                f"{data_maxima_mes_analise.strftime('%d/%m/%Y')}."
+            )
 
     periodo_texto = (
         f"{data_inicial_analise.strftime('%d/%m/%Y')} a "
