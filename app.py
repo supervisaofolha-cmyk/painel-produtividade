@@ -4013,6 +4013,84 @@ def aplicar_filtro_data_powerbi(query, data_referencia):
     )
 
 
+def aplicar_filtro_datas_powerbi(query, datas_referencia):
+    if not datas_referencia:
+        return
+
+    fonte_data = next(
+        (
+            fonte
+            for fonte in query.setdefault("From", [])
+            if builtins.str(fonte.get("Entity", "")).startswith("LocalDateTable_")
+        ),
+        None,
+    )
+    if fonte_data is None:
+        fonte_data = {
+            "Name": "l",
+            "Entity": "LocalDateTable_5b42e521-bbb7-4d39-8e7e-735e21b48675",
+            "Type": 0,
+        }
+        query["From"].append(fonte_data)
+
+    nome_fonte = fonte_data["Name"]
+    valores = []
+    for data_referencia in sorted(set(datas_referencia)):
+        valores.append(
+            [
+                {"Literal": {"Value": f"{data_referencia.year}L"}},
+                {
+                    "Literal": {
+                        "Value": f"'{trimestre_powerbi(data_referencia)}'"
+                    }
+                },
+                {
+                    "Literal": {
+                        "Value": f"'{MESES_POWERBI[data_referencia.month]}'"
+                    }
+                },
+                {"Literal": {"Value": f"{data_referencia.day}L"}},
+            ]
+        )
+
+    query.setdefault("Where", []).insert(
+        0,
+        {
+            "Condition": {
+                "In": {
+                    "Expressions": [
+                        {
+                            "Column": {
+                                "Expression": {"SourceRef": {"Source": nome_fonte}},
+                                "Property": "Ano",
+                            }
+                        },
+                        {
+                            "Column": {
+                                "Expression": {"SourceRef": {"Source": nome_fonte}},
+                                "Property": "Trimestre",
+                            }
+                        },
+                        {
+                            "Column": {
+                                "Expression": {"SourceRef": {"Source": nome_fonte}},
+                                "Property": "Mês",
+                            }
+                        },
+                        {
+                            "Column": {
+                                "Expression": {"SourceRef": {"Source": nome_fonte}},
+                                "Property": "Dia",
+                            }
+                        },
+                    ],
+                    "Values": valores,
+                }
+            }
+        },
+    )
+
+
 def consulta_visual_powerbi(visual):
     if visual.get("query"):
         return json.loads(visual["query"])
@@ -4197,7 +4275,10 @@ def formatar_segundos_hhmmss(valor):
     return f"{horas:02d}:{minutos:02d}:{segundos:02d}"
 
 
-def buscar_tmea_diario_powerbi(data_referencia):
+def buscar_tmea_periodo_powerbi(datas_referencia):
+    if not datas_referencia:
+        return {"atendidas": 0, "tmea_segundos": 0}
+
     metadados = carregar_metadados_powerbi()
     secao_mapa = next(
         secao
@@ -4209,7 +4290,7 @@ def buscar_tmea_diario_powerbi(data_referencia):
     comando = consulta["Commands"][0]["SemanticQueryDataShapeCommand"]
     query = comando["Query"]
     query["Where"] = []
-    aplicar_filtro_data_powerbi(query, data_referencia)
+    aplicar_filtro_datas_powerbi(query, datas_referencia)
     aplicar_filtro_fila_powerbi(query)
     selecoes_originais = query["Select"]
     query["Select"] = [
@@ -4285,22 +4366,8 @@ def calcular_tme_acumulado_bi(base_analise):
             if pd.notna(valor)
         }
     )
-    total_atendidas = 0
-    soma_ponderada_tmea = 0
-
-    for dia in dias_periodo:
-        dados_dia = buscar_tmea_diario_powerbi(dia)
-        atendidas_dia = int(dados_dia.get("atendidas") or 0)
-        tmea_segundos_dia = float(dados_dia.get("tmea_segundos") or 0)
-        if atendidas_dia <= 0:
-            continue
-        total_atendidas += atendidas_dia
-        soma_ponderada_tmea += tmea_segundos_dia * atendidas_dia
-
-    if total_atendidas <= 0:
-        return 0
-
-    return soma_ponderada_tmea / total_atendidas
+    dados_periodo = buscar_tmea_periodo_powerbi(dias_periodo)
+    return float(dados_periodo.get("tmea_segundos") or 0)
 
 
 def decodificar_linhas_powerbi(linhas):
