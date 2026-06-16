@@ -195,6 +195,11 @@ TECNICOS_DESCONSIDERADOS_ESPERADO = {
     "lorena dias araujo",
     "lucas luiz romero",
 }
+DESLIGAMENTOS_TECNICOS = [
+    ("Daniel Gomes da Silva", date(2026, 6, 15)),
+    ("Karina Gonçalves Martins", date(2026, 6, 9)),
+    ("Lorena Dias de Araujo", date(2026, 6, 4)),
+]
 
 META_ESPERADA_POR_NIVEL = {
     "Técnico III": 35,
@@ -2098,6 +2103,8 @@ def _mostrar_gestao_disponibilidade_legado(dataframe):
         (dataframe["Data"].dt.year == ano_filtro)
         & (dataframe["Data"].dt.month == mes_filtro)
     ].copy()
+    base_mes = filtrar_dataframe_tecnicos_ativos(base_mes)
+    base_mes = filtrar_dataframe_tecnicos_ativos(base_mes)
     web_mes = base_mes[
         base_mes.apply(
             lambda linha: modalidade_tecnico_em_data(
@@ -3219,6 +3226,34 @@ def tecnicos_da_planilha(ws, colunas):
             if ws.cell(row=row, column=colunas["Técnico"]).value
         }
     )
+
+
+def tecnico_ativo_na_data(tecnico, data_referencia):
+    nome_normalizado = normalizar_nome(tecnico)
+    for nome_desligado, ultimo_dia in DESLIGAMENTOS_TECNICOS:
+        if nome_normalizado == normalizar_nome(nome_desligado):
+            return data_referencia <= ultimo_dia
+    return True
+
+
+def filtrar_dataframe_tecnicos_ativos(
+    dataframe,
+    coluna_tecnico="TÃ©cnico",
+    coluna_data="Data",
+):
+    return dataframe[
+        dataframe.apply(
+            lambda linha: (
+                pd.notna(linha.get(coluna_data))
+                and bool(builtins.str(linha.get(coluna_tecnico) or "").strip())
+                and tecnico_ativo_na_data(
+                    linha.get(coluna_tecnico),
+                    pd.Timestamp(linha.get(coluna_data)).date(),
+                )
+            ),
+            axis=1,
+        )
+    ].copy()
 
 
 def garantir_linhas_da_data(ws, colunas, data_referencia):
@@ -6935,6 +6970,7 @@ if modo_gestao and visao_gestao == "Visão Geral":
         (df["Data"].dt.month == mes_visao_gestao)
         & (df["Data"].dt.year == ano_visao_gestao)
     ].copy()
+    dados_gestao_mes = filtrar_dataframe_tecnicos_ativos(dados_gestao_mes)
 
     realizado_gestao = int(dados_gestao_mes["Realizado"].sum())
     esperado_gestao = int(dados_gestao_mes["Esperado"].sum())
