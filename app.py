@@ -58,7 +58,6 @@ COLUNA_ABANDONADAS = "Abandonadas"
 TECNICOS_SGD_WEB = [
     "Isabella Alves Queiroz",
     "Joao Frutuoso Machado Neto",
-    ("PatrÃ­cia Karla de Sousa AraÃºjo", date(2026, 5, 22)),
 ]
 TECNICOS_SGD_WEB_ALIASES = [
     "isabella alves queiroz",
@@ -200,6 +199,7 @@ DESLIGAMENTOS_TECNICOS = [
     ("Daniel Gomes da Silva", date(2026, 6, 15)),
     ("Karina Gonçalves Martins", date(2026, 6, 9)),
     ("Lorena Dias de Araujo", date(2026, 6, 4)),
+    ("Patrícia Karla de Sousa Araújo", date(2026, 5, 22)),
 ]
 
 META_ESPERADA_POR_NIVEL = {
@@ -4388,6 +4388,7 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha, modo="todos"):
     registros_periodo_por_tecnico = {}
     registros_por_chave = {}
     total_fonte = 0
+    tecnicos_origem_alias = []
 
     if incluir_fone:
         registros_periodo = buscar_satisfacao_sgd(
@@ -4414,6 +4415,9 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha, modo="todos"):
             }
         )
         total_fonte += len(registros_sgd)
+        tecnicos_origem_alias.extend(
+            [registro["tecnico"] for registro in registros_sgd]
+        )
 
     if incluir_web:
         registros_periodo_web = buscar_satisfacao_sgd(
@@ -4442,6 +4446,9 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha, modo="todos"):
             }
         )
         total_fonte += len(registros_sgd_web)
+        tecnicos_origem_alias.extend(
+            [registro["tecnico"] for registro in registros_sgd_web]
+        )
 
     wb = carregar_workbook_produtividade()
     ws = wb[ABA_PRODUTIVIDADE]
@@ -4462,7 +4469,7 @@ def atualizar_planilha_com_sgd(data_referencia, usuario, senha, modo="todos"):
     ws_aliases = garantir_aba_aliases(
         wb,
         tecnicos,
-        [registro["tecnico"] for registro in registros_sgd],
+        tecnicos_origem_alias,
         coluna_alias=3,
     )
     aliases = ler_aliases(ws_aliases, coluna_alias=3)
