@@ -4180,6 +4180,22 @@ def segundos_para_tma_planilha(valor):
     return round(minutos + (resto / 100), 2)
 
 
+def tma_planilha_para_segundos(valor):
+    if pd.isna(valor):
+        return 0
+    valor_float = float(valor or 0)
+    minutos = int(valor_float)
+    segundos = int(round((valor_float - minutos) * 100))
+    return (minutos * 60) + segundos
+
+
+def formatar_segundos_hhmmss(valor):
+    total_segundos = max(int(round(float(valor or 0))), 0)
+    horas, resto = divmod(total_segundos, 3600)
+    minutos, segundos = divmod(resto, 60)
+    return f"{horas:02d}:{minutos:02d}:{segundos:02d}"
+
+
 def decodificar_linhas_powerbi(linhas):
     registros = []
     anterior = [None] * 8
@@ -7816,6 +7832,28 @@ if modo_gestao and visao_gestao == "Analise":
         f"{data_final_analise.strftime('%d/%m/%Y')}"
     )
     atendidas_total_analise = int(analitico_analise["Atendidas"].fillna(0).sum())
+    if "TMA" in base_analise.columns:
+        base_tma_analise = base_analise.copy()
+        base_tma_analise["Atendidas_calc"] = pd.to_numeric(
+            base_tma_analise["Atendidas"],
+            errors="coerce",
+        ).fillna(0)
+        base_tma_analise["TMA_segundos"] = base_tma_analise["TMA"].map(
+            tma_planilha_para_segundos
+        )
+        total_atendidas_tma = float(base_tma_analise["Atendidas_calc"].sum())
+        if total_atendidas_tma > 0:
+            tme_realizado_segundos = (
+                (
+                    base_tma_analise["TMA_segundos"]
+                    * base_tma_analise["Atendidas_calc"]
+                ).sum()
+                / total_atendidas_tma
+            )
+        else:
+            tme_realizado_segundos = 0
+    else:
+        tme_realizado_segundos = 0
     if "Abandonadas" in base_analise.columns:
         abandonadas_total_analise = int(
             base_analise.groupby("Data", as_index=False)["Abandonadas"]
@@ -7841,6 +7879,10 @@ if modo_gestao and visao_gestao == "Analise":
             <div class="analise-card">
                 <small>TME</small>
                 <strong>00:02:00</strong>
+            </div>
+            <div class="analise-card">
+                <small>TME Realizado</small>
+                <strong>{formatar_segundos_hhmmss(tme_realizado_segundos)}</strong>
             </div>
         </div>
         """.replace(",", "."),
