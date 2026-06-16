@@ -7816,7 +7816,15 @@ if modo_gestao and visao_gestao == "Analise":
         f"{data_final_analise.strftime('%d/%m/%Y')}"
     )
     atendidas_total_analise = int(analitico_analise["Atendidas"].fillna(0).sum())
-    abandonadas_total_analise = int(base_analise["Abandonadas"].fillna(0).sum()) if "Abandonadas" in base_analise.columns else 0
+    if "Abandonadas" in base_analise.columns:
+        abandonadas_total_analise = int(
+            base_analise.groupby("Data", as_index=False)["Abandonadas"]
+            .max()["Abandonadas"]
+            .fillna(0)
+            .sum()
+        )
+    else:
+        abandonadas_total_analise = 0
 
     st.caption(f"Período analisado: {periodo_texto}")
     st.markdown(
