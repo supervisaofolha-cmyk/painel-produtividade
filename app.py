@@ -6785,6 +6785,7 @@ if modo_gestao:
         "Navegação da gestão",
         [
             "Visão Geral",
+            "Analise",
             "Resultados Individuais",
             "Disponibilidade",
             "Lista de Apoio",
