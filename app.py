@@ -7014,14 +7014,18 @@ if modo_gestao and visao_gestao == "Visão Geral":
     )
 
     data_status = dados_gestao_mes["Data"].max()
-    status_atual = (
-        dados_gestao_mes[dados_gestao_mes["Data"] == data_status][
-            ["Técnico", "Nível", "Classificação"]
-        ]
-        .dropna(subset=["Técnico", "Classificação"])
-        .sort_values(by=["Classificação", "Técnico"])
-    )
-    if pd.notna(data_status):
+    if pd.isna(data_status):
+        status_atual = pd.DataFrame(
+            columns=["Técnico", "Nível", "Classificação"]
+        )
+    else:
+        status_atual = (
+            dados_gestao_mes[dados_gestao_mes["Data"] == data_status][
+                ["Técnico", "Nível", "Classificação"]
+            ]
+            .dropna(subset=["Técnico", "Classificação"])
+            .sort_values(by=["Classificação", "Técnico"])
+        )
         referencia_status_ativo = min(
             datetime.now(FUSO_HORARIO_APP).date(),
             pd.Timestamp(data_status).date(),
@@ -7035,8 +7039,6 @@ if modo_gestao and visao_gestao == "Visão Geral":
                 {normalizar_nome(nome) for nome in nomes_status_ativos}
             )
         ].copy()
-    else:
-        status_atual = status_atual.iloc[0:0].copy()
     tecnicos_ativos_gestao = int(status_atual["Técnico"].nunique())
     percentuais_absorcao_mes = percentuais_absorcao_por_mes(
         df,
