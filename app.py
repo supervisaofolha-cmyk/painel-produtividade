@@ -58,6 +58,7 @@ COLUNA_ABANDONADAS = "Abandonadas"
 TECNICOS_SGD_WEB = [
     "Isabella Alves Queiroz",
     "Joao Frutuoso Machado Neto",
+    ("PatrÃ­cia Karla de Sousa AraÃºjo", date(2026, 5, 22)),
 ]
 TECNICOS_SGD_WEB_ALIASES = [
     "isabella alves queiroz",
