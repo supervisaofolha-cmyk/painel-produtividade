@@ -1942,6 +1942,159 @@ def nome_mes_ano(ano, mes):
     return f"{nomes_meses[mes]} de {ano}"
 
 
+def faixa_periodo_analise(ano, mes, modo_periodo):
+    ultimo_dia = calendar.monthrange(ano, mes)[1]
+    if modo_periodo == "1a quinzena":
+        return date(ano, mes, 1), date(ano, mes, min(15, ultimo_dia))
+    if modo_periodo == "2a quinzena":
+        return date(ano, mes, min(16, ultimo_dia)), date(ano, mes, ultimo_dia)
+    return date(ano, mes, 1), date(ano, mes, ultimo_dia)
+
+
+def construir_analise_gestao(dataframe, ano, mes, modo_periodo):
+    data_inicial, data_final = faixa_periodo_analise(ano, mes, modo_periodo)
+    base = dataframe[
+        (dataframe["Data"].dt.date >= data_inicial)
+        & (dataframe["Data"].dt.date <= data_final)
+    ].copy()
+    base = filtrar_dataframe_tecnicos_ativos(base)
+
+    if base.empty:
+        return data_inicial, data_final, base, pd.DataFrame()
+
+    coluna_votacao = None
+    coluna_satisfacao = None
+    try:
+        coluna_votacao = nome_coluna_dataframe(
+            base,
+            "Votacao",
+            "Votacao Media",
+            "Votacao",
+            "Vota??o",
+            "Votação",
+        )
+    except Exception:
+        coluna_votacao = None
+
+    try:
+        coluna_satisfacao = nome_coluna_dataframe(
+            base,
+            "Satisfacao",
+            "Satisfa??o",
+            "Satisfação",
+        )
+    except Exception:
+        coluna_satisfacao = None
+
+    registros = []
+    for tecnico_nome, dados_tecnico_periodo in base.groupby("Técnico"):
+        dados_tecnico_periodo = dados_tecnico_periodo.sort_values("Data").copy()
+        if dados_tecnico_periodo.empty:
+            continue
+
+        ultima_linha = dados_tecnico_periodo.iloc[-1]
+        data_referencia = pd.Timestamp(ultima_linha["Data"]).date()
+        canal = modalidade_tecnico_em_data(tecnico_nome, data_referencia)
+        nivel = nivel_tecnico_no_mes(dataframe, tecnico_nome, ano, mes)
+
+        realizado_fone = int(dados_tecnico_periodo["Realizado"].sum())
+        esperado = int(dados_tecnico_periodo["Esperado"].sum())
+        atendidas = int(dados_tecnico_periodo["Atendidas"].sum())
+        ssc = int(dados_tecnico_periodo["SSC"].sum()) if "SSC" in dados_tecnico_periodo.columns else 0
+        ro = int(dados_tecnico_periodo["RO"].sum()) if "RO" in dados_tecnico_periodo.columns else 0
+        chat = int(dados_tecnico_periodo["CHAT"].sum()) if "CHAT" in dados_tecnico_periodo.columns else 0
+
+        if canal == "web":
+            producao = ssc
+            esperado_exibicao = None
+            desvio = None
+            produtividade = None
+            classificacao = "-"
+        elif canal == "chat":
+            producao = chat
+            esperado_exibicao = None
+            desvio = None
+            produtividade = None
+            classificacao = "-"
+        else:
+            producao = realizado_fone
+            esperado_exibicao = esperado
+            desvio = producao - esperado
+            produtividade = (producao / esperado) * 100 if esperado > 0 else None
+            classificacao = status_por_desvio(desvio) if esperado > 0 else "-"
+
+        votacao_media = None
+        if coluna_votacao and coluna_votacao in dados_tecnico_periodo.columns:
+            serie_votacao = pd.to_numeric(
+                dados_tecnico_periodo[coluna_votacao],
+                errors="coerce",
+            ).dropna()
+            if not serie_votacao.empty:
+                votacao_media = round(float(serie_votacao.mean()), 2)
+
+        satisfacao_media = None
+        if coluna_satisfacao and coluna_satisfacao in dados_tecnico_periodo.columns:
+            serie_satisfacao = pd.to_numeric(
+                dados_tecnico_periodo[coluna_satisfacao],
+                errors="coerce",
+            ).dropna()
+            if not serie_satisfacao.empty:
+                satisfacao_media = round(float(serie_satisfacao.mean()), 2)
+
+        dias_meta = None
+        if COLUNA_DIAS_META in dados_tecnico_periodo.columns:
+            serie_dias_meta = pd.to_numeric(
+                dados_tecnico_periodo[COLUNA_DIAS_META],
+                errors="coerce",
+            ).dropna()
+            if not serie_dias_meta.empty:
+                dias_meta = float(serie_dias_meta.iloc[-1])
+
+        registros.append(
+            {
+                "Tecnico": tecnico_nome,
+                "Nivel": nivel,
+                "Canal": canal.upper(),
+                "Producao": int(producao),
+                "Esperado": esperado_exibicao,
+                "Desvio": desvio,
+                "Produtividade (%)": produtividade,
+                "Atendidas": atendidas,
+                "SSC": ssc,
+                "RO": ro,
+                "Chat": chat,
+                "Votacao Media (%)": votacao_media,
+                "Satisfacao (%)": satisfacao_media,
+                "Dias Meta": dias_meta,
+                "Classificacao": classificacao,
+            }
+        )
+
+    analitico = pd.DataFrame(registros)
+    if analitico.empty:
+        return data_inicial, data_final, base, analitico
+
+    ordem_canal = {"FONE": 0, "HIBRIDO": 1, "WEB": 2, "CHAT": 3}
+    analitico["_ordem_canal"] = analitico["Canal"].map(ordem_canal).fillna(9)
+    analitico = analitico.sort_values(
+        by=["_ordem_canal", "Producao", "Tecnico"],
+        ascending=[True, False, True],
+    ).drop(columns="_ordem_canal")
+    return data_inicial, data_final, base, analitico.reset_index(drop=True)
+
+
+def gerar_excel_analise_gestao(periodo_label, resumo_linhas, analitico):
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        pd.DataFrame(resumo_linhas).to_excel(
+            writer,
+            sheet_name="Resumo",
+            index=False,
+        )
+        analitico.to_excel(writer, sheet_name="Analise", index=False)
+    return buffer.getvalue()
+
+
 def abreviar_nome_disponibilidade(nome):
     partes = builtins.str(nome or "").title().split()
     if len(partes) <= 2:
@@ -6285,11 +6438,93 @@ st.markdown(
     text-align:center;
     margin-top:22px;
 }}
+.analise-faixa {{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:16px;
+    margin:10px 0 18px;
+}}
+.analise-card {{
+    background:#FFFFFF;
+    border:1px solid #D9E1EC;
+    border-radius:14px;
+    padding:18px;
+    box-shadow:0 8px 24px rgba(15, 23, 42, 0.04);
+}}
+.analise-card small {{
+    display:block;
+    color:#6B7280;
+    font-size:12px;
+    margin-bottom:8px;
+}}
+.analise-card strong {{
+    display:block;
+    color:#111827;
+    font-size:28px;
+    line-height:1;
+}}
+.analise-card em {{
+    display:block;
+    color:#6B7280;
+    font-size:12px;
+    font-style:normal;
+    margin-top:8px;
+}}
+.analise-bloco {{
+    background:#FFFFFF;
+    border:1px solid #D9E1EC;
+    border-radius:14px;
+    padding:18px;
+    box-shadow:0 8px 24px rgba(15, 23, 42, 0.04);
+    margin-bottom:18px;
+}}
+.analise-bloco h4 {{
+    color:#111827;
+    font-size:16px;
+    font-weight:700;
+    margin:0 0 14px 0;
+}}
+.analise-pills {{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+}}
+.analise-pill {{
+    border:1px solid #E5E7EB;
+    border-radius:999px;
+    padding:8px 12px;
+    font-size:12px;
+    color:#111827;
+    background:#FFFFFF;
+}}
+.analise-ranking-lista {{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}}
+.analise-ranking-item {{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:10px 12px;
+    border:1px solid #E5E7EB;
+    border-radius:12px;
+    background:#FAFAFA;
+}}
+.analise-ranking-item strong {{
+    color:#111827;
+    font-size:13px;
+}}
+.analise-ranking-item span {{
+    color:#6B7280;
+    font-size:12px;
+}}
 @media (max-width: 900px) {{
     .gestao-kpi-grid,
     .gestao-grid-duplo,
     .gestao-linha-inferior,
-    .gestao-resumo-faixa {{
+    .gestao-resumo-faixa,
+    .analise-faixa {{
         grid-template-columns:1fr;
     }}
     .disp-filtros,
