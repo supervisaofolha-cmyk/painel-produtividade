@@ -7815,189 +7815,19 @@ if modo_gestao and visao_gestao == "Analise":
         f"{data_inicial_analise.strftime('%d/%m/%Y')} a "
         f"{data_final_analise.strftime('%d/%m/%Y')}"
     )
-    tecnicos_meta = analitico_analise[
-        analitico_analise["Esperado"].notna()
-        & (analitico_analise["Esperado"] > 0)
-    ].copy()
-    realizado_total_analise = int(tecnicos_meta["Producao"].sum())
-    esperado_total_analise = int(tecnicos_meta["Esperado"].sum())
-    desvio_total_analise = realizado_total_analise - esperado_total_analise
     atendidas_total_analise = int(analitico_analise["Atendidas"].fillna(0).sum())
-    ssc_total_analise = int(analitico_analise["SSC"].fillna(0).sum())
-    ro_total_analise = int(analitico_analise["RO"].fillna(0).sum())
-    chat_total_analise = int(analitico_analise["Chat"].fillna(0).sum())
-    votacao_media_analise = pd.to_numeric(
-        analitico_analise["Votacao Media (%)"],
-        errors="coerce",
-    ).dropna()
-    satisfacao_media_analise = pd.to_numeric(
-        analitico_analise["Satisfacao (%)"],
-        errors="coerce",
-    ).dropna()
-    votacao_media_geral_analise = (
-        round(float(votacao_media_analise.mean()), 2)
-        if not votacao_media_analise.empty
-        else None
-    )
-    satisfacao_media_geral_analise = (
-        round(float(satisfacao_media_analise.mean()), 2)
-        if not satisfacao_media_analise.empty
-        else None
-    )
-    produtividade_media_analise = (
-        round((realizado_total_analise / esperado_total_analise) * 100, 2)
-        if esperado_total_analise > 0
-        else None
-    )
-
-    status_contagem_analise = {
-        status: int((tecnicos_meta["Classificacao"] == status).sum())
-        for status in ["CRÍTICO", "ATENÇÃO", "BOM", "EXCELENTE"]
-    }
-    canais_exibicao = {
-        "FONE": "Fone",
-        "HIBRIDO": "Fone + WEB",
-        "WEB": "WEB",
-        "CHAT": "CHAT",
-    }
-
-    cards_analise = [
-        ("Realizado", f"{realizado_total_analise:,}".replace(",", "."), None),
-        ("Esperado", f"{esperado_total_analise:,}".replace(",", "."), None),
-        ("Desvio", f"{desvio_total_analise:+d}", "#DC2626" if desvio_total_analise < 0 else "#16A34A"),
-        ("Atendidas", f"{atendidas_total_analise:,}".replace(",", "."), None),
-        ("SSC Total", f"{ssc_total_analise:,}".replace(",", "."), None),
-        ("RO Total", f"{ro_total_analise:,}".replace(",", "."), None),
-    ]
-    if chat_total_analise > 0:
-        cards_analise.append(("CHAT", f"{chat_total_analise:,}".replace(",", "."), None))
-    if produtividade_media_analise is not None:
-        cards_analise.append(
-            ("Produtividade", f"{produtividade_media_analise:.2f}%".replace(".", ","), None)
-        )
-    if votacao_media_geral_analise is not None:
-        cards_analise.append(
-            ("Votação Média", f"{votacao_media_geral_analise:.2f}%".replace(".", ","), None)
-        )
-    if satisfacao_media_geral_analise is not None:
-        cards_analise.append(
-            ("Satisfação", f"{satisfacao_media_geral_analise:.2f}%".replace(".", ","), None)
-        )
-
-    cards_analise_html = "".join(
-        f"""
-        <div class="analise-card">
-            <small>{escape(rotulo)}</small>
-            <strong{f' style="color:{cor};"' if cor else ''}>{escape(valor)}</strong>
-        </div>
-        """
-        for rotulo, valor, cor in cards_analise
-    )
 
     st.caption(f"Período analisado: {periodo_texto}")
     st.markdown(
-        f'<div class="analise-faixa">{cards_analise_html}</div>',
+        f"""
+        <div class="analise-faixa">
+            <div class="analise-card">
+                <small>Atendidas</small>
+                <strong>{atendidas_total_analise:,}</strong>
+            </div>
+        </div>
+        """.replace(",", "."),
         unsafe_allow_html=True,
-    )
-
-    
-    filtro_canal_analise = st.selectbox(
-        "Canal da tabela",
-        ["Todos", "Fone", "Fone + WEB", "WEB", "CHAT"],
-        key="gestao_analise_filtro_canal",
-    )
-    mapa_filtro_analise = {
-        "Todos": None,
-        "Fone": "FONE",
-        "Fone + WEB": "HIBRIDO",
-        "WEB": "WEB",
-        "CHAT": "CHAT",
-    }
-    analitico_tabela = analitico_analise.copy()
-    canal_filtrado = mapa_filtro_analise[filtro_canal_analise]
-    if canal_filtrado:
-        analitico_tabela = analitico_tabela[
-            analitico_tabela["Canal"] == canal_filtrado
-        ].copy()
-
-    analitico_export = analitico_tabela.copy()
-    analitico_exibicao = analitico_tabela.copy()
-    analitico_exibicao["Tecnico"] = analitico_exibicao["Tecnico"].map(
-        lambda valor: builtins.str(valor).title()
-    )
-    analitico_exibicao["Canal"] = analitico_exibicao["Canal"].map(
-        lambda valor: canais_exibicao.get(valor, valor)
-    )
-    for coluna_percentual in ["Produtividade (%)", "Votacao Media (%)", "Satisfacao (%)"]:
-        analitico_exibicao[coluna_percentual] = analitico_exibicao[coluna_percentual].map(
-            lambda valor: ""
-            if pd.isna(valor)
-            else f"{float(valor):.2f}%".replace(".", ",")
-        )
-    for coluna_inteira in ["Esperado", "Desvio", "Dias Meta"]:
-        analitico_exibicao[coluna_inteira] = analitico_exibicao[coluna_inteira].map(
-            lambda valor: ""
-            if pd.isna(valor)
-            else builtins.str(int(valor))
-            if float(valor).is_integer()
-            else f"{float(valor):.2f}".replace(".", ",")
-        )
-
-    resumo_export = [
-        {"Indicador": "Mes de referencia", "Valor": periodo_analise_label},
-        {"Indicador": "Recorte", "Valor": modo_periodo_analise},
-        {"Indicador": "Periodo", "Valor": periodo_texto},
-        {"Indicador": "Tecnicos no periodo", "Valor": int(analitico_analise["Tecnico"].nunique())},
-        {"Indicador": "Realizado consolidado", "Valor": realizado_total_analise},
-        {"Indicador": "Esperado consolidado", "Valor": esperado_total_analise},
-        {"Indicador": "Desvio consolidado", "Valor": desvio_total_analise},
-    ]
-    excel_analise = gerar_excel_analise_gestao(
-        periodo_analise_label,
-        resumo_export,
-        analitico_export,
-    )
-
-    col_titulo_analise, col_download_analise = st.columns([1, 0.24])
-    with col_titulo_analise:
-        st.markdown("#### Tabela analitica do periodo")
-    with col_download_analise:
-        st.download_button(
-            "Baixar analise",
-            data=excel_analise,
-            file_name=(
-                f"analise_{ano_analise}_{mes_analise:02d}_"
-                f"{modo_periodo_analise.replace(' ', '_')}.xlsx"
-            ),
-            mime=(
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            ),
-            key="download_analise_gestao",
-            use_container_width=True,
-        )
-
-    st.dataframe(
-        analitico_exibicao[
-            [
-                "Tecnico",
-                "Nivel",
-                "Canal",
-                "Producao",
-                "Esperado",
-                "Desvio",
-                "Produtividade (%)",
-                "Atendidas",
-                "SSC",
-                "RO",
-                "Chat",
-                "Votacao Media (%)",
-                "Satisfacao (%)",
-                "Dias Meta",
-                "Classificacao",
-            ]
-        ],
-        use_container_width=True,
-        hide_index=True,
     )
 
     st.stop()
