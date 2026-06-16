@@ -310,6 +310,7 @@ PROGRAMACAO_AUSENCIAS = [
     ("Milena da Silva Sales", date(2026, 6, 18), "Atestado", None),
     ("Milena da Silva Sales", date(2026, 6, 19), "Atestado", None),
     ("Alisson de Freitas Silva", date(2026, 6, 15), "Internet", None),
+    ("Lizandra Gomes Duarte", date(2026, 6, 16), "Energia", 4 * 60),
 ]
 
 
