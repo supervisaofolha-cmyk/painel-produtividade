@@ -7815,7 +7815,6 @@ if modo_gestao and visao_gestao == "Analise":
         f"{data_inicial_analise.strftime('%d/%m/%Y')} a "
         f"{data_final_analise.strftime('%d/%m/%Y')}"
     )
-    tecnicos_total_analise = int(analitico_analise["Tecnico"].nunique())
     tecnicos_meta = analitico_analise[
         analitico_analise["Esperado"].notna()
         & (analitico_analise["Esperado"] > 0)
@@ -7823,9 +7822,33 @@ if modo_gestao and visao_gestao == "Analise":
     realizado_total_analise = int(tecnicos_meta["Producao"].sum())
     esperado_total_analise = int(tecnicos_meta["Esperado"].sum())
     desvio_total_analise = realizado_total_analise - esperado_total_analise
-    tecnicos_web_analise = int((analitico_analise["Canal"] == "WEB").sum())
-    tecnicos_chat_analise = int((analitico_analise["Canal"] == "CHAT").sum())
-    tecnicos_hibridos_analise = int((analitico_analise["Canal"] == "HIBRIDO").sum())
+    atendidas_total_analise = int(analitico_analise["Atendidas"].fillna(0).sum())
+    ssc_total_analise = int(analitico_analise["SSC"].fillna(0).sum())
+    ro_total_analise = int(analitico_analise["RO"].fillna(0).sum())
+    chat_total_analise = int(analitico_analise["Chat"].fillna(0).sum())
+    votacao_media_analise = pd.to_numeric(
+        analitico_analise["Votacao Media (%)"],
+        errors="coerce",
+    ).dropna()
+    satisfacao_media_analise = pd.to_numeric(
+        analitico_analise["Satisfacao (%)"],
+        errors="coerce",
+    ).dropna()
+    votacao_media_geral_analise = (
+        round(float(votacao_media_analise.mean()), 2)
+        if not votacao_media_analise.empty
+        else None
+    )
+    satisfacao_media_geral_analise = (
+        round(float(satisfacao_media_analise.mean()), 2)
+        if not satisfacao_media_analise.empty
+        else None
+    )
+    produtividade_media_analise = (
+        round((realizado_total_analise / esperado_total_analise) * 100, 2)
+        if esperado_total_analise > 0
+        else None
+    )
 
     status_contagem_analise = {
         status: int((tecnicos_meta["Classificacao"] == status).sum())
@@ -7838,31 +7861,42 @@ if modo_gestao and visao_gestao == "Analise":
         "CHAT": "CHAT",
     }
 
-    st.markdown(
+    cards_analise = [
+        ("Realizado", f"{realizado_total_analise:,}".replace(",", "."), None),
+        ("Esperado", f"{esperado_total_analise:,}".replace(",", "."), None),
+        ("Desvio", f"{desvio_total_analise:+d}", "#DC2626" if desvio_total_analise < 0 else "#16A34A"),
+        ("Atendidas", f"{atendidas_total_analise:,}".replace(",", "."), None),
+        ("SSC Total", f"{ssc_total_analise:,}".replace(",", "."), None),
+        ("RO Total", f"{ro_total_analise:,}".replace(",", "."), None),
+    ]
+    if chat_total_analise > 0:
+        cards_analise.append(("CHAT", f"{chat_total_analise:,}".replace(",", "."), None))
+    if produtividade_media_analise is not None:
+        cards_analise.append(
+            ("Produtividade", f"{produtividade_media_analise:.2f}%".replace(".", ","), None)
+        )
+    if votacao_media_geral_analise is not None:
+        cards_analise.append(
+            ("Votação Média", f"{votacao_media_geral_analise:.2f}%".replace(".", ","), None)
+        )
+    if satisfacao_media_geral_analise is not None:
+        cards_analise.append(
+            ("Satisfação", f"{satisfacao_media_geral_analise:.2f}%".replace(".", ","), None)
+        )
+
+    cards_analise_html = "".join(
         f"""
-        <div class="analise-faixa">
-            <div class="analise-card">
-                <small>Periodo</small>
-                <strong>{escape(modo_periodo_analise)}</strong>
-                <em>{escape(periodo_texto)}</em>
-            </div>
-            <div class="analise-card">
-                <small>Tecnicos no periodo</small>
-                <strong>{tecnicos_total_analise}</strong>
-                <em>{tecnicos_web_analise} WEB • {tecnicos_chat_analise} CHAT • {tecnicos_hibridos_analise} hibrido(s)</em>
-            </div>
-            <div class="analise-card">
-                <small>Realizado x Esperado</small>
-                <strong>{realizado_total_analise:,} / {esperado_total_analise:,}</strong>
-                <em>Base de meta: canais de fone</em>
-            </div>
-            <div class="analise-card">
-                <small>Desvio consolidado</small>
-                <strong style="color:{'#DC2626' if desvio_total_analise < 0 else '#16A34A'};">{desvio_total_analise:+d}</strong>
-                <em>Comparativo do periodo</em>
-            </div>
+        <div class="analise-card">
+            <small>{escape(rotulo)}</small>
+            <strong{f' style="color:{cor};"' if cor else ''}>{escape(valor)}</strong>
+            <em>{escape(periodo_texto)}</em>
         </div>
-        """.replace(",", "."),
+        """
+        for rotulo, valor, cor in cards_analise
+    )
+
+    st.markdown(
+        f'<div class="analise-faixa">{cards_analise_html}</div>',
         unsafe_allow_html=True,
     )
 
