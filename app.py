@@ -7021,19 +7021,22 @@ if modo_gestao and visao_gestao == "Visão Geral":
         .dropna(subset=["Técnico", "Classificação"])
         .sort_values(by=["Classificação", "Técnico"])
     )
-    referencia_status_ativo = min(
-        datetime.now(FUSO_HORARIO_APP).date(),
-        pd.Timestamp(data_status).date(),
-    )
-    nomes_status_ativos = nomes_ativos_na_referencia(
-        status_atual["Técnico"].dropna().unique().tolist(),
-        referencia_status_ativo,
-    )
-    status_atual = status_atual[
-        status_atual["Técnico"].map(normalizar_nome).isin(
-            {normalizar_nome(nome) for nome in nomes_status_ativos}
+    if pd.notna(data_status):
+        referencia_status_ativo = min(
+            datetime.now(FUSO_HORARIO_APP).date(),
+            pd.Timestamp(data_status).date(),
         )
-    ].copy()
+        nomes_status_ativos = nomes_ativos_na_referencia(
+            status_atual["Técnico"].dropna().unique().tolist(),
+            referencia_status_ativo,
+        )
+        status_atual = status_atual[
+            status_atual["Técnico"].map(normalizar_nome).isin(
+                {normalizar_nome(nome) for nome in nomes_status_ativos}
+            )
+        ].copy()
+    else:
+        status_atual = status_atual.iloc[0:0].copy()
     tecnicos_ativos_gestao = int(status_atual["Técnico"].nunique())
     percentuais_absorcao_mes = percentuais_absorcao_por_mes(
         df,
