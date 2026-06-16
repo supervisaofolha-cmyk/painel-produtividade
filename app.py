@@ -7696,6 +7696,291 @@ if modo_gestao and visao_gestao == "Visão Geral":
 
     st.stop()
 
+if modo_gestao and visao_gestao == "Analise":
+    st.subheader("Analise Quinzenal e Mensal")
+    st.caption(
+        "Use esta guia para acompanhar a analise do mes sem depender da planilha manual."
+    )
+
+    periodos_analise = sorted(
+        {
+            (data.year, data.month)
+            for data in df["Data"].dropna()
+        },
+        reverse=True,
+    )
+    opcoes_periodo_analise = {
+        nome_mes_ano(ano_periodo, mes_periodo): (ano_periodo, mes_periodo)
+        for ano_periodo, mes_periodo in periodos_analise
+    }
+    periodo_padrao_analise = nome_mes_ano(ano_atual, mes_atual)
+    if periodo_padrao_analise not in opcoes_periodo_analise:
+        periodo_padrao_analise = next(iter(opcoes_periodo_analise))
+
+    col_mes_analise, col_modo_analise = st.columns([0.32, 0.68])
+    with col_mes_analise:
+        periodo_analise_label = st.selectbox(
+            "Mes da analise",
+            list(opcoes_periodo_analise.keys()),
+            index=list(opcoes_periodo_analise.keys()).index(periodo_padrao_analise),
+            key="gestao_analise_mes",
+            label_visibility="collapsed",
+        )
+    with col_modo_analise:
+        modo_periodo_analise = st.radio(
+            "Recorte da analise",
+            ["1a quinzena", "2a quinzena", "Mensal"],
+            key="gestao_analise_modo",
+            horizontal=True,
+            label_visibility="collapsed",
+        )
+
+    ano_analise, mes_analise = opcoes_periodo_analise[periodo_analise_label]
+    (
+        data_inicial_analise,
+        data_final_analise,
+        base_analise,
+        analitico_analise,
+    ) = construir_analise_gestao(df, ano_analise, mes_analise, modo_periodo_analise)
+
+    if analitico_analise.empty:
+        st.info("Nao encontrei dados para esse periodo.")
+        st.stop()
+
+    periodo_texto = (
+        f"{data_inicial_analise.strftime('%d/%m/%Y')} a "
+        f"{data_final_analise.strftime('%d/%m/%Y')}"
+    )
+    tecnicos_total_analise = int(analitico_analise["Tecnico"].nunique())
+    tecnicos_meta = analitico_analise[
+        analitico_analise["Esperado"].notna()
+        & (analitico_analise["Esperado"] > 0)
+    ].copy()
+    realizado_total_analise = int(tecnicos_meta["Producao"].sum())
+    esperado_total_analise = int(tecnicos_meta["Esperado"].sum())
+    desvio_total_analise = realizado_total_analise - esperado_total_analise
+    tecnicos_web_analise = int((analitico_analise["Canal"] == "WEB").sum())
+    tecnicos_chat_analise = int((analitico_analise["Canal"] == "CHAT").sum())
+    tecnicos_hibridos_analise = int((analitico_analise["Canal"] == "HIBRIDO").sum())
+
+    status_contagem_analise = {
+        status: int((tecnicos_meta["Classificacao"] == status).sum())
+        for status in ["CRÍTICO", "ATENÇÃO", "BOM", "EXCELENTE"]
+    }
+    canais_exibicao = {
+        "FONE": "Fone",
+        "HIBRIDO": "Fone + WEB",
+        "WEB": "WEB",
+        "CHAT": "CHAT",
+    }
+
+    st.markdown(
+        f"""
+        <div class="analise-faixa">
+            <div class="analise-card">
+                <small>Periodo</small>
+                <strong>{escape(modo_periodo_analise)}</strong>
+                <em>{escape(periodo_texto)}</em>
+            </div>
+            <div class="analise-card">
+                <small>Tecnicos no periodo</small>
+                <strong>{tecnicos_total_analise}</strong>
+                <em>{tecnicos_web_analise} WEB • {tecnicos_chat_analise} CHAT • {tecnicos_hibridos_analise} hibrido(s)</em>
+            </div>
+            <div class="analise-card">
+                <small>Realizado x Esperado</small>
+                <strong>{realizado_total_analise:,} / {esperado_total_analise:,}</strong>
+                <em>Base de meta: canais de fone</em>
+            </div>
+            <div class="analise-card">
+                <small>Desvio consolidado</small>
+                <strong style="color:{'#DC2626' if desvio_total_analise < 0 else '#16A34A'};">{desvio_total_analise:+d}</strong>
+                <em>Comparativo do periodo</em>
+            </div>
+        </div>
+        """.replace(",", "."),
+        unsafe_allow_html=True,
+    )
+
+    ranking_analise = analitico_analise.sort_values(
+        by=["Producao", "Tecnico"],
+        ascending=[False, True],
+    ).head(10)
+    grafico_analise = go.Figure()
+    grafico_analise.add_bar(
+        x=[
+            "<br>".join(builtins.str(nome).title().split()[:2])
+            for nome in ranking_analise["Tecnico"]
+        ],
+        y=ranking_analise["Producao"],
+        marker_color=[
+            COR_LARANJA if indice == 0 else "#4B5563"
+            for indice in range(len(ranking_analise))
+        ],
+        text=ranking_analise["Producao"],
+        textposition="outside",
+        hovertemplate="<b>%{x}</b><br>Producao: %{y}<extra></extra>",
+    )
+    grafico_analise.update_layout(
+        title="Quem mais produziu no periodo",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=10, r=10, t=48, b=10),
+        height=320,
+        showlegend=False,
+        xaxis=dict(title=""),
+        yaxis=dict(title="Producao", gridcolor="#E5E7EB", zeroline=False),
+    )
+
+    nomes_ranking_html = "".join(
+        f"""
+        <div class="analise-ranking-item">
+            <div>
+                <strong>{escape(builtins.str(linha['Tecnico']).title())}</strong>
+                <span>{escape(canais_exibicao.get(linha['Canal'], linha['Canal']))} • {escape(builtins.str(linha['Nivel']))}</span>
+            </div>
+            <strong>{int(linha['Producao'])}</strong>
+        </div>
+        """
+        for _, linha in ranking_analise.head(5).iterrows()
+    )
+    classificacao_pills = "".join(
+        f'<div class="analise-pill" style="border-color:{CORES_STATUS[status]};">'
+        f"{status}: {quantidade}</div>"
+        for status, quantidade in status_contagem_analise.items()
+    )
+
+    col_grafico_analise, col_resumo_analise = st.columns([1.35, 1])
+    with col_grafico_analise:
+        st.plotly_chart(
+            grafico_analise,
+            use_container_width=True,
+            config={"displayModeBar": False},
+        )
+    with col_resumo_analise:
+        st.markdown(
+            """
+            <div class="analise-bloco">
+                <h4>Distribuicao por classificacao</h4>
+                <div class="analise-pills">
+            """
+            + classificacao_pills
+            + """
+                </div>
+            </div>
+            <div class="analise-bloco">
+                <h4>Destaques do periodo</h4>
+                <div class="analise-ranking-lista">
+            """
+            + nomes_ranking_html
+            + """
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    filtro_canal_analise = st.selectbox(
+        "Canal da tabela",
+        ["Todos", "Fone", "Fone + WEB", "WEB", "CHAT"],
+        key="gestao_analise_filtro_canal",
+    )
+    mapa_filtro_analise = {
+        "Todos": None,
+        "Fone": "FONE",
+        "Fone + WEB": "HIBRIDO",
+        "WEB": "WEB",
+        "CHAT": "CHAT",
+    }
+    analitico_tabela = analitico_analise.copy()
+    canal_filtrado = mapa_filtro_analise[filtro_canal_analise]
+    if canal_filtrado:
+        analitico_tabela = analitico_tabela[
+            analitico_tabela["Canal"] == canal_filtrado
+        ].copy()
+
+    analitico_export = analitico_tabela.copy()
+    analitico_exibicao = analitico_tabela.copy()
+    analitico_exibicao["Tecnico"] = analitico_exibicao["Tecnico"].map(
+        lambda valor: builtins.str(valor).title()
+    )
+    analitico_exibicao["Canal"] = analitico_exibicao["Canal"].map(
+        lambda valor: canais_exibicao.get(valor, valor)
+    )
+    for coluna_percentual in ["Produtividade (%)", "Votacao Media (%)", "Satisfacao (%)"]:
+        analitico_exibicao[coluna_percentual] = analitico_exibicao[coluna_percentual].map(
+            lambda valor: ""
+            if pd.isna(valor)
+            else f"{float(valor):.2f}%".replace(".", ",")
+        )
+    for coluna_inteira in ["Esperado", "Desvio", "Dias Meta"]:
+        analitico_exibicao[coluna_inteira] = analitico_exibicao[coluna_inteira].map(
+            lambda valor: ""
+            if pd.isna(valor)
+            else builtins.str(int(valor))
+            if float(valor).is_integer()
+            else f"{float(valor):.2f}".replace(".", ",")
+        )
+
+    resumo_export = [
+        {"Indicador": "Mes de referencia", "Valor": periodo_analise_label},
+        {"Indicador": "Recorte", "Valor": modo_periodo_analise},
+        {"Indicador": "Periodo", "Valor": periodo_texto},
+        {"Indicador": "Tecnicos no periodo", "Valor": tecnicos_total_analise},
+        {"Indicador": "Realizado consolidado", "Valor": realizado_total_analise},
+        {"Indicador": "Esperado consolidado", "Valor": esperado_total_analise},
+        {"Indicador": "Desvio consolidado", "Valor": desvio_total_analise},
+    ]
+    excel_analise = gerar_excel_analise_gestao(
+        periodo_analise_label,
+        resumo_export,
+        analitico_export,
+    )
+
+    col_titulo_analise, col_download_analise = st.columns([1, 0.24])
+    with col_titulo_analise:
+        st.markdown("#### Tabela analitica do periodo")
+    with col_download_analise:
+        st.download_button(
+            "Baixar analise",
+            data=excel_analise,
+            file_name=(
+                f"analise_{ano_analise}_{mes_analise:02d}_"
+                f"{modo_periodo_analise.replace(' ', '_')}.xlsx"
+            ),
+            mime=(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ),
+            key="download_analise_gestao",
+            use_container_width=True,
+        )
+
+    st.dataframe(
+        analitico_exibicao[
+            [
+                "Tecnico",
+                "Nivel",
+                "Canal",
+                "Producao",
+                "Esperado",
+                "Desvio",
+                "Produtividade (%)",
+                "Atendidas",
+                "SSC",
+                "RO",
+                "Chat",
+                "Votacao Media (%)",
+                "Satisfacao (%)",
+                "Dias Meta",
+                "Classificacao",
+            ]
+        ],
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    st.stop()
+
 if modo_gestao and visao_gestao == "Resultados Individuais":
     tecnico = st.selectbox(
         "Selecione o Técnico",
