@@ -7729,7 +7729,7 @@ if modo_gestao and visao_gestao == "Analise":
     with col_modo_analise:
         modo_periodo_analise = st.radio(
             "Recorte da analise",
-            ["1a quinzena", "2a quinzena", "Mensal"],
+            ["Mensal", "1a quinzena", "2a quinzena"],
             key="gestao_analise_modo",
             horizontal=True,
             label_visibility="collapsed",
@@ -7744,8 +7744,29 @@ if modo_gestao and visao_gestao == "Analise":
     ) = construir_analise_gestao(df, ano_analise, mes_analise, modo_periodo_analise)
 
     if analitico_analise.empty:
-        st.info("Nao encontrei dados para esse periodo.")
-        st.stop()
+        base_mes_analise = df[
+            (df["Data"].dt.year == ano_analise)
+            & (df["Data"].dt.month == mes_analise)
+        ].copy()
+        base_mes_analise = filtrar_dataframe_tecnicos_ativos(base_mes_analise)
+        if not base_mes_analise.empty:
+            ultima_data_disponivel = pd.Timestamp(base_mes_analise["Data"].max()).date()
+            primeira_data_disponivel = pd.Timestamp(base_mes_analise["Data"].min()).date()
+            st.warning(
+                "Esse recorte ainda nao tem dados. "
+                f"Estou mostrando o mes com dados disponiveis de "
+                f"{primeira_data_disponivel.strftime('%d/%m/%Y')} ate "
+                f"{ultima_data_disponivel.strftime('%d/%m/%Y')}."
+            )
+            (
+                data_inicial_analise,
+                data_final_analise,
+                base_analise,
+                analitico_analise,
+            ) = construir_analise_gestao(df, ano_analise, mes_analise, "Mensal")
+        else:
+            st.info("Nao encontrei dados para esse periodo.")
+            st.stop()
 
     periodo_texto = (
         f"{data_inicial_analise.strftime('%d/%m/%Y')} a "
