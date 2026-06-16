@@ -4069,7 +4069,15 @@ def atualizar_planilha_com_bi(data_referencia):
         registro = registros_por_agente.get(chave_agente)
 
         if not registro:
-            sem_alias.append(tecnico)
+            tecnico_modalidade = modalidade_tecnico_em_data(tecnico, data_referencia)
+            em_ferias = ferias_ativa_tecnico(tecnico, data_referencia) is not None
+            em_licenca = licenca_ativa_tecnico(tecnico, data_referencia) is not None
+            if (
+                tecnico_modalidade in {"fone", "hibrido"}
+                and not em_ferias
+                and not em_licenca
+            ):
+                sem_alias.append(tecnico)
             continue
 
         ws.cell(row=row, column=col_atendidas).value = registro["atendidas"]
