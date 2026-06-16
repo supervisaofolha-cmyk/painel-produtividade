@@ -7889,95 +7889,18 @@ if modo_gestao and visao_gestao == "Analise":
         <div class="analise-card">
             <small>{escape(rotulo)}</small>
             <strong{f' style="color:{cor};"' if cor else ''}>{escape(valor)}</strong>
-            <em>{escape(periodo_texto)}</em>
         </div>
         """
         for rotulo, valor, cor in cards_analise
     )
 
+    st.caption(f"Período analisado: {periodo_texto}")
     st.markdown(
         f'<div class="analise-faixa">{cards_analise_html}</div>',
         unsafe_allow_html=True,
     )
 
-    ranking_analise = analitico_analise.sort_values(
-        by=["Producao", "Tecnico"],
-        ascending=[False, True],
-    ).head(10)
-    grafico_analise = go.Figure()
-    grafico_analise.add_bar(
-        x=[
-            "<br>".join(builtins.str(nome).title().split()[:2])
-            for nome in ranking_analise["Tecnico"]
-        ],
-        y=ranking_analise["Producao"],
-        marker_color=[
-            COR_LARANJA if indice == 0 else "#4B5563"
-            for indice in range(len(ranking_analise))
-        ],
-        text=ranking_analise["Producao"],
-        textposition="outside",
-        hovertemplate="<b>%{x}</b><br>Producao: %{y}<extra></extra>",
-    )
-    grafico_analise.update_layout(
-        title="Quem mais produziu no periodo",
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=10, r=10, t=48, b=10),
-        height=320,
-        showlegend=False,
-        xaxis=dict(title=""),
-        yaxis=dict(title="Producao", gridcolor="#E5E7EB", zeroline=False),
-    )
-
-    nomes_ranking_html = "".join(
-        f"""
-        <div class="analise-ranking-item">
-            <div>
-                <strong>{escape(builtins.str(linha['Tecnico']).title())}</strong>
-                <span>{escape(canais_exibicao.get(linha['Canal'], linha['Canal']))} • {escape(builtins.str(linha['Nivel']))}</span>
-            </div>
-            <strong>{int(linha['Producao'])}</strong>
-        </div>
-        """
-        for _, linha in ranking_analise.head(5).iterrows()
-    )
-    classificacao_pills = "".join(
-        f'<div class="analise-pill" style="border-color:{CORES_STATUS[status]};">'
-        f"{status}: {quantidade}</div>"
-        for status, quantidade in status_contagem_analise.items()
-    )
-
-    col_grafico_analise, col_resumo_analise = st.columns([1.35, 1])
-    with col_grafico_analise:
-        st.plotly_chart(
-            grafico_analise,
-            use_container_width=True,
-            config={"displayModeBar": False},
-        )
-    with col_resumo_analise:
-        st.markdown(
-            """
-            <div class="analise-bloco">
-                <h4>Distribuicao por classificacao</h4>
-                <div class="analise-pills">
-            """
-            + classificacao_pills
-            + """
-                </div>
-            </div>
-            <div class="analise-bloco">
-                <h4>Destaques do periodo</h4>
-                <div class="analise-ranking-lista">
-            """
-            + nomes_ranking_html
-            + """
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
+    
     filtro_canal_analise = st.selectbox(
         "Canal da tabela",
         ["Todos", "Fone", "Fone + WEB", "WEB", "CHAT"],
@@ -8024,7 +7947,7 @@ if modo_gestao and visao_gestao == "Analise":
         {"Indicador": "Mes de referencia", "Valor": periodo_analise_label},
         {"Indicador": "Recorte", "Valor": modo_periodo_analise},
         {"Indicador": "Periodo", "Valor": periodo_texto},
-        {"Indicador": "Tecnicos no periodo", "Valor": tecnicos_total_analise},
+        {"Indicador": "Tecnicos no periodo", "Valor": int(analitico_analise["Tecnico"].nunique())},
         {"Indicador": "Realizado consolidado", "Valor": realizado_total_analise},
         {"Indicador": "Esperado consolidado", "Valor": esperado_total_analise},
         {"Indicador": "Desvio consolidado", "Valor": desvio_total_analise},
