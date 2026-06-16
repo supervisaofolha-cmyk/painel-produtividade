@@ -1950,6 +1950,20 @@ def abreviar_nome_disponibilidade(nome):
 def html_calendario_disponibilidade(ano, mes, eventos):
     calendario = calendar.Calendar(firstweekday=0)
     semanas = calendario.monthdatescalendar(ano, mes)
+    data_referencia_ativa = min(
+        datetime.now(FUSO_HORARIO_APP).date(),
+        fim_periodo,
+    )
+    nomes_mes_ativos = nomes_ativos_na_referencia(
+        base_mes["TÃ©cnico"].dropna().unique().tolist(),
+        data_referencia_ativa,
+    )
+    base_mes = base_mes[
+        base_mes["TÃ©cnico"].map(normalizar_nome).isin(
+            {normalizar_nome(nome) for nome in nomes_mes_ativos}
+        )
+    ].copy()
+    tecnicos_mes = set(nomes_mes_ativos)
     hoje = datetime.now(FUSO_HORARIO_APP).date()
     cabecalhos = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
     partes_html = [
@@ -3254,6 +3268,18 @@ def filtrar_dataframe_tecnicos_ativos(
             axis=1,
         )
     ].copy()
+
+
+def nomes_ativos_na_referencia(nomes, data_referencia):
+    return sorted(
+        [
+            builtins.str(nome).strip()
+            for nome in nomes
+            if builtins.str(nome).strip()
+            and tecnico_ativo_na_data(nome, data_referencia)
+        ],
+        key=normalizar_nome,
+    )
 
 
 def garantir_linhas_da_data(ws, colunas, data_referencia):
