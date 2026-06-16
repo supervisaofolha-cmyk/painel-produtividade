@@ -1,5 +1,6 @@
 import csv
 import base64
+import copy
 import hashlib
 import json
 import locale
@@ -4196,46 +4197,110 @@ def formatar_segundos_hhmmss(valor):
     return f"{horas:02d}:{minutos:02d}:{segundos:02d}"
 
 
+def buscar_tmea_diario_powerbi(data_referencia):
+    metadados = carregar_metadados_powerbi()
+    secao_mapa = next(
+        secao
+        for secao in metadados["exploration"]["sections"]
+        if secao.get("displayName") == "Mapa"
+    )
+    visual = secao_mapa["visualContainers"][1]
+    consulta = consulta_visual_powerbi(visual)
+    comando = consulta["Commands"][0]["SemanticQueryDataShapeCommand"]
+    query = comando["Query"]
+    query["Where"] = []
+    aplicar_filtro_data_powerbi(query, data_referencia)
+    aplicar_filtro_fila_powerbi(query)
+    selecoes_originais = query["Select"]
+    query["Select"] = [
+        copy.deepcopy(selecoes_originais[4]),
+        copy.deepcopy(selecoes_originais[12]),
+    ]
+    query["OrderBy"] = []
+    comando["Binding"] = {
+        "Primary": {"Groupings": [{"Projections": [0, 1]}]},
+        "DataReduction": {"DataVolume": 3, "Primary": {"Top": {}}},
+        "Version": 1,
+    }
+
+    resposta = criar_sessao_http().post(
+        f"{POWERBI_API_BASE}/public/reports/querydata?synchronous=true",
+        headers=headers_powerbi(),
+        json={
+            "version": "1.0.0",
+            "queries": [
+                {
+                    "Query": consulta,
+                    "ApplicationContext": {
+                        "DatasetId": builtins.str(metadados["models"][0]["id"]),
+                        "Sources": [
+                            {
+                                "ReportId": metadados["exploration"]["reportId"],
+                                "VisualId": json.loads(visual["config"])["name"],
+                            }
+                        ],
+                    },
+                }
+            ],
+            "cancelQueries": [],
+            "modelId": metadados["models"][0]["id"],
+        },
+        timeout=45,
+    )
+    resposta.raise_for_status()
+    linhas = (
+        resposta.json()["results"][0]["result"]["data"]["dsr"]["DS"][0]["PH"][0].get("DM0")
+        or []
+    )
+    if not linhas:
+        return {"atendidas": 0, "tmea_segundos": 0}
+
+    valores = linhas[0].get("C", [])
+    atendidas = int(round(float(valores[0] or 0))) if len(valores) >= 1 else 0
+    tmea_segundos = int(round(float(valores[1] or 0))) if len(valores) >= 2 else 0
+    return {
+        "atendidas": atendidas,
+        "tmea_segundos": tmea_segundos,
+    }
+
+
 def calcular_tme_acumulado_bi(base_analise):
-    if "TMA" not in base_analise.columns or "Atendidas" not in base_analise.columns:
+    coluna_data = nome_coluna_dataframe(base_analise, "Data")
+    if not coluna_data or "Atendidas" not in base_analise.columns:
         return 0
 
-    coluna_data = nome_coluna_dataframe(base_analise, "Data")
-    coluna_tecnico = nome_coluna_dataframe(base_analise, "Técnico", "Tecnico")
-    base_tma = base_analise.copy()
-    base_tma["Atendidas_calc"] = pd.to_numeric(
-        base_tma["Atendidas"],
+    base_tmea = base_analise.copy()
+    base_tmea["Atendidas_calc"] = pd.to_numeric(
+        base_tmea["Atendidas"],
         errors="coerce",
     ).fillna(0)
-    base_tma = base_tma[base_tma["Atendidas_calc"] > 0].copy()
-    if base_tma.empty:
+    base_tmea = base_tmea[base_tmea["Atendidas_calc"] > 0].copy()
+    if base_tmea.empty:
         return 0
 
-    base_tma = base_tma[
-        base_tma.apply(
-            lambda linha: modalidade_tecnico_em_data(
-                linha[coluna_tecnico],
-                linha[coluna_data],
-            )
-            in {"fone", "hibrido"},
-            axis=1,
-        )
-    ].copy()
-    if base_tma.empty:
-        return 0
+    dias_periodo = sorted(
+        {
+            pd.Timestamp(valor).date()
+            for valor in base_tmea[coluna_data].dropna().tolist()
+            if pd.notna(valor)
+        }
+    )
+    total_atendidas = 0
+    soma_ponderada_tmea = 0
 
-    base_tma["TMA_segundos"] = base_tma["TMA"].map(tma_planilha_para_segundos)
-    total_atendidas = float(base_tma["Atendidas_calc"].sum())
+    for dia in dias_periodo:
+        dados_dia = buscar_tmea_diario_powerbi(dia)
+        atendidas_dia = int(dados_dia.get("atendidas") or 0)
+        tmea_segundos_dia = float(dados_dia.get("tmea_segundos") or 0)
+        if atendidas_dia <= 0:
+            continue
+        total_atendidas += atendidas_dia
+        soma_ponderada_tmea += tmea_segundos_dia * atendidas_dia
+
     if total_atendidas <= 0:
         return 0
 
-    return (
-        (
-            base_tma["TMA_segundos"]
-            * base_tma["Atendidas_calc"]
-        ).sum()
-        / total_atendidas
-    )
+    return soma_ponderada_tmea / total_atendidas
 
 
 def decodificar_linhas_powerbi(linhas):
