@@ -4019,6 +4019,11 @@ def buscar_abandonadas_powerbi(data_referencia):
 def atualizar_planilha_com_bi(data_referencia):
     registros_bi = buscar_produtividade_powerbi(data_referencia)
     abandonadas = buscar_abandonadas_powerbi(data_referencia)
+    if not registros_bi:
+        raise RuntimeError(
+            "O BI não retornou registros para a data informada. "
+            "A atualização foi interrompida para não zerar a planilha."
+        )
     registros_por_agente = {
         normalizar_nome(registro["agente"]): registro
         for registro in registros_bi
@@ -6535,12 +6540,8 @@ if modo_gestao and visao_gestao == "Atualizações":
     if atualizar_bi:
         with st.spinner("Buscando dados no PowerBI e atualizando a planilha..."):
             try:
-                origem_atualizacao = "painel"
-                try:
-                    resultado = atualizar_via_servico_local("bi", data_referencia)["bi"]
-                    origem_atualizacao = "planilha local"
-                except Exception:
-                    resultado = atualizar_planilha_com_bi(data_referencia)
+                origem_atualizacao = "planilha local"
+                resultado = atualizar_planilha_com_bi(data_referencia)
             except PermissionError:
                 st.error("Feche a produtividade.xlsx no Excel e tente novamente.")
             except Exception as erro:
