@@ -4196,6 +4196,48 @@ def formatar_segundos_hhmmss(valor):
     return f"{horas:02d}:{minutos:02d}:{segundos:02d}"
 
 
+def calcular_tme_acumulado_bi(base_analise):
+    if "TMA" not in base_analise.columns or "Atendidas" not in base_analise.columns:
+        return 0
+
+    coluna_data = nome_coluna_dataframe(base_analise, "Data")
+    coluna_tecnico = nome_coluna_dataframe(base_analise, "Técnico", "Tecnico")
+    base_tma = base_analise.copy()
+    base_tma["Atendidas_calc"] = pd.to_numeric(
+        base_tma["Atendidas"],
+        errors="coerce",
+    ).fillna(0)
+    base_tma = base_tma[base_tma["Atendidas_calc"] > 0].copy()
+    if base_tma.empty:
+        return 0
+
+    base_tma = base_tma[
+        base_tma.apply(
+            lambda linha: modalidade_tecnico_em_data(
+                linha[coluna_tecnico],
+                linha[coluna_data],
+            )
+            in {"fone", "hibrido"},
+            axis=1,
+        )
+    ].copy()
+    if base_tma.empty:
+        return 0
+
+    base_tma["TMA_segundos"] = base_tma["TMA"].map(tma_planilha_para_segundos)
+    total_atendidas = float(base_tma["Atendidas_calc"].sum())
+    if total_atendidas <= 0:
+        return 0
+
+    return (
+        (
+            base_tma["TMA_segundos"]
+            * base_tma["Atendidas_calc"]
+        ).sum()
+        / total_atendidas
+    )
+
+
 def decodificar_linhas_powerbi(linhas):
     registros = []
     anterior = [None] * 8
@@ -7832,28 +7874,7 @@ if modo_gestao and visao_gestao == "Analise":
         f"{data_final_analise.strftime('%d/%m/%Y')}"
     )
     atendidas_total_analise = int(analitico_analise["Atendidas"].fillna(0).sum())
-    if "TMA" in base_analise.columns:
-        base_tma_analise = base_analise.copy()
-        base_tma_analise["Atendidas_calc"] = pd.to_numeric(
-            base_tma_analise["Atendidas"],
-            errors="coerce",
-        ).fillna(0)
-        base_tma_analise["TMA_segundos"] = base_tma_analise["TMA"].map(
-            tma_planilha_para_segundos
-        )
-        total_atendidas_tma = float(base_tma_analise["Atendidas_calc"].sum())
-        if total_atendidas_tma > 0:
-            tme_realizado_segundos = (
-                (
-                    base_tma_analise["TMA_segundos"]
-                    * base_tma_analise["Atendidas_calc"]
-                ).sum()
-                / total_atendidas_tma
-            )
-        else:
-            tme_realizado_segundos = 0
-    else:
-        tme_realizado_segundos = 0
+    tme_realizado_segundos = calcular_tme_acumulado_bi(base_analise)
     if "Abandonadas" in base_analise.columns:
         abandonadas_total_analise = int(
             base_analise.groupby("Data", as_index=False)["Abandonadas"]
