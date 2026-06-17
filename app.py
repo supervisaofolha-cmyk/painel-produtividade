@@ -659,7 +659,7 @@ def database_url_lista_apoio():
     ).strip()
     if url and "connect_timeout=" not in url:
         separador = "&" if "?" in url else "?"
-        url = f"{url}{separador}connect_timeout=15"
+        url = f"{url}{separador}connect_timeout=5"
     return url
 
 
@@ -685,6 +685,8 @@ def conexao_lista_apoio_db():
             database_url_lista_apoio(),
             row_factory=dict_row,
             prepare_threshold=None,
+            connect_timeout=5,
+            options="-c statement_timeout=5000",
         )
 
     conexao = sqlite3.connect(ARQUIVO_LISTA_APOIO_DB)
@@ -1534,25 +1536,6 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
 
 
 def ler_lista_apoio():
-    try:
-        garantir_lista_apoio()
-        dataframe_banco = ler_lista_apoio_do_banco()
-        if not dataframe_banco.empty:
-            return dataframe_banco
-    except Exception:
-        dataframe_banco = dataframe_lista_apoio_vazio()
-
-    dataframe_historico = restaurar_lista_apoio_do_historico()
-    if not dataframe_historico.empty:
-        try:
-            if backend_lista_apoio() == "postgres":
-                salvar_registros_lista_apoio_no_banco(
-                    dataframe_para_registros_lista_apoio(dataframe_historico)
-                )
-        except Exception:
-            pass
-        return dataframe_historico
-
     dataframe_principal = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO)
     if not dataframe_principal.empty:
         return dataframe_principal
@@ -1560,6 +1543,19 @@ def ler_lista_apoio():
     dataframe_backup = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO_BACKUP)
     if not dataframe_backup.empty:
         return dataframe_backup
+
+    dataframe_historico = restaurar_lista_apoio_do_historico()
+    if not dataframe_historico.empty:
+        return dataframe_historico
+
+    try:
+        garantir_lista_apoio()
+        dataframe_banco = ler_lista_apoio_do_banco()
+        if not dataframe_banco.empty:
+            tentar_espelhar_lista_apoio_para_arquivos(dataframe_banco)
+            return dataframe_banco
+    except Exception:
+        dataframe_banco = dataframe_lista_apoio_vazio()
 
     return dataframe_banco
 
@@ -1680,6 +1676,12 @@ def _bytes_lista_apoio_cache(_versao_lista_apoio):
 
 
 def versao_lista_apoio():
+    if os.path.exists(ARQUIVO_LISTA_APOIO):
+        return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO)))
+    if os.path.exists(ARQUIVO_LISTA_APOIO_BACKUP):
+        return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO_BACKUP)))
+    if os.path.exists(ARQUIVO_LISTA_APOIO_DB):
+        return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO_DB)))
     if backend_lista_apoio() == "postgres":
         try:
             with conexao_lista_apoio_db() as conexao:
@@ -1690,8 +1692,6 @@ def versao_lista_apoio():
                     return f"{linha['versao']}|{linha['total']}"
         except Exception:
             return "sem_arquivo"
-    if os.path.exists(ARQUIVO_LISTA_APOIO_DB):
-        return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO_DB)))
     return "sem_arquivo"
 
 
