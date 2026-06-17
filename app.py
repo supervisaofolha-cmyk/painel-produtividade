@@ -4688,6 +4688,7 @@ def extrair_registros_sgd(conteudo_xlsx):
                 "satisfacao": float(ws.cell(row=row, column=5).value or 0),
                 "votacao": float(ws.cell(row=row, column=11).value or 0),
                 "ssc": int(ws.cell(row=row, column=10).value or 0),
+                "votados": int(round(float(ws.cell(row=row, column=10).value or 0) * float(ws.cell(row=row, column=11).value or 0) / 100.0)),
             }
         )
 
@@ -4746,6 +4747,46 @@ def buscar_total_ssc_web_sgd_cache(
         filtros=SGD_FILTRO_WEB,
     )
     return int(sum(registro.get("ssc", 0) for registro in registros))
+
+
+def calcular_satisfacao_geral_registros_sgd(registros):
+    if not registros:
+        return 0.0
+
+    total_votados = sum(
+        int(registro.get("votados", 0) or 0)
+        for registro in registros
+    )
+    if total_votados <= 0:
+        return 0.0
+
+    soma_ponderada = sum(
+        float(registro.get("satisfacao", 0) or 0)
+        * int(registro.get("votados", 0) or 0)
+        for registro in registros
+    )
+    return round(soma_ponderada / total_votados, 2)
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def buscar_satisfacao_geral_sgd_cache(
+    data_inicial_texto,
+    data_final_texto,
+    usuario,
+    senha,
+    canal,
+):
+    data_inicial = datetime.strptime(data_inicial_texto, "%d/%m/%Y").date()
+    data_final = datetime.strptime(data_final_texto, "%d/%m/%Y").date()
+    filtros = SGD_FILTRO_WEB if canal == "web" else None
+    registros = buscar_satisfacao_sgd(
+        data_inicial,
+        data_final,
+        usuario,
+        senha,
+        filtros=filtros,
+    )
+    return calcular_satisfacao_geral_registros_sgd(registros)
 
 
 def atualizar_planilha_com_sgd(data_referencia, usuario, senha, modo="todos"):
@@ -7156,12 +7197,17 @@ if modo_gestao and visao_gestao == "Atualizações":
     st.markdown("#### SGD")
     col_usuario_sgd, col_senha_sgd = st.columns(2)
     with col_usuario_sgd:
-        usuario_sgd = st.text_input("Usuário SGD", value=usuario_sgd_padrao)
+        usuario_sgd = st.text_input(
+            "Usuário SGD",
+            value=usuario_sgd_padrao,
+            key="sgd_usuario_input",
+        )
     with col_senha_sgd:
         senha_sgd = st.text_input(
             "Senha SGD",
             value=senha_sgd_padrao,
             type="password",
+            key="sgd_senha_input",
         )
     col_botao_sgd_fone, col_botao_sgd_web = st.columns(2)
     with col_botao_sgd_fone:
