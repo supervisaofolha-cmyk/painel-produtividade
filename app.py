@@ -1532,6 +1532,20 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
         coluna_responsavel: "",
     }
     salvar_registros_lista_apoio_no_banco([registro])
+    try:
+        dataframe_atual = ler_lista_apoio_do_banco()
+        if not dataframe_atual.empty:
+            tentar_espelhar_lista_apoio_para_arquivos(dataframe_atual)
+    except Exception:
+        dataframe_existente = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO)
+        dataframe_novo = padronizar_dataframe_lista_apoio(
+            pd.concat(
+                [dataframe_existente, pd.DataFrame([registro])],
+                ignore_index=True,
+            )
+        )
+        dataframe_novo = deduplicar_dataframe_lista_apoio(dataframe_novo)
+        tentar_espelhar_lista_apoio_para_arquivos(dataframe_novo)
     registrar_historico_lista_apoio("create", registro)
 
 
@@ -1662,6 +1676,7 @@ def salvar_lista_apoio(dataframe):
     salvar_registros_lista_apoio_no_banco(
         dataframe_para_registros_lista_apoio(dataframe_final)
     )
+    tentar_espelhar_lista_apoio_para_arquivos(dataframe_final)
 
 
 def bytes_lista_apoio():
