@@ -8026,6 +8026,53 @@ if modo_gestao and visao_gestao == "Analise":
     else:
         abandonadas_total_analise = 0
 
+    coluna_tecnico_analise = nome_coluna_dataframe(base_analise, "Técnico", "Tecnico")
+    coluna_data_analise = nome_coluna_dataframe(base_analise, "Data")
+    coluna_satisfacao_analise = nome_coluna_dataframe(
+        base_analise,
+        "Satisfação",
+        "SatisfaÃ§Ã£o",
+        "Satisfa??o",
+        "Satisfacao",
+    )
+    satisfacao_fone_analise = 0.0
+    satisfacao_web_analise = 0.0
+    if coluna_tecnico_analise and coluna_data_analise and coluna_satisfacao_analise:
+        base_satisfacao_analise = base_analise[
+            base_analise[coluna_satisfacao_analise].notna()
+        ].copy()
+        base_satisfacao_analise["satisfacao_calc"] = pd.to_numeric(
+            base_satisfacao_analise[coluna_satisfacao_analise],
+            errors="coerce",
+        )
+        base_satisfacao_analise = base_satisfacao_analise[
+            base_satisfacao_analise["satisfacao_calc"].notna()
+        ].copy()
+        if not base_satisfacao_analise.empty:
+            base_satisfacao_analise["modalidade_calc"] = base_satisfacao_analise.apply(
+                lambda linha: modalidade_tecnico_em_data(
+                    linha[coluna_tecnico_analise],
+                    pd.Timestamp(linha[coluna_data_analise]).date(),
+                ),
+                axis=1,
+            )
+            base_satisfacao_fone = base_satisfacao_analise[
+                base_satisfacao_analise["modalidade_calc"].isin({"fone", "hibrido"})
+            ]
+            base_satisfacao_web = base_satisfacao_analise[
+                base_satisfacao_analise["modalidade_calc"].isin({"web", "hibrido"})
+            ]
+            if not base_satisfacao_fone.empty:
+                satisfacao_fone_analise = round(
+                    float(base_satisfacao_fone["satisfacao_calc"].mean()),
+                    2,
+                )
+            if not base_satisfacao_web.empty:
+                satisfacao_web_analise = round(
+                    float(base_satisfacao_web["satisfacao_calc"].mean()),
+                    2,
+                )
+
     st.caption(f"Período analisado: {periodo_texto}")
     st.markdown(
         f"""
@@ -8045,6 +8092,14 @@ if modo_gestao and visao_gestao == "Analise":
             <div class="analise-card">
                 <small>TME Realizado</small>
                 <strong>{formatar_tempo_powerbi_hhmmss(tme_realizado_segundos)}</strong>
+            </div>
+            <div class="analise-card">
+                <small>Satisfação Fone</small>
+                <strong>{satisfacao_fone_analise:.2f}%</strong>
+            </div>
+            <div class="analise-card">
+                <small>Satisfação Web</small>
+                <strong>{satisfacao_web_analise:.2f}%</strong>
             </div>
         </div>
         """.replace(",", "."),
