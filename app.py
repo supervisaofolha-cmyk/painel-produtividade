@@ -8072,105 +8072,36 @@ if modo_gestao and visao_gestao == "Analise":
     else:
         abandonadas_total_analise = 0
 
-    coluna_tecnico_analise = nome_coluna_dataframe(base_analise, "Técnico", "Tecnico")
-    coluna_data_analise = nome_coluna_dataframe(base_analise, "Data")
-    coluna_satisfacao_analise = nome_coluna_dataframe(
-        base_analise,
-        "Satisfação",
-        "SatisfaÃ§Ã£o",
-        "Satisfa??o",
-        "Satisfacao",
-    )
-    coluna_votacao_analise = nome_coluna_dataframe(
-        base_analise,
-        "Votação",
-        "VotaÃ§Ã£o",
-        "Vota??o",
-        "Votacao",
-    )
-    coluna_ssc_analise = nome_coluna_dataframe(base_analise, "SSC")
     satisfacao_fone_analise = 0.0
     satisfacao_web_analise = 0.0
-    if (
-        coluna_tecnico_analise
-        and coluna_data_analise
-        and coluna_satisfacao_analise
-        and coluna_votacao_analise
-        and coluna_ssc_analise
-    ):
-        base_satisfacao_analise = base_analise[
-            base_analise[coluna_satisfacao_analise].notna()
-        ].copy()
-        base_satisfacao_analise["satisfacao_calc"] = pd.to_numeric(
-            base_satisfacao_analise[coluna_satisfacao_analise],
-            errors="coerce",
-        )
-        base_satisfacao_analise["votacao_calc"] = pd.to_numeric(
-            base_satisfacao_analise[coluna_votacao_analise],
-            errors="coerce",
-        )
-        base_satisfacao_analise["ssc_calc"] = pd.to_numeric(
-            base_satisfacao_analise[coluna_ssc_analise],
-            errors="coerce",
-        )
-        base_satisfacao_analise = base_satisfacao_analise[
-            base_satisfacao_analise["satisfacao_calc"].notna()
-            & base_satisfacao_analise["votacao_calc"].notna()
-            & base_satisfacao_analise["ssc_calc"].notna()
-        ].copy()
-        if not base_satisfacao_analise.empty:
-            base_satisfacao_analise = base_satisfacao_analise.sort_values(
-                [coluna_tecnico_analise, coluna_data_analise]
+    env_local_sgd = carregar_env_local()
+    usuario_sgd_analise = (
+        st.session_state.get("sgd_usuario_input")
+        or env_local_sgd.get("SGD_USUARIO", os.getenv("SGD_USUARIO", ""))
+    )
+    senha_sgd_analise = (
+        st.session_state.get("sgd_senha_input")
+        or env_local_sgd.get("SGD_SENHA", os.getenv("SGD_SENHA", ""))
+    )
+    if usuario_sgd_analise and senha_sgd_analise:
+        try:
+            satisfacao_fone_analise = buscar_satisfacao_geral_sgd_cache(
+                data_inicial_analise.strftime("%d/%m/%Y"),
+                data_final_analise.strftime("%d/%m/%Y"),
+                usuario_sgd_analise,
+                senha_sgd_analise,
+                "fone",
             )
-            base_satisfacao_analise = (
-                base_satisfacao_analise.groupby(coluna_tecnico_analise, as_index=False)
-                .tail(1)
-                .copy()
+            satisfacao_web_analise = buscar_satisfacao_geral_sgd_cache(
+                data_inicial_analise.strftime("%d/%m/%Y"),
+                data_final_analise.strftime("%d/%m/%Y"),
+                usuario_sgd_analise,
+                senha_sgd_analise,
+                "web",
             )
-            base_satisfacao_analise["modalidade_calc"] = base_satisfacao_analise.apply(
-                lambda linha: modalidade_tecnico_em_data(
-                    linha[coluna_tecnico_analise],
-                    pd.Timestamp(linha[coluna_data_analise]).date(),
-                ),
-                axis=1,
-            )
-            base_satisfacao_analise["votados_calc"] = (
-                base_satisfacao_analise["ssc_calc"]
-                * base_satisfacao_analise["votacao_calc"]
-                / 100.0
-            )
-            base_satisfacao_fone = base_satisfacao_analise[
-                base_satisfacao_analise["modalidade_calc"].isin({"fone", "hibrido"})
-            ]
-            base_satisfacao_web = base_satisfacao_analise[
-                base_satisfacao_analise["modalidade_calc"].isin({"web", "hibrido"})
-            ]
-            if not base_satisfacao_fone.empty:
-                total_votados_fone = float(base_satisfacao_fone["votados_calc"].sum())
-                if total_votados_fone > 0:
-                    satisfacao_fone_analise = round(
-                        float(
-                            (
-                                base_satisfacao_fone["satisfacao_calc"]
-                                * base_satisfacao_fone["votados_calc"]
-                            ).sum()
-                            / total_votados_fone
-                        ),
-                        2,
-                    )
-            if not base_satisfacao_web.empty:
-                total_votados_web = float(base_satisfacao_web["votados_calc"].sum())
-                if total_votados_web > 0:
-                    satisfacao_web_analise = round(
-                        float(
-                            (
-                                base_satisfacao_web["satisfacao_calc"]
-                                * base_satisfacao_web["votados_calc"]
-                            ).sum()
-                            / total_votados_web
-                        ),
-                        2,
-                    )
+        except Exception:
+            satisfacao_fone_analise = 0.0
+            satisfacao_web_analise = 0.0
 
     st.caption(f"Período analisado: {periodo_texto}")
     st.markdown(
