@@ -4797,6 +4797,27 @@ def buscar_total_ssc_web_sgd_cache(
     return int(sum(registro.get("ssc", 0) for registro in registros))
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def buscar_total_ssc_sgd_cache(
+    data_inicial_texto,
+    data_final_texto,
+    usuario,
+    senha,
+    canal,
+):
+    data_inicial = datetime.strptime(data_inicial_texto, "%d/%m/%Y").date()
+    data_final = datetime.strptime(data_final_texto, "%d/%m/%Y").date()
+    filtros = SGD_FILTRO_WEB if canal == "web" else SGD_FILTRO_FONE
+    registros = buscar_satisfacao_sgd(
+        data_inicial,
+        data_final,
+        usuario,
+        senha,
+        filtros=filtros,
+    )
+    return int(sum(registro.get("ssc", 0) or 0 for registro in registros))
+
+
 def calcular_satisfacao_geral_registros_sgd(registros):
     if not registros:
         return 0.0
@@ -4835,49 +4856,6 @@ def buscar_satisfacao_geral_sgd_cache(
         filtros=filtros,
     )
     return calcular_satisfacao_geral_registros_sgd(registros)
-
-
-def buscar_satisfacao_pdf_local(data_inicial, data_final, canal):
-    try:
-        from pypdf import PdfReader
-    except Exception:
-        return None
-
-    padrao_nome = "FONE*.pdf" if canal == "fone" else "WEB*.pdf"
-    candidatos = glob.glob(
-        os.path.join(os.path.expanduser("~"), "Downloads", padrao_nome)
-    )
-    if not candidatos:
-        return None
-
-    periodo_texto = (
-        f"{data_inicial.strftime('%d/%m/%Y')} - {data_final.strftime('%d/%m/%Y')}"
-    )
-    meio_texto = "MEIOS DE ACESSO: Telefone." if canal == "fone" else "MEIOS DE ACESSO: Web."
-    melhor_candidato = None
-    melhor_mtime = None
-
-    for caminho in candidatos:
-        try:
-            texto = "\n".join(
-                (pagina.extract_text() or "")
-                for pagina in PdfReader(caminho).pages
-            )
-        except Exception:
-            continue
-        if periodo_texto not in texto or meio_texto not in texto:
-            continue
-        correspondencia = re.search(r"M[ÉE]DIA\s+(\d{1,3},\d{2})", texto)
-        if not correspondencia:
-            continue
-        mtime = os.path.getmtime(caminho)
-        if melhor_mtime is None or mtime > melhor_mtime:
-            melhor_mtime = mtime
-            melhor_candidato = correspondencia.group(1)
-
-    if melhor_candidato is None:
-        return None
-    return float(melhor_candidato.replace(".", "").replace(",", "."))
 
 
 def calcular_satisfacao_geral_analise_fallback(base_analise, canal):
@@ -4952,6 +4930,14 @@ def calcular_satisfacao_geral_analise_fallback(base_analise, canal):
         ),
         2,
     )
+
+
+def formatar_valor_card_analise(valor, percentual=False):
+    if valor is None:
+        return "--"
+    if percentual:
+        return f"{float(valor):.2f}%"
+    return f"{int(valor):,}".replace(",", ".")
 
 
 def atualizar_planilha_com_sgd(data_referencia, usuario, senha, modo="todos"):
@@ -8237,22 +8223,10 @@ if modo_gestao and visao_gestao == "Analise":
     else:
         abandonadas_total_analise = 0
 
-    satisfacao_fone_analise = 0.0
-    satisfacao_web_analise = 0.0
-    satisfacao_fone_pdf = buscar_satisfacao_pdf_local(
-        data_inicial_analise,
-        data_final_analise,
-        "fone",
-    )
-    satisfacao_web_pdf = buscar_satisfacao_pdf_local(
-        data_inicial_analise,
-        data_final_analise,
-        "web",
-    )
-    if satisfacao_fone_pdf is not None:
-        satisfacao_fone_analise = satisfacao_fone_pdf
-    if satisfacao_web_pdf is not None:
-        satisfacao_web_analise = satisfacao_web_pdf
+    ssc_fone_analise = None
+    ssc_web_analise = None
+    satisfacao_fone_analise = None
+    satisfacao_web_analise = None
     env_local_sgd = carregar_env_local()
     with st.expander("Credenciais SGD", expanded=False):
         col_usuario_sgd_analise, col_senha_sgd_analise = st.columns(2)
@@ -8285,48 +8259,41 @@ if modo_gestao and visao_gestao == "Analise":
         or st.session_state.get("sgd_senha_input")
         or env_local_sgd.get("SGD_SENHA", os.getenv("SGD_SENHA", ""))
     )
-    if (
-        satisfacao_fone_pdf is None
-        or satisfacao_web_pdf is None
-    ) and usuario_sgd_analise and senha_sgd_analise:
+    if usuario_sgd_analise and senha_sgd_analise:
         try:
-            if satisfacao_fone_pdf is None:
-                satisfacao_fone_analise = buscar_satisfacao_geral_sgd_cache(
-                    data_inicial_analise.strftime("%d/%m/%Y"),
-                    data_final_analise.strftime("%d/%m/%Y"),
-                    usuario_sgd_analise,
-                    senha_sgd_analise,
-                    "fone",
-                )
-            if satisfacao_web_pdf is None:
-                satisfacao_web_analise = buscar_satisfacao_geral_sgd_cache(
-                    data_inicial_analise.strftime("%d/%m/%Y"),
-                    data_final_analise.strftime("%d/%m/%Y"),
-                    usuario_sgd_analise,
-                    senha_sgd_analise,
-                    "web",
-                )
-        except Exception:
-            if satisfacao_fone_pdf is None:
-                satisfacao_fone_analise = calcular_satisfacao_geral_analise_fallback(
-                    base_analise,
-                    "fone",
-                )
-            if satisfacao_web_pdf is None:
-                satisfacao_web_analise = calcular_satisfacao_geral_analise_fallback(
-                    base_analise,
-                    "web",
-                )
-    else:
-        if satisfacao_fone_pdf is None:
-            satisfacao_fone_analise = calcular_satisfacao_geral_analise_fallback(
-                base_analise,
+            periodo_inicial_texto = data_inicial_analise.strftime("%d/%m/%Y")
+            periodo_final_texto = data_final_analise.strftime("%d/%m/%Y")
+            ssc_fone_analise = buscar_total_ssc_sgd_cache(
+                periodo_inicial_texto,
+                periodo_final_texto,
+                usuario_sgd_analise,
+                senha_sgd_analise,
                 "fone",
             )
-        if satisfacao_web_pdf is None:
-            satisfacao_web_analise = calcular_satisfacao_geral_analise_fallback(
-                base_analise,
+            ssc_web_analise = buscar_total_ssc_sgd_cache(
+                periodo_inicial_texto,
+                periodo_final_texto,
+                usuario_sgd_analise,
+                senha_sgd_analise,
                 "web",
+            )
+            satisfacao_fone_analise = buscar_satisfacao_geral_sgd_cache(
+                periodo_inicial_texto,
+                periodo_final_texto,
+                usuario_sgd_analise,
+                senha_sgd_analise,
+                "fone",
+            )
+            satisfacao_web_analise = buscar_satisfacao_geral_sgd_cache(
+                periodo_inicial_texto,
+                periodo_final_texto,
+                usuario_sgd_analise,
+                senha_sgd_analise,
+                "web",
+            )
+        except Exception as erro_sgd_analise:
+            st.warning(
+                f"Não foi possível consultar o SGD nesse período: {erro_sgd_analise}"
             )
 
     st.caption(f"Período analisado: {periodo_texto}")
@@ -8342,20 +8309,24 @@ if modo_gestao and visao_gestao == "Analise":
                 <strong>{abandonadas_total_analise:,}</strong>
             </div>
             <div class="analise-card">
-                <small>TME</small>
-                <strong>00:02:00</strong>
+                <small>SSC Registrada Fone</small>
+                <strong>{formatar_valor_card_analise(ssc_fone_analise)}</strong>
+            </div>
+            <div class="analise-card">
+                <small>SSC Registrada Web</small>
+                <strong>{formatar_valor_card_analise(ssc_web_analise)}</strong>
+            </div>
+            <div class="analise-card">
+                <small>Satisfação Fone</small>
+                <strong>{formatar_valor_card_analise(satisfacao_fone_analise, percentual=True)}</strong>
+            </div>
+            <div class="analise-card">
+                <small>Satisfação Web</small>
+                <strong>{formatar_valor_card_analise(satisfacao_web_analise, percentual=True)}</strong>
             </div>
             <div class="analise-card">
                 <small>TME Realizado</small>
                 <strong>{formatar_tempo_powerbi_hhmmss(tme_realizado_segundos)}</strong>
-            </div>
-            <div class="analise-card">
-                <small>Satisfação Fone</small>
-                <strong>{satisfacao_fone_analise:.2f}%</strong>
-            </div>
-            <div class="analise-card">
-                <small>Satisfação Web</small>
-                <strong>{satisfacao_web_analise:.2f}%</strong>
             </div>
         </div>
         """.replace(",", "."),
