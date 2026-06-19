@@ -137,6 +137,13 @@ SGD_FILTRO_WEB = {
     "formFiltroRelatorio:responsavel": "0",
     "formFiltroRelatorio:origemSuporteSemTopico": "false",
 }
+SGD_FILTRO_FONE = {
+    "formFiltroRelatorio:unidades": ["7", "131", "140"],
+    "formFiltroRelatorio:gestores": ["1206900"],
+    "formFiltroRelatorio:meiosAcessos": ["2"],
+    "formFiltroRelatorio:responsavel": "0",
+    "formFiltroRelatorio:origemSuporteSemTopico": "false",
+}
 RO_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1O-1uJ6D9al9piHgOv_Ju0fpL-3Xbz3zK"
 RO_PLANILHAS_FIXAS = {
     (2026, 6): "https://docs.google.com/spreadsheets/d/1AZKhjWnIS_hys9B9oaeazcSUP0wS6ExX8U9wRdrktRs/edit?resourcekey#gid=148357412",
@@ -4805,7 +4812,7 @@ def buscar_satisfacao_geral_sgd_cache(
 ):
     data_inicial = datetime.strptime(data_inicial_texto, "%d/%m/%Y").date()
     data_final = datetime.strptime(data_final_texto, "%d/%m/%Y").date()
-    filtros = SGD_FILTRO_WEB if canal == "web" else None
+    filtros = SGD_FILTRO_WEB if canal == "web" else SGD_FILTRO_FONE
     registros = buscar_satisfacao_sgd(
         data_inicial,
         data_final,
