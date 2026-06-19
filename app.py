@@ -4807,6 +4807,80 @@ def buscar_satisfacao_geral_sgd_cache(
     return calcular_satisfacao_geral_registros_sgd(registros)
 
 
+def calcular_satisfacao_geral_analise_fallback(base_analise, canal):
+    coluna_tecnico = nome_coluna_dataframe(base_analise, "Técnico", "Tecnico")
+    coluna_data = nome_coluna_dataframe(base_analise, "Data")
+    coluna_ssc = nome_coluna_dataframe(base_analise, "SSC")
+    coluna_satisfacao = nome_coluna_dataframe(
+        base_analise,
+        "Satisfação",
+        "SatisfaÃ§Ã£o",
+        "Satisfa??o",
+        "Satisfacao",
+    )
+    coluna_votacao = nome_coluna_dataframe(
+        base_analise,
+        "Votação",
+        "VotaÃ§Ã£o",
+        "Vota??o",
+        "Votacao",
+    )
+    if not all([coluna_tecnico, coluna_data, coluna_ssc, coluna_satisfacao, coluna_votacao]):
+        return 0.0
+
+    base_calc = base_analise.copy()
+    base_calc["ssc_calc"] = pd.to_numeric(base_calc[coluna_ssc], errors="coerce")
+    base_calc["satisfacao_calc"] = pd.to_numeric(
+        base_calc[coluna_satisfacao],
+        errors="coerce",
+    )
+    base_calc["votacao_calc"] = pd.to_numeric(
+        base_calc[coluna_votacao],
+        errors="coerce",
+    )
+    base_calc = base_calc[
+        base_calc[coluna_tecnico].notna()
+        & base_calc[coluna_data].notna()
+        & base_calc["ssc_calc"].notna()
+        & base_calc["satisfacao_calc"].notna()
+        & base_calc["votacao_calc"].notna()
+    ].copy()
+    if base_calc.empty:
+        return 0.0
+
+    base_calc = base_calc.sort_values([coluna_tecnico, coluna_data])
+    base_calc = base_calc.groupby(coluna_tecnico, as_index=False).tail(1).copy()
+    base_calc["modalidade_calc"] = base_calc.apply(
+        lambda linha: modalidade_tecnico_em_data(
+            linha[coluna_tecnico],
+            pd.Timestamp(linha[coluna_data]).date(),
+        ),
+        axis=1,
+    )
+    if canal == "web":
+        modalidades_validas = {"web", "hibrido"}
+    else:
+        modalidades_validas = {"fone", "hibrido"}
+    base_calc = base_calc[base_calc["modalidade_calc"].isin(modalidades_validas)].copy()
+    if base_calc.empty:
+        return 0.0
+
+    base_calc["votados_calc"] = (
+        base_calc["ssc_calc"] * base_calc["votacao_calc"] / 100.0
+    )
+    total_votados = float(base_calc["votados_calc"].sum())
+    if total_votados <= 0:
+        return 0.0
+
+    return round(
+        float(
+            (base_calc["satisfacao_calc"] * base_calc["votados_calc"]).sum()
+            / total_votados
+        ),
+        2,
+    )
+
+
 def atualizar_planilha_com_sgd(data_referencia, usuario, senha, modo="todos"):
     data_inicial = inicio_mes(data_referencia)
     incluir_fone = modo in {"todos", "fone"}
