@@ -4743,6 +4743,30 @@ def extrair_registros_sgd(conteudo_xlsx):
     return registros
 
 
+def extrair_resumo_sgd(conteudo_xlsx):
+    wb = openpyxl.load_workbook(BytesIO(conteudo_xlsx), data_only=True)
+    ws = wb.active
+
+    for row in range(10, ws.max_row + 1):
+        descricao = ws.cell(row=row, column=2).value
+        descricao_normalizada = normalizar_texto(descricao)
+        if descricao_normalizada not in {"media", "media geral", "total", "totais"}:
+            continue
+
+        satisfacao = float(ws.cell(row=row, column=5).value or 0)
+        votados = int(round(float(ws.cell(row=row, column=8).value or 0)))
+        ssc = int(round(float(ws.cell(row=row, column=10).value or 0)))
+        votacao = float(ws.cell(row=row, column=11).value or 0)
+        return {
+            "satisfacao": round(satisfacao, 2),
+            "votados": votados,
+            "ssc": ssc,
+            "votacao": round(votacao, 2),
+        }
+
+    return None
+
+
 def buscar_satisfacao_sgd(data_inicial, data_final, usuario, senha, filtros=None):
     sessao = login_sgd(usuario, senha)
     conteudo = gerar_relatorio_sgd(
@@ -4752,6 +4776,17 @@ def buscar_satisfacao_sgd(data_inicial, data_final, usuario, senha, filtros=None
         filtros=filtros,
     )
     return extrair_registros_sgd(conteudo)
+
+
+def buscar_resumo_sgd(data_inicial, data_final, usuario, senha, filtros=None):
+    sessao = login_sgd(usuario, senha)
+    conteudo = gerar_relatorio_sgd(
+        sessao,
+        data_inicial,
+        data_final,
+        filtros=filtros,
+    )
+    return extrair_resumo_sgd(conteudo)
 
 
 def buscar_satisfacao_sgd_diaria(data_referencia, usuario, senha, filtros=None):
@@ -4808,6 +4843,15 @@ def buscar_total_ssc_sgd_cache(
     data_inicial = datetime.strptime(data_inicial_texto, "%d/%m/%Y").date()
     data_final = datetime.strptime(data_final_texto, "%d/%m/%Y").date()
     filtros = SGD_FILTRO_WEB if canal == "web" else SGD_FILTRO_FONE
+    resumo = buscar_resumo_sgd(
+        data_inicial,
+        data_final,
+        usuario,
+        senha,
+        filtros=filtros,
+    )
+    if resumo:
+        return int(resumo.get("ssc", 0) or 0)
     registros = buscar_satisfacao_sgd(
         data_inicial,
         data_final,
@@ -4848,6 +4892,15 @@ def buscar_satisfacao_geral_sgd_cache(
     data_inicial = datetime.strptime(data_inicial_texto, "%d/%m/%Y").date()
     data_final = datetime.strptime(data_final_texto, "%d/%m/%Y").date()
     filtros = SGD_FILTRO_WEB if canal == "web" else SGD_FILTRO_FONE
+    resumo = buscar_resumo_sgd(
+        data_inicial,
+        data_final,
+        usuario,
+        senha,
+        filtros=filtros,
+    )
+    if resumo:
+        return round(float(resumo.get("satisfacao", 0) or 0), 2)
     registros = buscar_satisfacao_sgd(
         data_inicial,
         data_final,
