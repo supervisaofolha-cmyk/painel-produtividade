@@ -1524,6 +1524,29 @@ def garantir_lista_apoio():
     return None, None
 
 
+def carregar_lista_apoio_local_completa():
+    return mesclar_dataframes_lista_apoio(
+        [
+            ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO),
+            ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO_BACKUP),
+            restaurar_lista_apoio_do_historico(),
+        ]
+    )
+
+
+def persistir_registro_lista_apoio_local(registro):
+    dataframe_existente = carregar_lista_apoio_local_completa()
+    dataframe_novo = padronizar_dataframe_lista_apoio(
+        pd.concat(
+            [dataframe_existente, pd.DataFrame([registro])],
+            ignore_index=True,
+        )
+    )
+    dataframe_novo = deduplicar_dataframe_lista_apoio(dataframe_novo)
+    salvar_dataframe_lista_apoio(dataframe_novo)
+    return dataframe_novo
+
+
 def registrar_duvida_apoio(tecnico, topico, resumo):
     garantir_lista_apoio()
     coluna_carimbo = CABECALHOS_LISTA_APOIO[0]
@@ -1542,22 +1565,15 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
         coluna_situacao: "Aberto",
         coluna_responsavel: "",
     }
-    salvar_registros_lista_apoio_no_banco([registro])
-    try:
-        dataframe_atual = ler_lista_apoio_do_banco()
-        if not dataframe_atual.empty:
-            tentar_espelhar_lista_apoio_para_arquivos(dataframe_atual)
-    except Exception:
-        dataframe_existente = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO)
-        dataframe_novo = padronizar_dataframe_lista_apoio(
-            pd.concat(
-                [dataframe_existente, pd.DataFrame([registro])],
-                ignore_index=True,
-            )
-        )
-        dataframe_novo = deduplicar_dataframe_lista_apoio(dataframe_novo)
-        tentar_espelhar_lista_apoio_para_arquivos(dataframe_novo)
+    persistir_registro_lista_apoio_local(registro)
     registrar_historico_lista_apoio("create", registro)
+    try:
+        salvar_registros_lista_apoio_no_banco([registro])
+    except Exception as erro:
+        registrar_erro_backup_painel(
+            f"Falha ao sincronizar nova ajuda no banco: {erro}"
+        )
+    return registro
 
 
 def ler_lista_apoio():
@@ -1684,10 +1700,15 @@ def salvar_lista_apoio(dataframe):
             registrar_historico_lista_apoio("update", registro_depois)
 
     dataframe_final = existente[CABECALHOS_LISTA_APOIO]
-    salvar_registros_lista_apoio_no_banco(
-        dataframe_para_registros_lista_apoio(dataframe_final)
-    )
-    tentar_espelhar_lista_apoio_para_arquivos(dataframe_final)
+    salvar_dataframe_lista_apoio(dataframe_final)
+    try:
+        salvar_registros_lista_apoio_no_banco(
+            dataframe_para_registros_lista_apoio(dataframe_final)
+        )
+    except Exception as erro:
+        registrar_erro_backup_painel(
+            f"Falha ao sincronizar edicao da lista de apoio no banco: {erro}"
+        )
 
 
 def bytes_lista_apoio():
