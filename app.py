@@ -14,6 +14,7 @@ import time
 import unicodedata
 import uuid
 import zipfile
+import glob
 import builtins
 from datetime import date, datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
@@ -4823,6 +4824,49 @@ def buscar_satisfacao_geral_sgd_cache(
     return calcular_satisfacao_geral_registros_sgd(registros)
 
 
+def buscar_satisfacao_pdf_local(data_inicial, data_final, canal):
+    try:
+        from pypdf import PdfReader
+    except Exception:
+        return None
+
+    padrao_nome = "FONE*.pdf" if canal == "fone" else "WEB*.pdf"
+    candidatos = glob.glob(
+        os.path.join(os.path.expanduser("~"), "Downloads", padrao_nome)
+    )
+    if not candidatos:
+        return None
+
+    periodo_texto = (
+        f"{data_inicial.strftime('%d/%m/%Y')} - {data_final.strftime('%d/%m/%Y')}"
+    )
+    meio_texto = "MEIOS DE ACESSO: Telefone." if canal == "fone" else "MEIOS DE ACESSO: Web."
+    melhor_candidato = None
+    melhor_mtime = None
+
+    for caminho in candidatos:
+        try:
+            texto = "\n".join(
+                (pagina.extract_text() or "")
+                for pagina in PdfReader(caminho).pages
+            )
+        except Exception:
+            continue
+        if periodo_texto not in texto or meio_texto not in texto:
+            continue
+        correspondencia = re.search(r"M[ÉE]DIA\s+(\d{1,3},\d{2})", texto)
+        if not correspondencia:
+            continue
+        mtime = os.path.getmtime(caminho)
+        if melhor_mtime is None or mtime > melhor_mtime:
+            melhor_mtime = mtime
+            melhor_candidato = correspondencia.group(1)
+
+    if melhor_candidato is None:
+        return None
+    return float(melhor_candidato.replace(".", "").replace(",", "."))
+
+
 def calcular_satisfacao_geral_analise_fallback(base_analise, canal):
     coluna_tecnico = nome_coluna_dataframe(base_analise, "Técnico", "Tecnico")
     coluna_data = nome_coluna_dataframe(base_analise, "Data")
@@ -8182,6 +8226,20 @@ if modo_gestao and visao_gestao == "Analise":
 
     satisfacao_fone_analise = 0.0
     satisfacao_web_analise = 0.0
+    satisfacao_fone_pdf = buscar_satisfacao_pdf_local(
+        data_inicial_analise,
+        data_final_analise,
+        "fone",
+    )
+    satisfacao_web_pdf = buscar_satisfacao_pdf_local(
+        data_inicial_analise,
+        data_final_analise,
+        "web",
+    )
+    if satisfacao_fone_pdf is not None:
+        satisfacao_fone_analise = satisfacao_fone_pdf
+    if satisfacao_web_pdf is not None:
+        satisfacao_web_analise = satisfacao_web_pdf
     env_local_sgd = carregar_env_local()
     with st.expander("Credenciais SGD", expanded=False):
         col_usuario_sgd_analise, col_senha_sgd_analise = st.columns(2)
@@ -8214,40 +8272,49 @@ if modo_gestao and visao_gestao == "Analise":
         or st.session_state.get("sgd_senha_input")
         or env_local_sgd.get("SGD_SENHA", os.getenv("SGD_SENHA", ""))
     )
-    if usuario_sgd_analise and senha_sgd_analise:
+    if (
+        satisfacao_fone_pdf is None
+        or satisfacao_web_pdf is None
+    ) and usuario_sgd_analise and senha_sgd_analise:
         try:
-            satisfacao_fone_analise = buscar_satisfacao_geral_sgd_cache(
-                data_inicial_analise.strftime("%d/%m/%Y"),
-                data_final_analise.strftime("%d/%m/%Y"),
-                usuario_sgd_analise,
-                senha_sgd_analise,
-                "fone",
-            )
-            satisfacao_web_analise = buscar_satisfacao_geral_sgd_cache(
-                data_inicial_analise.strftime("%d/%m/%Y"),
-                data_final_analise.strftime("%d/%m/%Y"),
-                usuario_sgd_analise,
-                senha_sgd_analise,
-                "web",
-            )
+            if satisfacao_fone_pdf is None:
+                satisfacao_fone_analise = buscar_satisfacao_geral_sgd_cache(
+                    data_inicial_analise.strftime("%d/%m/%Y"),
+                    data_final_analise.strftime("%d/%m/%Y"),
+                    usuario_sgd_analise,
+                    senha_sgd_analise,
+                    "fone",
+                )
+            if satisfacao_web_pdf is None:
+                satisfacao_web_analise = buscar_satisfacao_geral_sgd_cache(
+                    data_inicial_analise.strftime("%d/%m/%Y"),
+                    data_final_analise.strftime("%d/%m/%Y"),
+                    usuario_sgd_analise,
+                    senha_sgd_analise,
+                    "web",
+                )
         except Exception:
+            if satisfacao_fone_pdf is None:
+                satisfacao_fone_analise = calcular_satisfacao_geral_analise_fallback(
+                    base_analise,
+                    "fone",
+                )
+            if satisfacao_web_pdf is None:
+                satisfacao_web_analise = calcular_satisfacao_geral_analise_fallback(
+                    base_analise,
+                    "web",
+                )
+    else:
+        if satisfacao_fone_pdf is None:
             satisfacao_fone_analise = calcular_satisfacao_geral_analise_fallback(
                 base_analise,
                 "fone",
             )
+        if satisfacao_web_pdf is None:
             satisfacao_web_analise = calcular_satisfacao_geral_analise_fallback(
                 base_analise,
                 "web",
             )
-    else:
-        satisfacao_fone_analise = calcular_satisfacao_geral_analise_fallback(
-            base_analise,
-            "fone",
-        )
-        satisfacao_web_analise = calcular_satisfacao_geral_analise_fallback(
-            base_analise,
-            "web",
-        )
 
     st.caption(f"Período analisado: {periodo_texto}")
     st.markdown(
