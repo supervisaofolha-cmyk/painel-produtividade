@@ -4706,7 +4706,16 @@ def extrair_registros_sgd(conteudo_xlsx):
                 "satisfacao": float(ws.cell(row=row, column=5).value or 0),
                 "votacao": float(ws.cell(row=row, column=11).value or 0),
                 "ssc": int(ws.cell(row=row, column=10).value or 0),
-                "votados": int(round(float(ws.cell(row=row, column=10).value or 0) * float(ws.cell(row=row, column=11).value or 0) / 100.0)),
+                "votados": int(
+                    round(
+                        float(ws.cell(row=row, column=8).value or 0)
+                        or (
+                            float(ws.cell(row=row, column=10).value or 0)
+                            * float(ws.cell(row=row, column=11).value or 0)
+                            / 100.0
+                        )
+                    )
+                ),
             }
         )
 
