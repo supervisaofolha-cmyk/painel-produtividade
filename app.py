@@ -8176,12 +8176,35 @@ if modo_gestao and visao_gestao == "Analise":
     satisfacao_fone_analise = 0.0
     satisfacao_web_analise = 0.0
     env_local_sgd = carregar_env_local()
+    with st.expander("Credenciais SGD", expanded=False):
+        col_usuario_sgd_analise, col_senha_sgd_analise = st.columns(2)
+        with col_usuario_sgd_analise:
+            usuario_sgd_analise_input = st.text_input(
+                "Usuário SGD",
+                value=st.session_state.get("sgd_usuario_input")
+                or env_local_sgd.get("SGD_USUARIO", os.getenv("SGD_USUARIO", "")),
+                key="sgd_usuario_analise_input",
+            )
+        with col_senha_sgd_analise:
+            senha_sgd_analise_input = st.text_input(
+                "Senha SGD",
+                value=st.session_state.get("sgd_senha_input")
+                or env_local_sgd.get("SGD_SENHA", os.getenv("SGD_SENHA", "")),
+                type="password",
+                key="sgd_senha_analise_input",
+            )
+    if st.session_state.get("sgd_usuario_analise_input"):
+        st.session_state["sgd_usuario_input"] = st.session_state["sgd_usuario_analise_input"]
+    if st.session_state.get("sgd_senha_analise_input"):
+        st.session_state["sgd_senha_input"] = st.session_state["sgd_senha_analise_input"]
     usuario_sgd_analise = (
-        st.session_state.get("sgd_usuario_input")
+        st.session_state.get("sgd_usuario_analise_input")
+        or st.session_state.get("sgd_usuario_input")
         or env_local_sgd.get("SGD_USUARIO", os.getenv("SGD_USUARIO", ""))
     )
     senha_sgd_analise = (
-        st.session_state.get("sgd_senha_input")
+        st.session_state.get("sgd_senha_analise_input")
+        or st.session_state.get("sgd_senha_input")
         or env_local_sgd.get("SGD_SENHA", os.getenv("SGD_SENHA", ""))
     )
     if usuario_sgd_analise and senha_sgd_analise:
