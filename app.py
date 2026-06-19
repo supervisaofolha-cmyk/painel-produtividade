@@ -8192,8 +8192,23 @@ if modo_gestao and visao_gestao == "Analise":
                 "web",
             )
         except Exception:
-            satisfacao_fone_analise = 0.0
-            satisfacao_web_analise = 0.0
+            satisfacao_fone_analise = calcular_satisfacao_geral_analise_fallback(
+                base_analise,
+                "fone",
+            )
+            satisfacao_web_analise = calcular_satisfacao_geral_analise_fallback(
+                base_analise,
+                "web",
+            )
+    else:
+        satisfacao_fone_analise = calcular_satisfacao_geral_analise_fallback(
+            base_analise,
+            "fone",
+        )
+        satisfacao_web_analise = calcular_satisfacao_geral_analise_fallback(
+            base_analise,
+            "web",
+        )
 
     st.caption(f"Período analisado: {periodo_texto}")
     st.markdown(
