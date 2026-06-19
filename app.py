@@ -1577,17 +1577,9 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
 
 
 def ler_lista_apoio():
-    dataframe_principal = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO)
-    if not dataframe_principal.empty:
-        return dataframe_principal
-
-    dataframe_backup = ler_dataframe_lista_apoio_arquivo(ARQUIVO_LISTA_APOIO_BACKUP)
-    if not dataframe_backup.empty:
-        return dataframe_backup
-
-    dataframe_historico = restaurar_lista_apoio_do_historico()
-    if not dataframe_historico.empty:
-        return dataframe_historico
+    dataframe_local = carregar_lista_apoio_local_completa()
+    if not dataframe_local.empty:
+        return dataframe_local
 
     try:
         garantir_lista_apoio()
