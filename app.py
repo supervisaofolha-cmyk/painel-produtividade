@@ -7707,8 +7707,26 @@ if modo_gestao and visao_gestao == "Visão Geral":
     ].copy()
     dados_gestao_mes = filtrar_dataframe_tecnicos_ativos(dados_gestao_mes)
 
-    realizado_gestao = int(dados_gestao_mes["Realizado"].sum())
-    esperado_gestao = int(dados_gestao_mes["Esperado"].sum())
+    coluna_2min_gestao = "> 2min" if "> 2min" in dados_gestao_mes.columns else " > 2min"
+    for coluna_base_gestao in [coluna_2min_gestao, "RO", "CHAT", "Realizado", "Esperado"]:
+        if coluna_base_gestao in dados_gestao_mes.columns:
+            dados_gestao_mes[coluna_base_gestao] = pd.to_numeric(
+                dados_gestao_mes[coluna_base_gestao],
+                errors="coerce",
+            ).fillna(0)
+
+    if coluna_2min_gestao in dados_gestao_mes.columns:
+        dados_gestao_mes["Realizado Visao Geral"] = (
+            dados_gestao_mes[coluna_2min_gestao]
+            + dados_gestao_mes.get("RO", 0)
+            + dados_gestao_mes.get("CHAT", 0)
+        )
+    else:
+        dados_gestao_mes["Realizado Visao Geral"] = dados_gestao_mes.get("Realizado", 0)
+    dados_gestao_mes["Esperado Visao Geral"] = dados_gestao_mes.get("Esperado", 0)
+
+    realizado_gestao = int(dados_gestao_mes["Realizado Visao Geral"].sum())
+    esperado_gestao = int(dados_gestao_mes["Esperado Visao Geral"].sum())
     desvio_gestao = realizado_gestao - esperado_gestao
     desvio_percentual_gestao = (
         (desvio_gestao / esperado_gestao) * 100 if esperado_gestao else 0
@@ -7796,9 +7814,17 @@ if modo_gestao and visao_gestao == "Visão Geral":
         "EXCELENTE": "#15803D",
     }
     status_mensal = (
-        dados_gestao_mes.groupby("Técnico", as_index=False)[["Realizado", "Esperado"]]
+        dados_gestao_mes.groupby("Técnico", as_index=False)[
+            ["Realizado Visao Geral", "Esperado Visao Geral"]
+        ]
         .sum()
         .reset_index(drop=True)
+    )
+    status_mensal = status_mensal.rename(
+        columns={
+            "Realizado Visao Geral": "Realizado",
+            "Esperado Visao Geral": "Esperado",
+        }
     )
     status_mensal["Desvio"] = status_mensal["Realizado"] - status_mensal["Esperado"]
     status_mensal["Classificação"] = status_mensal["Desvio"].apply(status_por_desvio)
@@ -7894,9 +7920,17 @@ if modo_gestao and visao_gestao == "Visão Geral":
         ]
 
     ranking_geral_mensal = (
-        base_ranking_geral.groupby("Técnico", as_index=False)[["Realizado", "Esperado"]]
+        base_ranking_geral.groupby("Técnico", as_index=False)[
+            ["Realizado Visao Geral", "Esperado Visao Geral"]
+        ]
         .sum()
         .reset_index(drop=True)
+    )
+    ranking_geral_mensal = ranking_geral_mensal.rename(
+        columns={
+            "Realizado Visao Geral": "Realizado",
+            "Esperado Visao Geral": "Esperado",
+        }
     )
     ranking_geral_mensal["Produtividade"] = ranking_geral_mensal.apply(
         lambda linha: (
