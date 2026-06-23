@@ -4,4 +4,5 @@ __pycache__/
 ~$*
 backups_lista_apoio/
 .playwright-plug/
+.playwright-plug-login/
 auto_sync_github.log

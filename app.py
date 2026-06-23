@@ -117,7 +117,8 @@ TOPICOS_LISTA_APOIO = [
 USUARIOS_APOIO = {"subbrenda", "subluma"}
 FUSO_HORARIO_APP = ZoneInfo("America/Araguaina")
 PLUG_CHATBOX_URL = "https://tr.plugsocial.com.br/#/app/chatbox"
-PLUG_PERFIL_DIR = pathlib.Path(".playwright-plug")
+PLUG_DYNAMIC_PANEL_URL = "https://tr.plugsocial.com.br/#/app/dynamic-panel/6a2acc30ebb0519584747367"
+PLUG_PERFIL_DIR = pathlib.Path(".playwright-plug-login")
 PLUG_GRUPO_FOLHA = "Folha de Pagamento"
 PLUG_STATUS_FECHADO = "Fechado"
 
@@ -3462,9 +3463,23 @@ def tecnico_ativo_na_data(tecnico, data_referencia):
 
 def filtrar_dataframe_tecnicos_ativos(
     dataframe,
-    coluna_tecnico="TÃ©cnico",
+    coluna_tecnico=None,
     coluna_data="Data",
 ):
+    if dataframe.empty:
+        return dataframe.copy()
+
+    if not coluna_tecnico or coluna_tecnico not in dataframe.columns:
+        coluna_tecnico = nome_coluna_dataframe(
+            dataframe,
+            "T?cnico",
+            "Tecnico",
+            "T??cnico",
+            "T????cnico",
+        )
+    if coluna_data not in dataframe.columns:
+        coluna_data = nome_coluna_dataframe(dataframe, "Data")
+
     return dataframe[
         dataframe.apply(
             lambda linha: (
@@ -3478,7 +3493,6 @@ def filtrar_dataframe_tecnicos_ativos(
             axis=1,
         )
     ].copy()
-
 
 def nomes_ativos_na_referencia(nomes, data_referencia):
     return sorted(
@@ -3763,8 +3777,15 @@ def atualizar_via_servico_local(fonte, data_referencia):
         },
         timeout=600,
     )
-    resposta.raise_for_status()
-    payload = resposta.json()
+    try:
+        payload = resposta.json()
+    except Exception:
+        payload = {}
+    if resposta.status_code >= 400:
+        raise RuntimeError(
+            payload.get("erro")
+            or f"Serviço local retornou erro HTTP {resposta.status_code}."
+        )
     if not payload.get("ok"):
         raise RuntimeError(payload.get("erro", "Falha na atualização local."))
     return payload.get("resultados", {})
@@ -5254,14 +5275,14 @@ def abrir_sessao_plug():
             kwargs["executable_path"] = executable_path
         contexto = playwright.chromium.launch_persistent_context(**kwargs)
         pagina = contexto.pages[0] if contexto.pages else contexto.new_page()
-        pagina.goto(PLUG_CHATBOX_URL, wait_until="domcontentloaded", timeout=60000)
+        pagina.goto(PLUG_DYNAMIC_PANEL_URL, wait_until="domcontentloaded", timeout=60000)
 
         limite = time.time() + 180
         while time.time() < limite:
             url_atual = pagina.url
             if "#/app/" in url_atual and "login" not in url_atual.lower():
                 pagina.goto(
-                    PLUG_CHATBOX_URL,
+                    PLUG_DYNAMIC_PANEL_URL,
                     wait_until="domcontentloaded",
                     timeout=60000,
                 )
@@ -5276,6 +5297,251 @@ def abrir_sessao_plug():
             contexto.close()
         playwright.stop()
         raise
+
+
+def aplicar_periodo_painel_dinamico_plug(pagina, data_referencia):
+    data_texto = data_referencia.strftime("%d/%m/%Y")
+    periodo_texto = f"{data_texto} - {data_texto}"
+
+    pagina.wait_for_load_state("domcontentloaded", timeout=30000)
+    pagina.wait_for_timeout(2500)
+    resultado = pagina.evaluate(
+        """({ dataTexto, periodoTexto }) => {
+            const normalizar = (valor) => (valor || "")
+                .toString()
+                .normalize("NFD")
+                .replace(/[\\u0300-\\u036f]/g, "")
+                .toLowerCase()
+                .trim();
+
+            const disparar = (elemento) => {
+                elemento.dispatchEvent(new Event("input", { bubbles: true }));
+                elemento.dispatchEvent(new Event("change", { bubbles: true }));
+                elemento.dispatchEvent(new Event("blur", { bubbles: true }));
+            };
+
+            const inputs = Array.from(document.querySelectorAll("input"))
+                .filter((input) => {
+                    const texto = normalizar([
+                        input.placeholder,
+                        input.name,
+                        input.id,
+                        input.getAttribute("aria-label"),
+                        input.closest("label")?.textContent,
+                        input.parentElement?.textContent,
+                    ].join(" "));
+                    return input.offsetParent !== null
+                        && !input.disabled
+                        && (
+                            input.type === "date"
+                            || texto.includes("data")
+                            || texto.includes("periodo")
+                            || texto.includes("inicio")
+                            || texto.includes("final")
+                        );
+                });
+
+            for (const input of inputs) {
+                const texto = normalizar([
+                    input.placeholder,
+                    input.name,
+                    input.id,
+                    input.getAttribute("aria-label"),
+                    input.closest("label")?.textContent,
+                    input.parentElement?.textContent,
+                ].join(" "));
+                input.focus();
+                if (input.type === "date") {
+                    const [dia, mes, ano] = dataTexto.split("/");
+                    input.value = `${ano}-${mes}-${dia}`;
+                } else if (texto.includes("periodo") || texto.includes("intervalo")) {
+                    input.value = periodoTexto;
+                } else {
+                    input.value = dataTexto;
+                }
+                disparar(input);
+            }
+
+            const botoes = Array.from(document.querySelectorAll("button, [role='button']"));
+            const botao = botoes.find((item) => {
+                const texto = normalizar(item.textContent || item.getAttribute("aria-label"));
+                return item.offsetParent !== null
+                    && !item.disabled
+                    && (
+                        texto.includes("filtrar")
+                        || texto.includes("aplicar")
+                        || texto.includes("buscar")
+                        || texto.includes("atualizar")
+                        || texto.includes("gerar")
+                    );
+            });
+            if (botao) {
+                botao.click();
+            }
+
+            return { inputs: inputs.length, clicou: Boolean(botao) };
+        }""",
+        {"dataTexto": data_texto, "periodoTexto": periodo_texto},
+    )
+    pagina.wait_for_timeout(3500)
+    return resultado
+
+
+def clicar_opcao_plug_por_texto(pagina, textos):
+    return pagina.evaluate(
+        """(textos) => {
+            const normalizar = (valor) => (valor || "")
+                .toString()
+                .normalize("NFD")
+                .replace(/[\\u0300-\\u036f]/g, "")
+                .toLowerCase()
+                .replace(/\\s+/g, " ")
+                .trim();
+            const alvos = textos.map(normalizar);
+            const elementos = Array.from(document.querySelectorAll(
+                "a, button, [role='button'], [role='menuitem'], li, .menu-item, .nav-item, span, div"
+            )).filter((elemento) => {
+                const texto = normalizar(elemento.innerText || elemento.textContent);
+                return elemento.offsetParent !== null
+                    && texto
+                    && alvos.some((alvo) => texto === alvo || texto.includes(alvo));
+            });
+            for (const elemento of elementos) {
+                const clicavel = elemento.closest("a, button, [role='button'], [role='menuitem'], li, .menu-item, .nav-item")
+                    || elemento;
+                if (clicavel && clicavel.offsetParent !== null) {
+                    clicavel.click();
+                    return true;
+                }
+            }
+            return false;
+        }""",
+        textos,
+    )
+
+
+def abrir_painel_folha_plug(pagina):
+    pagina.wait_for_timeout(2500)
+    texto_atual = pagina.locator("body").inner_text(timeout=20000)
+    texto_normalizado = normalizar_nome(texto_atual)
+    if "produtividade" in texto_normalizado and "total de protocolos" in texto_normalizado:
+        return
+
+    passos = [
+        ["configuracoes", "configuração", "configurações"],
+        ["paineis dinamicos", "painéis dinâmicos", "painel dinamico", "painel dinâmico"],
+        ["folha", "painel folha", "folha de pagamento"],
+    ]
+    for opcoes in passos:
+        clicou = clicar_opcao_plug_por_texto(pagina, opcoes)
+        pagina.wait_for_timeout(2500)
+        if not clicou:
+            continue
+
+
+def pagina_ativa_plug(contexto, pagina_atual=None):
+    paginas = [pagina for pagina in contexto.pages if not pagina.is_closed()]
+    if pagina_atual and not pagina_atual.is_closed():
+        if pagina_atual in paginas:
+            return pagina_atual
+        return pagina_atual
+    if paginas:
+        return paginas[-1]
+    return contexto.new_page()
+
+
+def validar_login_plug(pagina):
+    url_atual = builtins.str(pagina.url or "").lower()
+    texto = ""
+    try:
+        texto = pagina.locator("body").inner_text(timeout=5000)
+    except Exception:
+        texto = ""
+    texto_normalizado = normalizar_nome(texto)
+    if (
+        "login" in url_atual
+        or "esqueceu sua senha" in texto_normalizado
+        or "nao possui uma conta de acesso" in texto_normalizado
+    ):
+        raise RuntimeError(
+            "Faça login no PLUG/SGD na janela do navegador local e depois tente atualizar o CHAT novamente."
+        )
+
+
+def extrair_produtividade_painel_dinamico_plug(pagina):
+    return pagina.evaluate(
+        """() => {
+            const normalizar = (valor) => (valor || "")
+                .toString()
+                .normalize("NFD")
+                .replace(/[\\u0300-\\u036f]/g, "")
+                .toLowerCase()
+                .replace(/\\s+/g, " ")
+                .trim();
+            const numero = (valor) => {
+                const texto = (valor || "").toString().replace(/[^0-9,.-]/g, "");
+                if (!texto) return 0;
+                const limpo = texto.replace(/\\./g, "").replace(",", ".");
+                const parsed = Number(limpo);
+                return Number.isFinite(parsed) ? Math.round(parsed) : 0;
+            };
+            const textoCelula = (celula) => (celula?.innerText || celula?.textContent || "").trim();
+            const indiceTecnico = (cabecalhos) => {
+                const candidatos = ["tecnico", "atendente", "operador", "usuario", "colaborador", "nome"];
+                for (const candidato of candidatos) {
+                    const indice = cabecalhos.findIndex((item) => normalizar(item).includes(candidato));
+                    if (indice >= 0) return indice;
+                }
+                return 0;
+            };
+            const montar = (linhas) => {
+                const matriz = linhas
+                    .map((linha) => Array.from(linha.querySelectorAll("th,td,[role='columnheader'],[role='gridcell'],[role='cell']"))
+                        .map(textoCelula)
+                        .filter((texto) => texto !== ""))
+                    .filter((linha) => linha.length >= 2);
+                const indiceCabecalho = matriz.findIndex((linha) =>
+                    linha.some((valor) => normalizar(valor).includes("total de protocolos"))
+                );
+                if (indiceCabecalho < 0) return null;
+                const cabecalhos = matriz[indiceCabecalho];
+                const indiceTotal = cabecalhos.findIndex((valor) =>
+                    normalizar(valor).includes("total de protocolos")
+                );
+                const indiceNome = indiceTecnico(cabecalhos);
+                if (indiceTotal < 0 || indiceNome < 0) return null;
+
+                const registros = [];
+                for (const linha of matriz.slice(indiceCabecalho + 1)) {
+                    const nome = linha[indiceNome];
+                    const total = linha[indiceTotal];
+                    if (!nome || normalizar(nome).includes("total")) continue;
+                    registros.push({ tecnico: nome, total: numero(total) });
+                }
+                return registros.length ? registros : null;
+            };
+
+            const candidatos = Array.from(document.querySelectorAll("section, article, div, table, [role='table'], [role='grid']"))
+                .filter((elemento) => {
+                    const texto = normalizar(elemento.innerText || elemento.textContent);
+                    return texto.includes("produtividade") && texto.includes("total de protocolos");
+                })
+                .sort((a, b) => (a.innerText || "").length - (b.innerText || "").length);
+
+            for (const candidato of candidatos) {
+                const tabelas = Array.from(candidato.querySelectorAll("table, [role='table'], [role='grid']"));
+                for (const tabela of tabelas.length ? tabelas : [candidato]) {
+                    const linhas = Array.from(tabela.querySelectorAll("tr, [role='row']"));
+                    const registros = montar(linhas);
+                    if (registros) return registros;
+                }
+            }
+
+            const linhasGlobais = Array.from(document.querySelectorAll("tr, [role='row']"));
+            const registrosGlobais = montar(linhasGlobais);
+            return registrosGlobais || [];
+        }"""
+    )
 
 
 def localizar_mes_no_calendario_plug(pagina, texto_mes_ano):
@@ -5386,34 +5652,41 @@ def total_chat_plug_atendente(pagina, value_atendente):
 def buscar_chat_plug(data_referencia):
     playwright, contexto, pagina = abrir_sessao_plug()
     try:
-        pagina.goto(PLUG_CHATBOX_URL, wait_until="domcontentloaded", timeout=60000)
-        pagina.wait_for_selector('button[title="Filtros"]', timeout=30000)
-        pagina.locator('button[title="Filtros"]').click()
-        pagina.wait_for_selector('input[name="datetimesCreated"]', timeout=15000)
-        ajustar_periodo_plug(pagina, data_referencia)
-
-        selects = pagina.locator("select")
-        if selects.count() < 5:
-            raise RuntimeError("Filtros principais do PLUG não foram carregados.")
-        selects.nth(4).select_option(label=PLUG_GRUPO_FOLHA)
-        pagina.wait_for_timeout(1200)
-        selecionar_status_plug(pagina, PLUG_STATUS_FECHADO)
-
-        atendentes = obter_atendentes_plug(pagina)
-        contagens = {}
-        for atendente in atendentes:
-            contagens[normalizar_nome(atendente["text"])] = total_chat_plug_atendente(
-                pagina,
-                atendente["value"],
+        pagina = pagina_ativa_plug(contexto, pagina)
+        pagina.goto(PLUG_DYNAMIC_PANEL_URL, wait_until="domcontentloaded", timeout=60000)
+        pagina = pagina_ativa_plug(contexto, pagina)
+        pagina.wait_for_timeout(3000)
+        validar_login_plug(pagina)
+        abrir_painel_folha_plug(pagina)
+        pagina = pagina_ativa_plug(contexto, pagina)
+        validar_login_plug(pagina)
+        aplicar_periodo_painel_dinamico_plug(pagina, data_referencia)
+        pagina = pagina_ativa_plug(contexto, pagina)
+        validar_login_plug(pagina)
+        registros = extrair_produtividade_painel_dinamico_plug(pagina)
+        if not registros:
+            raise RuntimeError(
+                "Não encontrei o widget Produtividade com a coluna Total de Protocolos no PLUG."
             )
+
+        contagens = {}
+        atendentes = []
+        for registro in registros:
+            tecnico_plug = builtins.str(registro.get("tecnico", "")).strip()
+            if not tecnico_plug:
+                continue
+            atendentes.append(tecnico_plug)
+            contagens[normalizar_nome(tecnico_plug)] = int(registro.get("total", 0) or 0)
 
         return {
             "contagens": contagens,
-            "atendentes": [item["text"] for item in atendentes],
+            "atendentes": atendentes,
         }
     finally:
-        contexto.close()
-        playwright.stop()
+        try:
+            contexto.close()
+        finally:
+            playwright.stop()
 
 
 def atualizar_planilha_com_chat(data_referencia):
@@ -7372,7 +7645,7 @@ if modo_gestao and visao_gestao == "Atualizações":
         )
 
     if atualizar_chat:
-        with st.spinner("Buscando chats fechados no PLUG e atualizando a planilha..."):
+        with st.spinner("Buscando Total de Protocolos no PLUG e atualizando a planilha..."):
             try:
                 resultado = atualizar_via_servico_local("chat", data_referencia)["chat"]
                 origem_atualizacao = "planilha local"
