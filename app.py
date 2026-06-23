@@ -1579,19 +1579,34 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
 
 def ler_lista_apoio():
     dataframe_local = carregar_lista_apoio_local_completa()
-    if not dataframe_local.empty:
-        return dataframe_local
-
+    dataframe_banco = dataframe_lista_apoio_vazio()
     try:
         garantir_lista_apoio()
         dataframe_banco = ler_lista_apoio_do_banco()
-        if not dataframe_banco.empty:
-            tentar_espelhar_lista_apoio_para_arquivos(dataframe_banco)
-            return dataframe_banco
-    except Exception:
-        dataframe_banco = dataframe_lista_apoio_vazio()
+    except Exception as erro:
+        registrar_erro_backup_painel(
+            f"Falha ao carregar lista de apoio do banco online: {erro}"
+        )
 
-    return dataframe_banco
+    dataframe_mesclado = mesclar_dataframes_lista_apoio(
+        [dataframe_local, dataframe_banco]
+    )
+    if dataframe_mesclado.empty:
+        return dataframe_lista_apoio_vazio()
+
+    tentar_espelhar_lista_apoio_para_arquivos(dataframe_mesclado)
+
+    if not dataframe_banco.empty and len(dataframe_mesclado) > len(dataframe_banco):
+        try:
+            salvar_registros_lista_apoio_no_banco(
+                dataframe_para_registros_lista_apoio(dataframe_mesclado)
+            )
+        except Exception as erro:
+            registrar_erro_backup_painel(
+                f"Falha ao sincronizar lista de apoio mesclada no banco: {erro}"
+            )
+
+    return dataframe_mesclado
 
 
 def texto_lista_apoio(valor):
@@ -1649,19 +1664,11 @@ def salvar_lista_apoio(dataframe):
         if coluna_lista not in existente.columns:
             existente[coluna_lista] = ""
 
-    for indice, linha in dataframe.iterrows():
-        if indice not in existente.index:
-            continue
-        for coluna in colunas_editaveis:
-            existente.at[indice, coluna] = normalizar_valor_lista_apoio(
-                coluna,
-                linha[coluna],
-                existente.at[indice, coluna],
-            )
-
     edits_por_chave = {}
     for _, linha in dataframe.iterrows():
         chave = tuple(texto_lista_apoio(linha[coluna]) for coluna in colunas_chave)
+        if not any(chave):
+            continue
         edits_por_chave[chave] = {
             coluna: linha[coluna]
             for coluna in colunas_editaveis
@@ -1710,18 +1717,11 @@ def bytes_lista_apoio():
 
 @st.cache_data(show_spinner=False)
 def _bytes_lista_apoio_cache(_versao_lista_apoio):
-    garantir_lista_apoio()
-    dataframe = ler_lista_apoio_do_banco()
+    dataframe = ler_lista_apoio()
     return bytes_dataframe_excel(dataframe)
 
 
 def versao_lista_apoio():
-    if os.path.exists(ARQUIVO_LISTA_APOIO):
-        return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO)))
-    if os.path.exists(ARQUIVO_LISTA_APOIO_BACKUP):
-        return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO_BACKUP)))
-    if os.path.exists(ARQUIVO_LISTA_APOIO_DB):
-        return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO_DB)))
     if backend_lista_apoio() == "postgres":
         try:
             with conexao_lista_apoio_db() as conexao:
@@ -1731,7 +1731,13 @@ def versao_lista_apoio():
                 if linha:
                     return f"{linha['versao']}|{linha['total']}"
         except Exception:
-            return "sem_arquivo"
+            pass
+    if os.path.exists(ARQUIVO_LISTA_APOIO):
+        return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO)))
+    if os.path.exists(ARQUIVO_LISTA_APOIO_BACKUP):
+        return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO_BACKUP)))
+    if os.path.exists(ARQUIVO_LISTA_APOIO_DB):
+        return builtins.str(int(os.path.getmtime(ARQUIVO_LISTA_APOIO_DB)))
     return "sem_arquivo"
 
 

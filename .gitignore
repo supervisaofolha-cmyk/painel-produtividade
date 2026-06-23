@@ -3,6 +3,11 @@ __pycache__/
 *.log
 ~$*
 backups_lista_apoio/
+lista_apoio.xlsx
+lista_apoio_backup.xlsx
+lista_apoio.db
+lista_apoio_historico.jsonl
+lista_apoio_backup_meta.json
 .playwright-plug/
 .playwright-plug-login/
 auto_sync_github.log
