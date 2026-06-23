@@ -8003,6 +8003,15 @@ if modo_gestao and visao_gestao == "Visão Geral":
     else:
         dados_gestao_mes["Realizado Visao Geral"] = dados_gestao_mes.get("Realizado", 0)
     dados_gestao_mes["Esperado Visao Geral"] = dados_gestao_mes.get("Esperado", 0)
+    nivel_por_tecnico_gestao = {}
+    if {"Técnico", "Nível", "Data"}.issubset(dados_gestao_mes.columns):
+        nivel_por_tecnico_gestao = (
+            dados_gestao_mes.sort_values("Data")
+            .dropna(subset=["Técnico"])
+            .groupby("Técnico")["Nível"]
+            .last()
+            .to_dict()
+        )
 
     realizado_gestao = int(dados_gestao_mes["Realizado Visao Geral"].sum())
     esperado_gestao = int(dados_gestao_mes["Esperado Visao Geral"].sum())
@@ -8107,6 +8116,7 @@ if modo_gestao and visao_gestao == "Visão Geral":
     )
     status_mensal["Desvio"] = status_mensal["Realizado"] - status_mensal["Esperado"]
     status_mensal["Classificação"] = status_mensal["Desvio"].apply(status_por_desvio)
+    status_mensal["Nível"] = status_mensal["Técnico"].map(nivel_por_tecnico_gestao).fillna("")
     blocos_status = []
     modo_status_gestao = st.radio(
         "Distribuição por classificação",
@@ -8121,8 +8131,9 @@ if modo_gestao and visao_gestao == "Visão Geral":
             base_status_exibicao["Classificação"] == status
         ].copy()
         dados_status["Técnico"] = dados_status["Técnico"].fillna("").astype(str)
-        if "Nível" in dados_status.columns:
-            dados_status["Nível"] = dados_status["Nível"].fillna("").astype(str)
+        if "Nível" not in dados_status.columns:
+            dados_status["Nível"] = dados_status["Técnico"].map(nivel_por_tecnico_gestao)
+        dados_status["Nível"] = dados_status["Nível"].fillna("").astype(str)
         dados_status = dados_status[dados_status["Técnico"].str.strip() != ""].sort_values("Técnico")
         quantidade = len(dados_status)
         legenda, referencia = descricoes_status[status]
