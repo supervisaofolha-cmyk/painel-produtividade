@@ -8979,6 +8979,13 @@ nivel_exibicao = escape(
 )
 classificacao_exibicao = escape(builtins.str(classificacao))
 sinal_desvio = "+" if desvio_total > 0 else ""
+tooltip_realizado = (
+    "Realizado WEB: soma de SSC realizados no relatório WEB do SGD."
+    if tecnico_web
+    else "Realizado CHAT: soma dos chats/protocolos registrados no período."
+    if tecnico_chat
+    else "Realizado Total: soma de >2min + RO + CHAT no período selecionado."
+)
 cards_secundarios_html = "".join(
     f'''
         <div class="resultado-card secundario">
@@ -9068,7 +9075,7 @@ if modo_gestao:
 
     performance_cards_html = "".join(
         f"""
-        <div class="resultado-card destaque gestao">
+        <div class="resultado-card destaque gestao"{f' title="{escape(tooltip_realizado)}"' if rotulo in {'Realizado Total', 'SSC Realizado', 'Chats Realizados'} else ""}>
             <div class="resultado-label">{escape(rotulo)}</div>
             <div class="resultado-valor"{f' style="color:{cor};"' if cor else ""}>{escape(valor)}</div>
         </div>
@@ -9152,7 +9159,7 @@ elif tecnico_web or tecnico_chat:
             </div>
         </div>
         <div class="resultado-grid-principal">
-            <div class="resultado-card destaque">
+            <div class="resultado-card destaque" title="{escape(tooltip_realizado)}">
                 <div class="resultado-label">{rotulo_realizado}</div>
                 <div class="resultado-valor">{realizado_total}</div>
             </div>
@@ -9188,7 +9195,7 @@ else:
             </div>
         </div>
         <div class="resultado-grid-principal">
-            <div class="resultado-card destaque">
+            <div class="resultado-card destaque" title="{escape(tooltip_realizado)}">
                 <div class="resultado-label">Realizado</div>
                 <div class="resultado-valor">{realizado_total}</div>
             </div>
