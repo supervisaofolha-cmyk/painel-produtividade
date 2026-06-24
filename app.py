@@ -203,6 +203,7 @@ MOTIVOS_RO_CONTAM = {
 TECNICOS_DESCONSIDERADOS_ESPERADO = {
     "patricia karla sousa araujo",
     "lorena dias araujo",
+    "lucas luiz romero",
 }
 DESLIGAMENTOS_TECNICOS = [
     ("Daniel Gomes da Silva", date(2026, 6, 15)),
