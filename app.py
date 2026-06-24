@@ -208,7 +208,6 @@ TECNICOS_DESCONSIDERADOS_ESPERADO = {
 DESLIGAMENTOS_TECNICOS = [
     ("Daniel Gomes da Silva", date(2026, 6, 15)),
     ("Karina Gonçalves Martins", date(2026, 6, 9)),
-    ("Leandro de Souza Silva", date(2026, 6, 22)),
     ("Lorena Dias de Araujo", date(2026, 6, 4)),
     ("Lucas Luiz Romero", date(2026, 6, 23)),
     ("Patrícia Karla de Sousa Araújo", date(2026, 5, 22)),
