@@ -3334,11 +3334,45 @@ def percentuais_absorcao_por_mes(dataframe, ano, mes):
     }
 
 
-def percentual_absorcao_tecnico(dataframe, ano, mes, nivel):
-    return percentuais_absorcao_por_mes(dataframe, ano, mes).get(
-        nivel_canonico(nivel),
-        0,
-    )
+def percentual_absorcao_tecnico(dataframe, ano, mes, tecnico):
+    dados_mes = dataframe[
+        (dataframe["Data"].dt.year == ano)
+        & (dataframe["Data"].dt.month == mes)
+    ].copy()
+    if dados_mes.empty:
+        return 0
+
+    dados_mes = dados_mes[
+        ~dados_mes["Técnico"]
+        .map(normalizar_nome)
+        .isin(TECNICOS_DESCONSIDERADOS_ESPERADO)
+    ].copy()
+    dados_mes = dados_mes[
+        dados_mes.apply(
+            lambda linha: (
+                pd.notna(linha.get("Data"))
+                and tecnico_ativo_na_data(
+                    linha.get("Técnico"),
+                    pd.Timestamp(linha.get("Data")).date(),
+                )
+            ),
+            axis=1,
+        )
+    ].copy()
+    if dados_mes.empty:
+        return 0
+
+    dados_mes["Meta Nivel"] = dados_mes["Nível"].map(meta_esperada_nivel).fillna(0)
+    dados_mes = dados_mes[dados_mes["Meta Nivel"] > 0].copy()
+    total_meta_mes = dados_mes.groupby("Data")["Meta Nivel"].sum().sum()
+    if not total_meta_mes:
+        return 0
+
+    tecnico_normalizado = normalizar_nome(tecnico)
+    meta_tecnico_mes = dados_mes[
+        dados_mes["Técnico"].map(normalizar_nome) == tecnico_normalizado
+    ]["Meta Nivel"].sum()
+    return (meta_tecnico_mes / total_meta_mes) * 100
 
 
 def total_meta_mensal_por_linha(dataframe):
@@ -8821,7 +8855,7 @@ percentual_absorcao = percentual_absorcao_tecnico(
     df,
     ano_atual,
     mes_atual,
-    nivel_tecnico,
+    tecnico,
 )
 dias_base_calendario = float(dias_uteis_para_meta(ano_atual, mes_atual))
 dias_meta_valor = dias_base_calendario
@@ -9192,7 +9226,7 @@ if not modo_gestao:
         df,
         ano_atual,
         mes_atual,
-        nivel_tecnico,
+        tecnico,
     )
     dias_base_calendario = float(dias_uteis_para_meta(ano_atual, mes_atual))
     dias_meta_valor = dias_base_calendario
