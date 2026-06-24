@@ -3305,22 +3305,32 @@ def percentuais_absorcao_por_mes(dataframe, ano, mes):
         .map(normalizar_nome)
         .isin(TECNICOS_DESCONSIDERADOS_ESPERADO)
     ].copy()
+    dados_mes = dados_mes[
+        dados_mes.apply(
+            lambda linha: (
+                pd.notna(linha.get("Data"))
+                and tecnico_ativo_na_data(
+                    linha.get("Técnico"),
+                    pd.Timestamp(linha.get("Data")).date(),
+                )
+            ),
+            axis=1,
+        )
+    ].copy()
     dados_mes["Nivel Canonico"] = dados_mes["Nível"].map(nivel_canonico)
-    dados_mes = dados_mes.sort_values("Data")
-    ultimo_nivel_tecnico = dados_mes.drop_duplicates(
-        subset=["Técnico"],
-        keep="last",
-    )
-    total_meta_mes = ultimo_nivel_tecnico["Nivel Canonico"].map(
+    dados_mes["Meta Nivel"] = dados_mes["Nivel Canonico"].map(
         META_ESPERADA_POR_NIVEL
-    ).fillna(0).sum()
+    ).fillna(0)
+    dados_mes = dados_mes[dados_mes["Meta Nivel"] > 0].copy()
+    total_meta_mes = dados_mes.groupby("Data")["Meta Nivel"].sum().sum()
 
     if not total_meta_mes:
         return {nivel: 0 for nivel in META_ESPERADA_POR_NIVEL}
 
+    meta_por_nivel_mes = dados_mes.groupby("Nivel Canonico")["Meta Nivel"].sum()
     return {
-        nivel: (meta / total_meta_mes) * 100
-        for nivel, meta in META_ESPERADA_POR_NIVEL.items()
+        nivel: (meta_por_nivel_mes.get(nivel, 0) / total_meta_mes) * 100
+        for nivel in META_ESPERADA_POR_NIVEL
     }
 
 
@@ -3332,27 +3342,31 @@ def percentual_absorcao_tecnico(dataframe, ano, mes, nivel):
 
 
 def total_meta_mensal_por_linha(dataframe):
-    totais_por_mes = {}
-    for periodo, dados_mes in dataframe.groupby(dataframe["Data"].dt.to_period("M")):
-        dados_validos = dados_mes[
-            ~dados_mes["Técnico"]
-            .map(normalizar_nome)
-            .isin(TECNICOS_DESCONSIDERADOS_ESPERADO)
-        ].copy()
-        if dados_validos.empty:
-            totais_por_mes[periodo] = 0
-            continue
-
-        dados_validos = dados_validos.sort_values("Data")
-        ultimo_nivel_tecnico = dados_validos.drop_duplicates(
-            subset=["Técnico"],
-            keep="last",
+    dados_validos = dataframe[
+        ~dataframe["Técnico"]
+        .map(normalizar_nome)
+        .isin(TECNICOS_DESCONSIDERADOS_ESPERADO)
+    ].copy()
+    dados_validos = dados_validos[
+        dados_validos.apply(
+            lambda linha: (
+                pd.notna(linha.get("Data"))
+                and tecnico_ativo_na_data(
+                    linha.get("Técnico"),
+                    pd.Timestamp(linha.get("Data")).date(),
+                )
+            ),
+            axis=1,
         )
-        totais_por_mes[periodo] = ultimo_nivel_tecnico["Nível"].map(
-            meta_esperada_nivel
-        ).fillna(0).sum()
+    ].copy()
+    if dados_validos.empty:
+        return pd.Series(0, index=dataframe.index)
 
-    return dataframe["Data"].dt.to_period("M").map(totais_por_mes).fillna(0)
+    dados_validos["Meta Nivel"] = dados_validos["Nível"].map(
+        meta_esperada_nivel
+    ).fillna(0)
+    totais_por_dia = dados_validos.groupby("Data")["Meta Nivel"].sum()
+    return dataframe["Data"].map(totais_por_dia).fillna(0)
 
 
 def cabecalhos(ws):
