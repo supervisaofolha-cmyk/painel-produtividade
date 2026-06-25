@@ -8177,36 +8177,60 @@ if modo_gestao and visao_gestao == "Visão Geral":
         mes_visao_gestao,
     )
 
+    status_desvio_classe = "positive" if desvio_gestao >= 0 else "negative"
+    resumo_periodo_gestao = (
+        f"{periodo_gestao_label} &bull; {formatar_inteiro_gestao(tecnicos_ativos_gestao)} t&eacute;cnicos ativos"
+    )
+
     st.markdown(
         f"""
+        <div class="gestao-visao-hero">
+            <div>
+                <h3>Vis&atilde;o Geral</h3>
+                <p>Acompanhamento consolidado da produtividade, meta e distribui&ccedil;&atilde;o da equipe.</p>
+            </div>
+            <div class="gestao-visao-pill">{escape(resumo_periodo_gestao)}</div>
+        </div>
         <div class="gestao-kpi-grid">
-            <div class="gestao-kpi-card">
-                <div>
-                    <small>Realizado total</small>
+            <div class="gestao-kpi-card" style="--kpi-color:#16A34A;">
+                <div class="gestao-kpi-conteudo">
+                    <div class="gestao-kpi-topo"><small>Realizado total</small></div>
                     <strong>{formatar_inteiro_gestao(realizado_gestao)}</strong>
+                    <div class="gestao-kpi-sub">Produ&ccedil;&atilde;o consolidada do m&ecirc;s</div>
                 </div>
-                <div class="gestao-kpi-spark">▁▃▂▅▄▆▅▇</div>
+                <div class="gestao-kpi-icon">
+                    <svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 7-9"/><path d="M14 6h6v6"/></svg>
+                </div>
             </div>
-            <div class="gestao-kpi-card">
-                <div>
-                    <small>Esperado total</small>
+            <div class="gestao-kpi-card" style="--kpi-color:#2563EB;">
+                <div class="gestao-kpi-conteudo">
+                    <div class="gestao-kpi-topo"><small>Esperado total</small></div>
                     <strong>{formatar_inteiro_gestao(esperado_gestao)}</strong>
+                    <div class="gestao-kpi-sub">Meta ajustada por n&iacute;vel e per&iacute;odo</div>
                 </div>
-                <div class="gestao-kpi-spark blue">▂▃▄▃▅▄▆▇</div>
+                <div class="gestao-kpi-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+                </div>
             </div>
-            <div class="gestao-kpi-card {'negative' if desvio_gestao < 0 else ''}">
-                <div>
-                    <small>Desvio</small>
+            <div class="gestao-kpi-card {status_desvio_classe}" style="--kpi-color:{'#15803D' if desvio_gestao >= 0 else '#DC2626'};">
+                <div class="gestao-kpi-conteudo">
+                    <div class="gestao-kpi-topo"><small>Desvio</small></div>
                     <strong>{desvio_gestao:+d}</strong>
+                    <div class="gestao-kpi-extra">{formatar_percentual_gestao(desvio_percentual_gestao)} vs esperado</div>
                 </div>
-                <div class="gestao-kpi-extra">{formatar_percentual_gestao(desvio_percentual_gestao)}<br>vs esperado</div>
+                <div class="gestao-kpi-icon">
+                    <svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 16V9"/><path d="M12 16V5"/><path d="M17 16v-3"/></svg>
+                </div>
             </div>
-            <div class="gestao-kpi-card">
-                <div>
-                    <small>Técnicos ativos</small>
+            <div class="gestao-kpi-card" style="--kpi-color:#7C3AED;">
+                <div class="gestao-kpi-conteudo">
+                    <div class="gestao-kpi-topo"><small>T&eacute;cnicos ativos</small></div>
                     <strong>{formatar_inteiro_gestao(tecnicos_ativos_gestao)}</strong>
+                    <div class="gestao-kpi-sub">Considerados na data de refer&ecirc;ncia</div>
                 </div>
-                <div class="gestao-kpi-spark slate">◔</div>
+                <div class="gestao-kpi-icon">
+                    <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
             </div>
         </div>
         """,
