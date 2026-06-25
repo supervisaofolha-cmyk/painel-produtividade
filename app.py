@@ -6062,53 +6062,128 @@ st.markdown(
     display:grid;
     grid-template-columns:repeat(4,minmax(0,1fr));
     gap:16px;
-    margin-bottom:18px;
+    margin:14px 0 18px;
 }}
 .gestao-kpi-card {{
     background:#FFFFFF;
     border:1px solid #D9E1EC;
-    border-radius:12px;
-    min-height:112px;
-    padding:16px 18px;
-    box-shadow:0 8px 24px rgba(15, 23, 42, 0.04);
+    border-radius:14px;
+    min-height:118px;
+    padding:17px 18px;
+    box-shadow:0 12px 30px rgba(15, 23, 42, 0.055);
     display:flex;
     justify-content:space-between;
-    align-items:flex-end;
+    align-items:stretch;
     gap:12px;
+    position:relative;
+    overflow:hidden;
+}}
+.gestao-kpi-card::before {{
+    content:"";
+    position:absolute;
+    inset:0 auto 0 0;
+    width:4px;
+    background:var(--kpi-color, #2563EB);
+}}
+.gestao-kpi-conteudo {{
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    min-width:0;
+}}
+.gestao-kpi-topo {{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#475569;
+    font-size:12px;
+    font-weight:700;
 }}
 .gestao-kpi-card small {{
     display:block;
-    color:#374151;
+    color:#475569;
     font-size:12px;
-    margin-bottom:8px;
+    font-weight:700;
+    margin:0;
 }}
 .gestao-kpi-card strong {{
     color:#111827;
-    font-size:26px;
+    font-size:30px;
     line-height:1;
     font-weight:700;
+}}
+.gestao-kpi-sub {{
+    color:#64748B;
+    font-size:11px;
+    line-height:1.35;
+    margin-top:6px;
 }}
 .gestao-kpi-card.negative strong,
 .gestao-kpi-card.negative .gestao-kpi-extra {{
     color:#DC2626;
 }}
+.gestao-kpi-card.positive strong,
+.gestao-kpi-card.positive .gestao-kpi-extra {{
+    color:#15803D;
+}}
 .gestao-kpi-extra {{
-    color:#2563EB;
+    color:#475569;
     font-size:12px;
     font-weight:600;
-    text-align:right;
+    text-align:left;
 }}
-.gestao-kpi-spark {{
-    color:#16A34A;
-    font-size:36px;
-    line-height:1;
-    letter-spacing:0;
+.gestao-kpi-icon {{
+    width:42px;
+    height:42px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:color-mix(in srgb, var(--kpi-color, #2563EB) 11%, white);
+    color:var(--kpi-color, #2563EB);
+    flex:0 0 auto;
 }}
-.gestao-kpi-spark.blue {{
-    color:#2563EB;
+.gestao-kpi-icon svg {{
+    width:22px;
+    height:22px;
+    stroke:currentColor;
+    stroke-width:2;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
 }}
-.gestao-kpi-spark.slate {{
+.gestao-visao-hero {{
+    background:linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 62%, #FFF7ED 100%);
+    border:1px solid #D9E1EC;
+    border-radius:16px;
+    padding:18px 20px;
+    box-shadow:0 12px 30px rgba(15, 23, 42, 0.05);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:16px;
+    margin-bottom:14px;
+}}
+.gestao-visao-hero h3 {{
+    color:#111827;
+    font-size:22px;
+    font-weight:800;
+    margin:0 0 4px 0;
+}}
+.gestao-visao-hero p {{
     color:#475569;
+    font-size:13px;
+    margin:0;
+}}
+.gestao-visao-pill {{
+    border:1px solid #FED7AA;
+    background:#FFF7ED;
+    color:#9A3412;
+    border-radius:999px;
+    padding:8px 12px;
+    font-size:12px;
+    font-weight:800;
+    white-space:nowrap;
 }}
 .gestao-card {{
     background:#FFFFFF;
