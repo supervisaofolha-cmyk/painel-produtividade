@@ -8307,10 +8307,46 @@ if modo_gestao and visao_gestao == "Visão Geral":
             "</div>"
         )
 
-    maior_percentual = max(percentuais_absorcao_mes.values(), default=0)
-    largura_referencia = maior_percentual if maior_percentual > 0 else 1
+    dados_absorcao_mes = dados_gestao_mes[
+        ~dados_gestao_mes["Técnico"]
+        .map(normalizar_nome)
+        .isin(TECNICOS_DESCONSIDERADOS_ESPERADO)
+    ].copy()
+    if not dados_absorcao_mes.empty:
+        dados_absorcao_mes = dados_absorcao_mes[
+            dados_absorcao_mes.apply(
+                lambda linha: (
+                    pd.notna(linha.get("Data"))
+                    and tecnico_ativo_na_data(
+                        linha.get("Técnico"),
+                        pd.Timestamp(linha.get("Data")).date(),
+                    )
+                ),
+                axis=1,
+            )
+        ].copy()
+        dados_absorcao_mes["Nivel Canonico"] = dados_absorcao_mes["Nível"].map(nivel_canonico)
+        dias_absorcao_mes = max(dados_absorcao_mes["Data"].nunique(), 1)
+        tecnicos_equivalentes_por_nivel = (
+            dados_absorcao_mes.drop_duplicates(["Data", "Técnico"])
+            .groupby("Nivel Canonico")["Técnico"]
+            .count()
+            / dias_absorcao_mes
+        )
+    else:
+        tecnicos_equivalentes_por_nivel = pd.Series(dtype=float)
+    percentuais_absorcao_por_tecnico = {
+        nivel: (
+            percentual / tecnicos_equivalentes_por_nivel.get(nivel, 0)
+            if tecnicos_equivalentes_por_nivel.get(nivel, 0)
+            else 0
+        )
+        for nivel, percentual in percentuais_absorcao_mes.items()
+    }
+    maior_percentual_individual = max(percentuais_absorcao_por_tecnico.values(), default=0)
+    largura_referencia = maior_percentual_individual if maior_percentual_individual > 0 else 1
     barras_absorcao = []
-    for nivel, percentual in percentuais_absorcao_mes.items():
+    for nivel, percentual in percentuais_absorcao_por_tecnico.items():
         largura = min((percentual / largura_referencia) * 100, 100)
         barras_absorcao.append(
             '<div class="gestao-absorcao-linha">'
@@ -8332,6 +8368,7 @@ if modo_gestao and visao_gestao == "Visão Geral":
     with col_absorcao_gestao:
         st.markdown(
             '<div class="gestao-card"><h4>Percentual de Absorção por Nível</h4>'
+            '<div style="color:#64748B;font-size:12px;margin:-8px 0 14px;">Valor individual para 1 técnico de cada nível.</div>'
             '<div class="gestao-absorcao">'
             + "".join(barras_absorcao)
             + "</div></div>",
