@@ -6210,67 +6210,91 @@ st.markdown(
     gap:12px;
 }}
 .gestao-status-resumo {{
-    background:#FFFFFF;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--status-color, #6B7280) 8%, white) 0%, #FFFFFF 34%);
     border:1px solid #D9E1EC;
-    border-top:4px solid #6B7280;
-    border-radius:10px;
-    padding:14px 14px 16px;
+    border-left:4px solid var(--status-color, #6B7280);
+    border-radius:12px;
+    padding:13px;
+    min-height:210px;
+    box-shadow:0 8px 22px rgba(15, 23, 42, 0.035);
 }}
-.gestao-status-resumo span,
-.gestao-status-resumo small,
-.gestao-status-resumo strong {{
-    display:block;
+.gestao-status-topo {{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
 }}
-.gestao-status-resumo span {{
+.gestao-status-titulo {{
     color:#111827;
     font-size:12px;
-    font-weight:700;
-    margin-bottom:10px;
+    font-weight:800;
+    letter-spacing:.02em;
+    text-transform:uppercase;
 }}
-.gestao-status-resumo strong {{
-    color:#111827;
-    font-size:22px;
-    line-height:1;
-    margin-bottom:10px;
+.gestao-status-contador {{
+    align-items:center;
+    background:#FFFFFF;
+    border:1px solid color-mix(in srgb, var(--status-color, #6B7280) 28%, #E5E7EB);
+    border-radius:999px;
+    color:var(--status-color, #6B7280);
+    display:flex;
+    font-size:18px;
+    font-weight:800;
+    height:36px;
+    justify-content:center;
+    min-width:44px;
+    padding:0 10px;
 }}
 .gestao-status-resumo em {{
     color:#374151;
     display:block;
     font-size:11px;
     font-style:normal;
-    margin-bottom:10px;
+    line-height:1.35;
+    margin-bottom:8px;
 }}
 .gestao-status-resumo small {{
+    display:block;
     font-size:10px;
+    font-weight:700;
     line-height:1.35;
 }}
 .gestao-status-nomes {{
-    margin-top:10px;
+    margin-top:11px;
     padding-top:10px;
     border-top:1px solid #E5E7EB;
     color:#374151;
     font-size:11px;
     line-height:1.5;
+    max-height:245px;
+    overflow:auto;
 }}
 .gestao-status-tecnico {{
-    padding:7px 0;
-}}
-.gestao-status-tecnico + .gestao-status-tecnico {{
-    border-top:1px dashed #E5E7EB;
+    background:#F8FAFC;
+    border:1px solid #EEF2F7;
+    border-radius:8px;
+    padding:8px 9px;
+    margin-bottom:7px;
 }}
 .gestao-status-tecnico strong {{
     display:block;
     color:#111827;
     font-size:11px;
-    font-weight:700;
+    font-weight:800;
     line-height:1.35;
 }}
 .gestao-status-tecnico small {{
     display:block;
-    color:#6B7280;
+    color:#64748B;
     font-size:10px;
     line-height:1.35;
     margin-top:2px;
+}}
+.gestao-status-vazio {{
+    color:#64748B;
+    font-size:11px;
+    padding:10px 0 2px;
 }}
 .gestao-absorcao {{
     display:flex;
