@@ -8318,13 +8318,15 @@ if modo_gestao and visao_gestao == "Visão Geral":
                 for _, linha in dados_status.iterrows()
             )
             if not dados_status.empty
-            else "Nenhum tecnico"
+            else '<div class="gestao-status-vazio">Nenhum t&eacute;cnico</div>'
         )
         blocos_status.append(
             '<div class="gestao-status-resumo" '
-            f'style="border-top-color:{CORES_STATUS[status]};">'
-            f"<span>{status}</span>"
-            f"<strong>{quantidade}</strong>"
+            f'style="--status-color:{CORES_STATUS[status]};">'
+            '<div class="gestao-status-topo">'
+            f'<span class="gestao-status-titulo">{status}</span>'
+            f'<strong class="gestao-status-contador">{quantidade}</strong>'
+            "</div>"
             f"<em>{legenda}</em>"
             f'<small style="color:{cores_texto_status[status]};">{referencia}</small>'
             f'<div class="gestao-status-nomes">{nomes_status}</div>'
