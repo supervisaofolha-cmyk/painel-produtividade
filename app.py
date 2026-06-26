@@ -1599,13 +1599,34 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
         coluna_situacao: "Aberto",
         coluna_responsavel: "",
     }
-    persistir_registro_lista_apoio_local(registro)
-    registrar_historico_lista_apoio("create", registro)
+    salvou_historico = False
+    try:
+        registrar_historico_lista_apoio("create", registro)
+        salvou_historico = True
+    except Exception as erro:
+        registrar_erro_backup_painel(
+            f"Falha ao gravar historico da lista de apoio: {erro}"
+        )
+
+    salvou_local = False
+    try:
+        persistir_registro_lista_apoio_local(registro)
+        salvou_local = True
+    except Exception as erro:
+        registrar_erro_backup_painel(
+            f"Falha ao gravar lista de apoio local: {erro}"
+        )
+
+    if not salvou_historico and not salvou_local:
+        raise RuntimeError(
+            "Não foi possível gravar a ajuda localmente. Tente novamente em instantes."
+        )
+
     if not banco_lista_apoio_em_cooldown():
         try:
             salvar_registros_lista_apoio_no_banco([registro])
         except Exception as erro:
-            marcar_banco_lista_apoio_indisponivel(erro)
+            marcar_banco_lista_apoio_indisponivel(erro, segundos=600)
     return registro
 
 
