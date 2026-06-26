@@ -332,6 +332,8 @@ PROGRAMACAO_AUSENCIAS = [
     ("Milena da Silva Sales", date(2026, 6, 24), "Folga BH", 3 * 60),
     ("Paulo Ricardo Santos", date(2026, 6, 26), "Falta/Atraso", None),
     ("Ana Karollyne Souza Faria", date(2026, 6, 26), "Energia", 4 * 60),
+    ("Milena da Silva Sales", date(2026, 6, 29), "Atestado", None),
+    ("Milena da Silva Sales", date(2026, 7, 7), "Atestado", None),
 ]
 
 
@@ -1628,6 +1630,10 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
             "Não foi possível gravar a ajuda localmente. Tente novamente em instantes."
         )
 
+    marcar_banco_lista_apoio_indisponivel(
+        "Registro gravado localmente; sincronização online adiada para evitar travamento.",
+        segundos=120,
+    )
     if not banco_lista_apoio_em_cooldown():
         try:
             salvar_registros_lista_apoio_no_banco([registro])
