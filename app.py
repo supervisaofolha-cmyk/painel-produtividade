@@ -1609,6 +1609,31 @@ def ler_lista_apoio():
     return dataframe_mesclado
 
 
+def ler_lista_apoio_tecnico(tecnico):
+    tecnico_normalizado = normalizar_nome(tecnico)
+    dataframe_local = carregar_lista_apoio_local_completa()
+    if not dataframe_local.empty:
+        dataframe_local = dataframe_local[
+            dataframe_local["Nome do TÃ©cnico"].map(normalizar_nome)
+            == tecnico_normalizado
+        ].copy()
+
+    dataframe_banco = dataframe_lista_apoio_vazio()
+    try:
+        dataframe_banco = ler_lista_apoio_do_banco()
+        if not dataframe_banco.empty:
+            dataframe_banco = dataframe_banco[
+                dataframe_banco["Nome do TÃ©cnico"].map(normalizar_nome)
+                == tecnico_normalizado
+            ].copy()
+    except Exception as erro:
+        registrar_erro_backup_painel(
+            f"Falha ao carregar lista de apoio do tecnico no banco: {erro}"
+        )
+
+    return mesclar_dataframes_lista_apoio([dataframe_local, dataframe_banco])
+
+
 def texto_lista_apoio(valor):
     if pd.isna(valor):
         return ""
@@ -9565,10 +9590,7 @@ if not modo_gestao:
                 st.success("Dúvida registrada para apoio.")
 
     try:
-        lista_apoio_tecnico = ler_lista_apoio()
-        lista_apoio_tecnico = lista_apoio_tecnico[
-            lista_apoio_tecnico["Nome do Técnico"].map(normalizar_nome) == normalizar_nome(tecnico)
-        ].copy()
+        lista_apoio_tecnico = ler_lista_apoio_tecnico(tecnico)
     except Exception as erro_lista_apoio:
         st.caption(f"Não foi possível carregar suas ajudas registradas: {erro_lista_apoio}")
         lista_apoio_tecnico = pd.DataFrame(columns=CABECALHOS_LISTA_APOIO)
