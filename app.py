@@ -1644,28 +1644,27 @@ def ler_lista_apoio():
 
 def ler_lista_apoio_tecnico(tecnico):
     tecnico_normalizado = normalizar_nome(tecnico)
+    coluna_tecnico = CABECALHOS_LISTA_APOIO[1]
     dataframe_local = carregar_lista_apoio_local_completa()
     if not dataframe_local.empty:
         dataframe_local = dataframe_local[
-            dataframe_local["Nome do TÃ©cnico"].map(normalizar_nome)
+            dataframe_local[coluna_tecnico].map(normalizar_nome)
             == tecnico_normalizado
         ].copy()
 
     dataframe_banco = dataframe_lista_apoio_vazio()
-    try:
-        dataframe_banco = ler_lista_apoio_do_banco()
-        if not dataframe_banco.empty:
-            dataframe_banco = dataframe_banco[
-                dataframe_banco["Nome do TÃ©cnico"].map(normalizar_nome)
-                == tecnico_normalizado
-            ].copy()
-    except Exception as erro:
-        registrar_erro_backup_painel(
-            f"Falha ao carregar lista de apoio do tecnico no banco: {erro}"
-        )
+    if not banco_lista_apoio_em_cooldown():
+        try:
+            dataframe_banco = ler_lista_apoio_do_banco()
+            if not dataframe_banco.empty:
+                dataframe_banco = dataframe_banco[
+                    dataframe_banco[coluna_tecnico].map(normalizar_nome)
+                    == tecnico_normalizado
+                ].copy()
+        except Exception as erro:
+            marcar_banco_lista_apoio_indisponivel(erro)
 
     return mesclar_dataframes_lista_apoio([dataframe_local, dataframe_banco])
-
 
 def texto_lista_apoio(valor):
     if pd.isna(valor):
