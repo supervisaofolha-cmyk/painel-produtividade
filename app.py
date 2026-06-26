@@ -1601,25 +1601,23 @@ def registrar_duvida_apoio(tecnico, topico, resumo):
     }
     persistir_registro_lista_apoio_local(registro)
     registrar_historico_lista_apoio("create", registro)
-    try:
-        salvar_registros_lista_apoio_no_banco([registro])
-    except Exception as erro:
-        registrar_erro_backup_painel(
-            f"Falha ao sincronizar nova ajuda no banco: {erro}"
-        )
+    if not banco_lista_apoio_em_cooldown():
+        try:
+            salvar_registros_lista_apoio_no_banco([registro])
+        except Exception as erro:
+            marcar_banco_lista_apoio_indisponivel(erro)
     return registro
 
 
 def ler_lista_apoio():
     dataframe_local = carregar_lista_apoio_local_completa()
     dataframe_banco = dataframe_lista_apoio_vazio()
-    try:
-        garantir_lista_apoio()
-        dataframe_banco = ler_lista_apoio_do_banco()
-    except Exception as erro:
-        registrar_erro_backup_painel(
-            f"Falha ao carregar lista de apoio do banco online: {erro}"
-        )
+    if not banco_lista_apoio_em_cooldown():
+        try:
+            garantir_lista_apoio()
+            dataframe_banco = ler_lista_apoio_do_banco()
+        except Exception as erro:
+            marcar_banco_lista_apoio_indisponivel(erro)
 
     dataframe_mesclado = mesclar_dataframes_lista_apoio(
         [dataframe_local, dataframe_banco]
@@ -1629,15 +1627,17 @@ def ler_lista_apoio():
 
     tentar_espelhar_lista_apoio_para_arquivos(dataframe_mesclado)
 
-    if not dataframe_banco.empty and len(dataframe_mesclado) > len(dataframe_banco):
+    if (
+        not banco_lista_apoio_em_cooldown()
+        and not dataframe_banco.empty
+        and len(dataframe_mesclado) > len(dataframe_banco)
+    ):
         try:
             salvar_registros_lista_apoio_no_banco(
                 dataframe_para_registros_lista_apoio(dataframe_mesclado)
             )
         except Exception as erro:
-            registrar_erro_backup_painel(
-                f"Falha ao sincronizar lista de apoio mesclada no banco: {erro}"
-            )
+            marcar_banco_lista_apoio_indisponivel(erro)
 
     return dataframe_mesclado
 
