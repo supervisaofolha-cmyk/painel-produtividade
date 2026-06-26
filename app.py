@@ -52,6 +52,7 @@ LISTA_APOIO_DATABASE_URL_PADRAO = "postgresql://postgres.pogiuykdubgvcjjzjihs:Tg
 ARQUIVO_LISTA_APOIO_HISTORICO = "lista_apoio_historico.jsonl"
 ARQUIVO_META_BACKUP_LISTA_APOIO = "lista_apoio_backup_meta.json"
 PASTA_BACKUP_LISTA_APOIO = "backups_lista_apoio"
+ARQUIVO_LISTA_APOIO_DB_COOLDOWN = "lista_apoio_db_cooldown.json"
 ARQUIVO_LOG_BACKUP_PAINEL = "painel_backup_db_erro.log"
 ABA_PRODUTIVIDADE = "Produtividade"
 ABA_ALIASES = "Aliases"
@@ -672,7 +673,10 @@ def database_url_lista_apoio():
     ).strip()
     if url and "connect_timeout=" not in url:
         separador = "&" if "?" in url else "?"
-        url = f"{url}{separador}connect_timeout=5"
+        url = f"{url}{separador}connect_timeout=3"
+    if url and "pool_timeout=" not in url:
+        separador = "&" if "?" in url else "?"
+        url = f"{url}{separador}pool_timeout=3"
     return url
 
 
@@ -698,13 +702,42 @@ def conexao_lista_apoio_db():
             database_url_lista_apoio(),
             row_factory=dict_row,
             prepare_threshold=None,
-            connect_timeout=5,
-            options="-c statement_timeout=5000",
+            connect_timeout=3,
+            options="-c statement_timeout=3000",
         )
 
     conexao = sqlite3.connect(ARQUIVO_LISTA_APOIO_DB)
     conexao.row_factory = sqlite3.Row
     return conexao
+
+
+def banco_lista_apoio_em_cooldown():
+    if not os.path.exists(ARQUIVO_LISTA_APOIO_DB_COOLDOWN):
+        return False
+    try:
+        with open(ARQUIVO_LISTA_APOIO_DB_COOLDOWN, "r", encoding="utf-8") as arquivo:
+            payload = json.load(arquivo)
+        ate = datetime.fromisoformat(payload.get("ate", ""))
+    except Exception:
+        return False
+    return datetime.now(FUSO_HORARIO_APP).replace(tzinfo=None) < ate
+
+
+def marcar_banco_lista_apoio_indisponivel(erro, segundos=300):
+    try:
+        ate = datetime.now(FUSO_HORARIO_APP).replace(tzinfo=None) + timedelta(seconds=segundos)
+        with open(ARQUIVO_LISTA_APOIO_DB_COOLDOWN, "w", encoding="utf-8") as arquivo:
+            json.dump(
+                {
+                    "ate": ate.isoformat(),
+                    "erro": builtins.str(erro),
+                },
+                arquivo,
+                ensure_ascii=False,
+            )
+    except Exception:
+        pass
+    registrar_erro_backup_painel(f"Banco da lista de apoio em cooldown: {erro}")
 
 
 def valor_backup_painel(valor):
