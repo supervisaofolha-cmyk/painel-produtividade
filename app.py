@@ -1550,7 +1550,6 @@ def persistir_registro_lista_apoio_local(registro):
 
 
 def registrar_duvida_apoio(tecnico, topico, resumo):
-    garantir_lista_apoio()
     coluna_carimbo = CABECALHOS_LISTA_APOIO[0]
     coluna_tecnico = CABECALHOS_LISTA_APOIO[1]
     coluna_topico = CABECALHOS_LISTA_APOIO[2]
