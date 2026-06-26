@@ -326,6 +326,12 @@ PROGRAMACAO_AUSENCIAS = [
     ("Leandro de Souza Silva", date(2026, 6, 19), "Atestado", None),
     ("Sarah Steffanie de Lima Borges", date(2026, 6, 19), "Atestado", None),
     ("Raane Batista Matos", date(2026, 6, 22), "Atestado", None),
+    ("Anna Luiza Rezende Tavares", date(2026, 6, 22), "Atestado", None),
+    ("Ana Karollyne Souza Faria", date(2026, 6, 22), "Atestado", 4 * 60),
+    ("Luiz Fernando de Carvalho Júnior", date(2026, 6, 23), "Atestado", 4 * 60),
+    ("Milena da Silva Sales", date(2026, 6, 24), "Folga BH", 3 * 60),
+    ("Paulo Ricardo Santos", date(2026, 6, 26), "Falta/Atraso", None),
+    ("Ana Karollyne Souza Faria", date(2026, 6, 26), "Energia", 4 * 60),
 ]
 
 
