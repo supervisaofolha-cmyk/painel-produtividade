@@ -1,0 +1,139 @@
+{
+  "resumo": {
+    "backup": "produtividade_pre_update_20260629_1146.xlsx",
+    "dias_uteis_processados": 21,
+    "sucessos": 0,
+    "falhas": 21,
+    "datas_falha": [
+      "28/05/2026",
+      "29/05/2026",
+      "01/06/2026",
+      "02/06/2026",
+      "03/06/2026",
+      "05/06/2026",
+      "08/06/2026",
+      "09/06/2026",
+      "10/06/2026",
+      "11/06/2026",
+      "12/06/2026",
+      "15/06/2026",
+      "16/06/2026",
+      "17/06/2026",
+      "18/06/2026",
+      "19/06/2026",
+      "22/06/2026",
+      "23/06/2026",
+      "24/06/2026",
+      "25/06/2026",
+      "26/06/2026"
+    ],
+    "ultimos_sucessos": []
+  },
+  "falhas": [
+    {
+      "data": "28/05/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "29/05/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "01/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "02/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "03/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "05/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "08/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "09/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "10/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "11/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "12/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "15/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "16/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "17/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "18/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "19/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "22/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "23/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "24/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "25/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    },
+    {
+      "data": "26/06/2026",
+      "erro": "[Errno 13] Permission denied: 'produtividade_backup.xlsx'",
+      "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 36, in <module>\n  File \"<string>\", line 4723, in atualizar_planilha_com_bi\n  File \"<string>\", line 481, in salvar_workbook_produtividade\n  File \"C:\\Users\\esther.queiroz\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\shutil.py\", line 315, in copyfile\n    with open(dst, 'wb') as fdst:\n         ~~~~^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied: 'produtividade_backup.xlsx'\n"
+    }
+  ]
+}
