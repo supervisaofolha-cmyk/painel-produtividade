@@ -3662,7 +3662,10 @@ def tecnicos_da_planilha(ws, colunas):
 def tecnico_ativo_na_data(tecnico, data_referencia):
     nome_normalizado = normalizar_nome(tecnico)
     if data_referencia >= DATA_INICIO_ATIVOS_JULHO_2026:
-        return nome_normalizado in TECNICOS_ATIVOS_A_PARTIR_JULHO_2026
+        return nome_normalizado in {
+            normalizar_nome(nome)
+            for nome in TECNICOS_ATIVOS_A_PARTIR_JULHO_2026
+        }
     for nome_desligado, ultimo_dia in DESLIGAMENTOS_TECNICOS:
         if nome_normalizado == normalizar_nome(nome_desligado):
             return data_referencia <= ultimo_dia
@@ -6024,7 +6027,6 @@ def recalcular_colunas_derivadas(df):
 
     df["Realizado"] = df[coluna_2min] + df["RO"] + df["CHAT"]
     meta_por_linha = df["Nível"].map(meta_esperada_nivel).fillna(0)
-    tecnicos_normalizados = df["Técnico"].apply(normalizar_nome)
     atendidas_validas = df.apply(
         lambda linha: (
             0
