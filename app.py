@@ -206,6 +206,50 @@ TECNICOS_DESCONSIDERADOS_ESPERADO = {
     "lorena dias araujo",
     "lucas luiz romero",
 }
+DATA_INICIO_ATIVOS_JULHO_2026 = date(2026, 7, 1)
+TECNICOS_ATIVOS_A_PARTIR_JULHO_2026 = {
+    "alisson de freitas silva",
+    "amanda moura ferreira",
+    "ana karollyne souza faria",
+    "ana paula da luz silva aleixo",
+    "anna luiza rezende tavares",
+    "brenda de menezes silva",
+    "carlos mateus cassimiro nunes",
+    "claudio de sousa velasco filho",
+    "clessiane pereira dos santos",
+    "cristiane ramos da silva rocha",
+    "damyllis lorraine de oliveira goncalves",
+    "davylla rodrigues freitas silva",
+    "emilly caylane costa",
+    "emilly kamilly medeiros miranda",
+    "francielson de oliveira",
+    "francilene ferreira de jesus",
+    "gabriel alves",
+    "gabriel gomes de andrade",
+    "isabella alves queiroz",
+    "isabella borges de oliveira",
+    "janaina lima dos reis urany",
+    "jaqueline evangelista da silva martins",
+    "jessica faria da silveira",
+    "jessica fe moura",
+    "joao frutuoso machado neto",
+    "kerollen cristielly de jesus siqueira",
+    "leandro oliveira de sousa",
+    "lizandra gomes duarte",
+    "luiz fernando de carvalho junior",
+    "maria eduarda sousa costa",
+    "matheus farias de souza",
+    "maysa victoria dias moura",
+    "michelle g santos",
+    "milena sales",
+    "paulo ricardo santos",
+    "pedro luiz mota sousa",
+    "quirino diogo leite torres",
+    "raane batista matos",
+    "rafael gomes de morais",
+    "sara maria monteiro lopes",
+    "sarah steffanie de lima borges",
+}
 DESLIGAMENTOS_TECNICOS = [
     ("Daniel Gomes da Silva", date(2026, 6, 15)),
     ("Karina Gonçalves Martins", date(2026, 6, 9)),
@@ -3596,10 +3640,21 @@ def tecnicos_da_planilha(ws, colunas):
 
 def tecnico_ativo_na_data(tecnico, data_referencia):
     nome_normalizado = normalizar_nome(tecnico)
+    if data_referencia >= DATA_INICIO_ATIVOS_JULHO_2026:
+        return nome_normalizado in TECNICOS_ATIVOS_A_PARTIR_JULHO_2026
     for nome_desligado, ultimo_dia in DESLIGAMENTOS_TECNICOS:
         if nome_normalizado == normalizar_nome(nome_desligado):
             return data_referencia <= ultimo_dia
     return True
+
+
+def tecnico_desconsiderado_esperado_na_data(tecnico, data_referencia):
+    nome_normalizado = normalizar_nome(tecnico)
+    if nome_normalizado in TECNICOS_DESCONSIDERADOS_ESPERADO:
+        return True
+    if data_referencia >= DATA_INICIO_ATIVOS_JULHO_2026:
+        return modalidade_tecnico_em_data(tecnico, data_referencia) in {"web", "chat"}
+    return False
 
 
 def filtrar_dataframe_tecnicos_ativos(
