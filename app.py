@@ -1921,7 +1921,7 @@ def mostrar_lista_apoio_gestao():
     with st.form(f"form_{chave_editor_apoio}", clear_on_submit=False):
         lista_editada = st.data_editor(
             lista_exibida_editor,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             num_rows="fixed",
             disabled=[
@@ -2554,7 +2554,7 @@ def _mostrar_gestao_disponibilidade_legado(dataframe):
                 ]
             ],
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )
 
     with aba_nivel:
@@ -2585,7 +2585,7 @@ def _mostrar_gestao_disponibilidade_legado(dataframe):
                 yaxis_title="Ocorrências",
             )
             grafico_nivel.update_traces(textposition="outside")
-            st.plotly_chart(grafico_nivel, use_container_width=True)
+            st.plotly_chart(grafico_nivel, width="stretch")
 
 
 def mostrar_gestao_disponibilidade(dataframe):
@@ -2852,7 +2852,7 @@ def mostrar_gestao_disponibilidade(dataframe):
                     ]
                 ],
                 hide_index=True,
-                use_container_width=True,
+                width="stretch",
             )
         st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
@@ -3166,7 +3166,7 @@ def mostrar_gestao_disponibilidade(dataframe):
         st.dataframe(
             ausencias_tabela[["Data", "Técnico", "Tipo", "Duração"]],
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -7810,18 +7810,18 @@ if modo_gestao and visao_gestao == "Atualizações":
     with col_bi:
         atualizar_bi = st.button(
             "Atualizar BI do dia anterior",
-            use_container_width=True,
+            width="stretch",
         )
     with col_ro:
         atualizar_ro = st.button(
             "Atualizar RO do dia anterior",
-            use_container_width=True,
+            width="stretch",
         )
     with col_chat:
         atualizar_chat = st.button(
             "Atualizar CHAT do dia anterior",
             disabled=not chat_local_disponivel,
-            use_container_width=True,
+            width="stretch",
         )
 
     if atualizar_bi:
@@ -7931,12 +7931,12 @@ if modo_gestao and visao_gestao == "Atualizações":
     with col_botao_sgd_fone:
         atualizar_sgd_fone = st.button(
             "Atualizar SGD Fone",
-            use_container_width=True,
+            width="stretch",
         )
     with col_botao_sgd_web:
         atualizar_sgd_web = st.button(
             "Atualizar SGD WEB",
-            use_container_width=True,
+            width="stretch",
         )
 
     if atualizar_sgd_fone or atualizar_sgd_web:
@@ -8726,7 +8726,7 @@ if modo_gestao and visao_gestao == "Visão Geral":
 
     st.plotly_chart(
         grafico_geral,
-        use_container_width=True,
+        width="stretch",
         config={"displayModeBar": False},
     )
 
@@ -9686,7 +9686,7 @@ if not modo_gestao:
                     "Responsável/Apoio",
                 ]
             ],
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
 
@@ -9814,7 +9814,7 @@ if not modo_gestao:
                     "Produtividade do dia",
                     meta_referencia=meta_diaria_nivel,
                 ),
-                use_container_width=True,
+                width="stretch",
             )
 
         with aba_nivel_mensal:
@@ -9825,7 +9825,7 @@ if not modo_gestao:
                     "Produtividade do mês",
                     meta_referencia=meta_mensal_nivel,
                 ),
-                use_container_width=True,
+                width="stretch",
             )
 
 st.divider()
@@ -9979,7 +9979,7 @@ if tecnico_web:
         ),
         hovermode="x unified",
     )
-    st.plotly_chart(grafico_produtividade, use_container_width=True)
+    st.plotly_chart(grafico_produtividade, width="stretch")
 else:
     produtividade = (
         dados_produtividade.groupby(["Data", "Data Formatada"])
@@ -10127,7 +10127,7 @@ else:
         hovermode="x unified",
     )
 
-    st.plotly_chart(grafico_produtividade, use_container_width=True)
+    st.plotly_chart(grafico_produtividade, width="stretch")
 
 if tecnico_hibrido_web and not dados_mes_web.empty:
     st.divider()
@@ -10249,7 +10249,7 @@ if tecnico_hibrido_web and not dados_mes_web.empty:
         ),
         hovermode="x unified",
     )
-    st.plotly_chart(grafico_produtividade_web, use_container_width=True)
+    st.plotly_chart(grafico_produtividade_web, width="stretch")
 
 st.divider()
 st.subheader("SSC Atendido por Dia")
@@ -10399,4 +10399,4 @@ grafico_ssc.update_layout(
     hovermode="x unified",
 )
 
-st.plotly_chart(grafico_ssc, use_container_width=True)
+st.plotly_chart(grafico_ssc, width="stretch")
