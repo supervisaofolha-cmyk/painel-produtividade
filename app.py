@@ -3431,9 +3431,16 @@ def percentuais_absorcao_por_mes(dataframe, ano, mes):
         return {nivel: 0 for nivel in META_ESPERADA_POR_NIVEL}
 
     dados_mes = dados_mes[
-        ~dados_mes["Técnico"]
-        .map(normalizar_nome)
-        .isin(TECNICOS_DESCONSIDERADOS_ESPERADO)
+        ~dados_mes.apply(
+            lambda linha: (
+                pd.notna(linha.get("Data"))
+                and tecnico_desconsiderado_esperado_na_data(
+                    linha.get("Técnico"),
+                    pd.Timestamp(linha.get("Data")).date(),
+                )
+            ),
+            axis=1,
+        )
     ].copy()
     dados_mes = dados_mes[
         dados_mes.apply(
@@ -3473,9 +3480,16 @@ def percentual_absorcao_tecnico(dataframe, ano, mes, tecnico):
         return 0
 
     dados_mes = dados_mes[
-        ~dados_mes["Técnico"]
-        .map(normalizar_nome)
-        .isin(TECNICOS_DESCONSIDERADOS_ESPERADO)
+        ~dados_mes.apply(
+            lambda linha: (
+                pd.notna(linha.get("Data"))
+                and tecnico_desconsiderado_esperado_na_data(
+                    linha.get("Técnico"),
+                    pd.Timestamp(linha.get("Data")).date(),
+                )
+            ),
+            axis=1,
+        )
     ].copy()
     dados_mes = dados_mes[
         dados_mes.apply(
@@ -3507,9 +3521,16 @@ def percentual_absorcao_tecnico(dataframe, ano, mes, tecnico):
 
 def total_meta_mensal_por_linha(dataframe):
     dados_validos = dataframe[
-        ~dataframe["Técnico"]
-        .map(normalizar_nome)
-        .isin(TECNICOS_DESCONSIDERADOS_ESPERADO)
+        ~dataframe.apply(
+            lambda linha: (
+                pd.notna(linha.get("Data"))
+                and tecnico_desconsiderado_esperado_na_data(
+                    linha.get("Técnico"),
+                    pd.Timestamp(linha.get("Data")).date(),
+                )
+            ),
+            axis=1,
+        )
     ].copy()
     dados_validos = dados_validos[
         dados_validos.apply(
@@ -6004,9 +6025,17 @@ def recalcular_colunas_derivadas(df):
     df["Realizado"] = df[coluna_2min] + df["RO"] + df["CHAT"]
     meta_por_linha = df["Nível"].map(meta_esperada_nivel).fillna(0)
     tecnicos_normalizados = df["Técnico"].apply(normalizar_nome)
-    atendidas_validas = df["Atendidas"].where(
-        ~tecnicos_normalizados.isin(TECNICOS_DESCONSIDERADOS_ESPERADO),
-        0,
+    atendidas_validas = df.apply(
+        lambda linha: (
+            0
+            if pd.isna(linha.get("Data"))
+            or tecnico_desconsiderado_esperado_na_data(
+                linha.get("Técnico"),
+                pd.Timestamp(linha.get("Data")).date(),
+            )
+            else linha.get("Atendidas", 0)
+        ),
+        axis=1,
     )
     total_meta_mes = total_meta_mensal_por_linha(df)
     total_atendidas_dia = df["Atendidas"].groupby(df["Data"]).transform("sum")
@@ -8476,9 +8505,16 @@ if modo_gestao and visao_gestao == "Visão Geral":
         )
 
     dados_absorcao_mes = dados_gestao_mes[
-        ~dados_gestao_mes["Técnico"]
-        .map(normalizar_nome)
-        .isin(TECNICOS_DESCONSIDERADOS_ESPERADO)
+        ~dados_gestao_mes.apply(
+            lambda linha: (
+                pd.notna(linha.get("Data"))
+                and tecnico_desconsiderado_esperado_na_data(
+                    linha.get("Técnico"),
+                    pd.Timestamp(linha.get("Data")).date(),
+                )
+            ),
+            axis=1,
+        )
     ].copy()
     if not dados_absorcao_mes.empty:
         dados_absorcao_mes = dados_absorcao_mes[
