@@ -1,5 +1,7 @@
 import json
 import pathlib
+import sys
+import traceback
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -7,12 +9,17 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 HOST = "127.0.0.1"
 PORT = 8765
 APP_PATH = pathlib.Path(__file__).with_name("app.py")
-CORTE_APP = "try:\n    locale.setlocale"
+CORTE_APP = "# STREAMLIT_APP_START"
 
 
 def carregar_funcoes_app():
     codigo = APP_PATH.read_text(encoding="utf-8")
-    corte = codigo.index(CORTE_APP)
+    try:
+        corte = codigo.index(CORTE_APP)
+    except ValueError as exc:
+        raise RuntimeError(
+            "Nao foi possivel localizar o marcador de inicio da interface no app.py."
+        ) from exc
     namespace = {}
     exec(codigo[:corte], namespace)
     return namespace
@@ -110,6 +117,11 @@ class Handler(BaseHTTPRequestHandler):
                 },
             )
         except Exception as erro:
+            print(
+                f"[servico_planilha] Falha ao processar /atualizar: {erro}",
+                file=sys.stderr,
+            )
+            traceback.print_exc()
             self._json(500, {"ok": False, "erro": str(erro)})
 
 

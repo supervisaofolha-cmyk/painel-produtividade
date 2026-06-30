@@ -48,7 +48,7 @@ ARQUIVO_LISTA_APOIO = "lista_apoio.xlsx"
 ARQUIVO_LISTA_APOIO_BACKUP = "lista_apoio_backup.xlsx"
 ARQUIVO_LISTA_APOIO_DB = "lista_apoio.db"
 ENV_LISTA_APOIO_DATABASE_URL = "LISTA_APOIO_DATABASE_URL"
-LISTA_APOIO_DATABASE_URL_PADRAO = "postgresql://postgres.pogiuykdubgvcjjzjihs:TgKyzWZhAXJjczXd@aws-1-us-west-2.pooler.supabase.com:6543/postgres?sslmode=require"
+LISTA_APOIO_DATABASE_URL_PADRAO = ""
 ARQUIVO_LISTA_APOIO_HISTORICO = "lista_apoio_historico.jsonl"
 ARQUIVO_META_BACKUP_LISTA_APOIO = "lista_apoio_backup_meta.json"
 PASTA_BACKUP_LISTA_APOIO = "backups_lista_apoio"
@@ -682,9 +682,6 @@ def database_url_lista_apoio():
     if url and "connect_timeout=" not in url:
         separador = "&" if "?" in url else "?"
         url = f"{url}{separador}connect_timeout=3"
-    if url and "pool_timeout=" not in url:
-        separador = "&" if "?" in url else "?"
-        url = f"{url}{separador}pool_timeout=3"
     return url
 
 
@@ -6090,6 +6087,7 @@ def atualizar_dados_automaticamente():
         pass
 
 
+# STREAMLIT_APP_START
 try:
     locale.setlocale(locale.LC_TIME, "pt_BR.UTF-8")
 except Exception:

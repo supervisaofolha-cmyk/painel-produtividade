@@ -4,12 +4,17 @@ from datetime import datetime
 
 
 APP_PATH = pathlib.Path(__file__).with_name("app.py")
-CORTE_APP = "try:\n    locale.setlocale"
+CORTE_APP = "# STREAMLIT_APP_START"
 
 
 def carregar_funcoes_app():
     codigo = APP_PATH.read_text(encoding="utf-8")
-    corte = codigo.index(CORTE_APP)
+    try:
+        corte = codigo.index(CORTE_APP)
+    except ValueError as exc:
+        raise RuntimeError(
+            "Nao foi possivel localizar o marcador de inicio da interface no app.py."
+        ) from exc
     namespace = {}
     exec(codigo[:corte], namespace)
     return namespace
