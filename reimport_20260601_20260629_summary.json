@@ -1,0 +1,1320 @@
+{
+  "periodo_solicitado": {
+    "inicio": "01/06/2026",
+    "fim": "29/06/2026"
+  },
+  "backup": "produtividade_backup_reimport_20260601_20260629_20260630_112440.xlsx",
+  "dias_processados": [
+    "01/06/2026",
+    "02/06/2026",
+    "03/06/2026",
+    "05/06/2026",
+    "08/06/2026",
+    "09/06/2026",
+    "10/06/2026",
+    "11/06/2026",
+    "12/06/2026",
+    "15/06/2026",
+    "16/06/2026",
+    "17/06/2026",
+    "18/06/2026",
+    "19/06/2026",
+    "22/06/2026",
+    "23/06/2026",
+    "24/06/2026",
+    "25/06/2026",
+    "26/06/2026",
+    "29/06/2026"
+  ],
+  "sucessos": [
+    {
+      "data": "01/06/2026",
+      "bi": {
+        "data": "01/06/2026",
+        "fonte": 35,
+        "abandonadas": 149,
+        "linhas_criadas": 0,
+        "atualizados": 35,
+        "sem_alias": [
+          "Lucas Luiz Romero",
+          "Patrícia Karla de Sousa Araújo",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "ro": {
+        "data": "01/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 71,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Amanda Moura Ferreira",
+          "Ana Paula Da Luz Silva Aleixo",
+          "Anna Luiza Rezende Tavares",
+          "Carlos Mateus Cassimiro Nunes",
+          "Claudio de Sousa Velasco Filho",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Davylla Rodrigues Freitas Silva",
+          "Emilly Caylane Costa",
+          "Francilene Ferreira de Jesus",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Patrícia Karla de Sousa Araújo",
+          "Paulo Ricardo Santos",
+          "Pedro Luiz Mota Sousa",
+          "Quirino Diogo Leite Torres",
+          "Rafael Gomes de Morais",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "sgd": {
+        "data": "01/06/2026",
+        "periodo": "01/06/2026 a 01/06/2026",
+        "fonte": 117,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 43,
+        "sem_alias": [
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Davylla Rodrigues Freitas Silva",
+          "Francilene Ferreira de Jesus",
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "02/06/2026",
+      "bi": {
+        "data": "02/06/2026",
+        "fonte": 34,
+        "abandonadas": 335,
+        "linhas_criadas": 0,
+        "atualizados": 34,
+        "sem_alias": [
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "ro": {
+        "data": "02/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 126,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Claudio de Sousa Velasco Filho",
+          "Emilly Caylane Costa",
+          "Francilene Ferreira de Jesus",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "sgd": {
+        "data": "02/06/2026",
+        "periodo": "01/06/2026 a 02/06/2026",
+        "fonte": 115,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 45,
+        "sem_alias": [
+          "Francilene Ferreira de Jesus",
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "03/06/2026",
+      "bi": {
+        "data": "03/06/2026",
+        "fonte": 36,
+        "abandonadas": 249,
+        "linhas_criadas": 0,
+        "atualizados": 36,
+        "sem_alias": [
+          "Lucas Luiz Romero",
+          "Patrícia Karla de Sousa Araújo",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "ro": {
+        "data": "03/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 69,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Amanda Moura Ferreira",
+          "Claudio de Sousa Velasco Filho",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Daniel Gomes da Silva",
+          "Emilly Caylane Costa",
+          "Francilene Ferreira de Jesus",
+          "Gabriel Alves",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Maria Eduarda Sousa Costa",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Patrícia Karla de Sousa Araújo",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "sgd": {
+        "data": "03/06/2026",
+        "periodo": "01/06/2026 a 03/06/2026",
+        "fonte": 116,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 46,
+        "sem_alias": [
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "05/06/2026",
+      "bi": {
+        "data": "05/06/2026",
+        "fonte": 34,
+        "abandonadas": 69,
+        "linhas_criadas": 0,
+        "atualizados": 34,
+        "sem_alias": [
+          "Carlos Mateus Cassimiro Nunes",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Patrícia Karla de Sousa Araújo",
+          "Paulo Ricardo Santos"
+        ]
+      },
+      "ro": {
+        "data": "05/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 112,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Carlos Mateus Cassimiro Nunes",
+          "Claudio de Sousa Velasco Filho",
+          "Davylla Rodrigues Freitas Silva",
+          "Emilly Caylane Costa",
+          "Francilene Ferreira de Jesus",
+          "Gabriel Alves",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Patrícia Karla de Sousa Araújo",
+          "Paulo Ricardo Santos"
+        ]
+      },
+      "sgd": {
+        "data": "05/06/2026",
+        "periodo": "01/06/2026 a 05/06/2026",
+        "fonte": 114,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 46,
+        "sem_alias": [
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "08/06/2026",
+      "bi": {
+        "data": "08/06/2026",
+        "fonte": 35,
+        "abandonadas": 35,
+        "linhas_criadas": 0,
+        "atualizados": 35,
+        "sem_alias": [
+          "Leandro de Souza Silva",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "ro": {
+        "data": "08/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 69,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Anna Luiza Rezende Tavares",
+          "Carlos Mateus Cassimiro Nunes",
+          "Claudio de Sousa Velasco Filho",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Davylla Rodrigues Freitas Silva",
+          "Emilly Caylane Costa",
+          "Francilene Ferreira de Jesus",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Leandro de Souza Silva",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "sgd": {
+        "data": "08/06/2026",
+        "periodo": "01/06/2026 a 08/06/2026",
+        "fonte": 113,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 46,
+        "sem_alias": [
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "09/06/2026",
+      "bi": {
+        "data": "09/06/2026",
+        "fonte": 34,
+        "abandonadas": 23,
+        "linhas_criadas": 0,
+        "atualizados": 34,
+        "sem_alias": [
+          "Leandro de Souza Silva",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Maria Eduarda Sousa Costa",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "ro": {
+        "data": "09/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 61,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Carlos Mateus Cassimiro Nunes",
+          "Claudio de Sousa Velasco Filho",
+          "Clessiane Pereira dos Santos",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Daniel Gomes da Silva",
+          "Davylla Rodrigues Freitas Silva",
+          "Emilly Caylane Costa",
+          "Francilene Ferreira de Jesus",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Isabella Borges de Oliveira",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Leandro de Souza Silva",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Maria Eduarda Sousa Costa",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo",
+          "Sara Maria Monteiro Lopes"
+        ]
+      },
+      "sgd": {
+        "data": "09/06/2026",
+        "periodo": "01/06/2026 a 09/06/2026",
+        "fonte": 115,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 46,
+        "sem_alias": [
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "10/06/2026",
+      "bi": {
+        "data": "10/06/2026",
+        "fonte": 34,
+        "abandonadas": 56,
+        "linhas_criadas": 0,
+        "atualizados": 34,
+        "sem_alias": [
+          "Karina Gonçalves Martins",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Maria Eduarda Sousa Costa",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "ro": {
+        "data": "10/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 71,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Anna Luiza Rezende Tavares",
+          "Claudio de Sousa Velasco Filho",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Daniel Gomes da Silva",
+          "Emilly Caylane Costa",
+          "Francilene Ferreira de Jesus",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Maria Eduarda Sousa Costa",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Patrícia Karla de Sousa Araújo",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "sgd": {
+        "data": "10/06/2026",
+        "periodo": "01/06/2026 a 10/06/2026",
+        "fonte": 122,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 46,
+        "sem_alias": [
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "11/06/2026",
+      "bi": {
+        "data": "11/06/2026",
+        "fonte": 35,
+        "abandonadas": 25,
+        "linhas_criadas": 0,
+        "atualizados": 35,
+        "sem_alias": [
+          "Karina Gonçalves Martins",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "ro": {
+        "data": "11/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 61,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Amanda Moura Ferreira",
+          "Anna Luiza Rezende Tavares",
+          "Claudio de Sousa Velasco Filho",
+          "Daniel Gomes da Silva",
+          "Davylla Rodrigues Freitas Silva",
+          "Emilly Caylane Costa",
+          "Francielson de Oliveira",
+          "Francilene Ferreira de Jesus",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Isabella Borges de Oliveira",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Patrícia Karla de Sousa Araújo",
+          "Rafael Gomes de Morais",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "sgd": {
+        "data": "11/06/2026",
+        "periodo": "01/06/2026 a 11/06/2026",
+        "fonte": 116,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 46,
+        "sem_alias": [
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "12/06/2026",
+      "bi": {
+        "data": "12/06/2026",
+        "fonte": 34,
+        "abandonadas": 14,
+        "linhas_criadas": 0,
+        "atualizados": 34,
+        "sem_alias": [
+          "Claudio de Sousa Velasco Filho",
+          "Karina Gonçalves Martins",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "ro": {
+        "data": "12/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 66,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Carlos Mateus Cassimiro Nunes",
+          "Claudio de Sousa Velasco Filho",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Davylla Rodrigues Freitas Silva",
+          "Emilly Caylane Costa",
+          "Francilene Ferreira de Jesus",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Patrícia Karla de Sousa Araújo",
+          "Sara Maria Monteiro Lopes",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "sgd": {
+        "data": "12/06/2026",
+        "periodo": "01/06/2026 a 12/06/2026",
+        "fonte": 115,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 46,
+        "sem_alias": [
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "15/06/2026",
+      "bi": {
+        "data": "15/06/2026",
+        "fonte": 32,
+        "abandonadas": 126,
+        "linhas_criadas": 0,
+        "atualizados": 32,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Karina Gonçalves Martins",
+          "Lorena Dias de Araujo",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "ro": {
+        "data": "15/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 58,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Anna Luiza Rezende Tavares",
+          "Brenda de Menezes Silva",
+          "Carlos Mateus Cassimiro Nunes",
+          "Claudio de Sousa Velasco Filho",
+          "Cristiane Ramos da Silva Rocha",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Daniel Gomes da Silva",
+          "Davylla Rodrigues Freitas Silva",
+          "Emilly Caylane Costa",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo",
+          "Rafael Gomes de Morais",
+          "Sara Maria Monteiro Lopes",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "sgd": {
+        "data": "15/06/2026",
+        "periodo": "01/06/2026 a 15/06/2026",
+        "fonte": 114,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 46,
+        "sem_alias": [
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "16/06/2026",
+      "bi": {
+        "data": "16/06/2026",
+        "fonte": 32,
+        "abandonadas": 106,
+        "linhas_criadas": 0,
+        "atualizados": 32,
+        "sem_alias": [
+          "Daniel Gomes da Silva",
+          "Karina Gonçalves Martins",
+          "Lorena Dias de Araujo",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "ro": {
+        "data": "16/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 120,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Brenda de Menezes Silva",
+          "Claudio de Sousa Velasco Filho",
+          "Cristiane Ramos da Silva Rocha",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Daniel Gomes da Silva",
+          "Emilly Caylane Costa",
+          "Francilene Ferreira de Jesus",
+          "Gabriel Alves",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "sgd": {
+        "data": "16/06/2026",
+        "periodo": "01/06/2026 a 16/06/2026",
+        "fonte": 111,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 46,
+        "sem_alias": [
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "17/06/2026",
+      "bi": {
+        "data": "17/06/2026",
+        "fonte": 33,
+        "abandonadas": 26,
+        "linhas_criadas": 0,
+        "atualizados": 33,
+        "sem_alias": [
+          "Daniel Gomes da Silva",
+          "Karina Gonçalves Martins",
+          "Lorena Dias de Araujo",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "ro": {
+        "data": "17/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 105,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Brenda de Menezes Silva",
+          "Claudio de Sousa Velasco Filho",
+          "Cristiane Ramos da Silva Rocha",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Daniel Gomes da Silva",
+          "Emilly Caylane Costa",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "sgd": {
+        "data": "17/06/2026",
+        "periodo": "01/06/2026 a 17/06/2026",
+        "fonte": 117,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 46,
+        "sem_alias": [
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "18/06/2026",
+      "bi": {
+        "data": "18/06/2026",
+        "fonte": 31,
+        "abandonadas": 8,
+        "linhas_criadas": 0,
+        "atualizados": 31,
+        "sem_alias": [
+          "Daniel Gomes da Silva",
+          "Gabriel Alves",
+          "Karina Gonçalves Martins",
+          "Lorena Dias de Araujo",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "ro": {
+        "data": "18/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 75,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Amanda Moura Ferreira",
+          "Brenda de Menezes Silva",
+          "Claudio de Sousa Velasco Filho",
+          "Cristiane Ramos da Silva Rocha",
+          "Daniel Gomes da Silva",
+          "Emilly Caylane Costa",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Maria Eduarda Sousa Costa",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "sgd": {
+        "data": "18/06/2026",
+        "periodo": "01/06/2026 a 18/06/2026",
+        "fonte": 117,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 46,
+        "sem_alias": [
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "19/06/2026",
+      "bi": {
+        "data": "19/06/2026",
+        "fonte": 31,
+        "abandonadas": 13,
+        "linhas_criadas": 0,
+        "atualizados": 31,
+        "sem_alias": [
+          "Daniel Gomes da Silva",
+          "Karina Gonçalves Martins",
+          "Leandro de Souza Silva",
+          "Lorena Dias de Araujo",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "ro": {
+        "data": "19/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 56,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Amanda Moura Ferreira",
+          "Brenda de Menezes Silva",
+          "Claudio de Sousa Velasco Filho",
+          "Cristiane Ramos da Silva Rocha",
+          "Daniel Gomes da Silva",
+          "Emilly Caylane Costa",
+          "Francielson de Oliveira",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Isabella Borges de Oliveira",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Leandro de Souza Silva",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo",
+          "Paulo Ricardo Santos",
+          "Quirino Diogo Leite Torres",
+          "Rafael Gomes de Morais",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "sgd": {
+        "data": "19/06/2026",
+        "periodo": "01/06/2026 a 19/06/2026",
+        "fonte": 110,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 46,
+        "sem_alias": [
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "22/06/2026",
+      "bi": {
+        "data": "22/06/2026",
+        "fonte": 30,
+        "abandonadas": 18,
+        "linhas_criadas": 0,
+        "atualizados": 30,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Anna Luiza Rezende Tavares",
+          "Daniel Gomes da Silva",
+          "Karina Gonçalves Martins",
+          "Lorena Dias de Araujo",
+          "Patrícia Karla de Sousa Araújo",
+          "Raane Batista Matos"
+        ]
+      },
+      "ro": {
+        "data": "22/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 62,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Anna Luiza Rezende Tavares",
+          "Brenda de Menezes Silva",
+          "Claudio de Sousa Velasco Filho",
+          "Clessiane Pereira dos Santos",
+          "Cristiane Ramos da Silva Rocha",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Daniel Gomes da Silva",
+          "Emilly Caylane Costa",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Patrícia Karla de Sousa Araújo",
+          "Raane Batista Matos",
+          "Rafael Gomes de Morais"
+        ]
+      },
+      "sgd": {
+        "data": "22/06/2026",
+        "periodo": "01/06/2026 a 22/06/2026",
+        "fonte": 111,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 46,
+        "sem_alias": [
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "23/06/2026",
+      "bi": {
+        "data": "23/06/2026",
+        "fonte": 31,
+        "abandonadas": 6,
+        "linhas_criadas": 0,
+        "atualizados": 29,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Daniel Gomes da Silva",
+          "Emilly Caylane Costa",
+          "Gabriel Alves",
+          "Karina Gonçalves Martins",
+          "Leandro de Souza Silva",
+          "Lorena Dias de Araujo",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "ro": {
+        "data": "23/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 50,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Anna Luiza Rezende Tavares",
+          "Brenda de Menezes Silva",
+          "Carlos Mateus Cassimiro Nunes",
+          "Claudio de Sousa Velasco Filho",
+          "Cristiane Ramos da Silva Rocha",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Daniel Gomes da Silva",
+          "Davylla Rodrigues Freitas Silva",
+          "Emilly Caylane Costa",
+          "Francielson de Oliveira",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Leandro de Souza Silva",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Patrícia Karla de Sousa Araújo",
+          "Pedro Luiz Mota Sousa",
+          "Sara Maria Monteiro Lopes",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "sgd": {
+        "data": "23/06/2026",
+        "periodo": "01/06/2026 a 23/06/2026",
+        "fonte": 113,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 46,
+        "sem_alias": [
+          "Jéssica Fé Moura"
+        ],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "24/06/2026",
+      "bi": {
+        "data": "24/06/2026",
+        "fonte": 34,
+        "abandonadas": 10,
+        "linhas_criadas": 0,
+        "atualizados": 31,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Daniel Gomes da Silva",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Leandro de Souza Silva",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "ro": {
+        "data": "24/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 42,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Amanda Moura Ferreira",
+          "Anna Luiza Rezende Tavares",
+          "Brenda de Menezes Silva",
+          "Claudio de Sousa Velasco Filho",
+          "Cristiane Ramos da Silva Rocha",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Daniel Gomes da Silva",
+          "Emilly Caylane Costa",
+          "Francielson de Oliveira",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Leandro Oliveira de Sousa",
+          "Leandro de Souza Silva",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Patrícia Karla de Sousa Araújo",
+          "Sarah Steffanie de Lima Borges"
+        ]
+      },
+      "sgd": {
+        "data": "24/06/2026",
+        "periodo": "01/06/2026 a 24/06/2026",
+        "fonte": 110,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "25/06/2026",
+      "bi": {
+        "data": "25/06/2026",
+        "fonte": 31,
+        "abandonadas": 10,
+        "linhas_criadas": 0,
+        "atualizados": 29,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Claudio de Sousa Velasco Filho",
+          "Daniel Gomes da Silva",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Leandro de Souza Silva",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "ro": {
+        "data": "25/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 46,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Amanda Moura Ferreira",
+          "Ana Karollyne Souza Faria",
+          "Anna Luiza Rezende Tavares",
+          "Brenda de Menezes Silva",
+          "Carlos Mateus Cassimiro Nunes",
+          "Claudio de Sousa Velasco Filho",
+          "Clessiane Pereira dos Santos",
+          "Cristiane Ramos da Silva Rocha",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Daniel Gomes da Silva",
+          "Davylla Rodrigues Freitas Silva",
+          "Emilly Caylane Costa",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Isabella Borges de Oliveira",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Leandro de Souza Silva",
+          "Lizandra Gomes Duarte",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Maria Eduarda Sousa Costa",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Patrícia Karla de Sousa Araújo",
+          "Paulo Ricardo Santos"
+        ]
+      },
+      "sgd": {
+        "data": "25/06/2026",
+        "periodo": "01/06/2026 a 25/06/2026",
+        "fonte": 111,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "26/06/2026",
+      "bi": {
+        "data": "26/06/2026",
+        "fonte": 34,
+        "abandonadas": 21,
+        "linhas_criadas": 0,
+        "atualizados": 30,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Claudio de Sousa Velasco Filho",
+          "Daniel Gomes da Silva",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Leandro de Souza Silva",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "ro": {
+        "data": "26/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 77,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Brenda de Menezes Silva",
+          "Claudio de Sousa Velasco Filho",
+          "Cristiane Ramos da Silva Rocha",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Daniel Gomes da Silva",
+          "Emilly Caylane Costa",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Isabella Borges de Oliveira",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Leandro de Souza Silva",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Patrícia Karla de Sousa Araújo",
+          "Paulo Ricardo Santos",
+          "Quirino Diogo Leite Torres"
+        ]
+      },
+      "sgd": {
+        "data": "26/06/2026",
+        "periodo": "01/06/2026 a 26/06/2026",
+        "fonte": 103,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [],
+        "modo": "todos"
+      }
+    },
+    {
+      "data": "29/06/2026",
+      "bi": {
+        "data": "29/06/2026",
+        "fonte": 30,
+        "abandonadas": 14,
+        "linhas_criadas": 47,
+        "atualizados": 29,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Daniel Gomes da Silva",
+          "Gabriel Alves",
+          "Jéssica Fé Moura",
+          "Karina Gonçalves Martins",
+          "Leandro de Souza Silva",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo"
+        ]
+      },
+      "ro": {
+        "data": "29/06/2026",
+        "arquivo": "RO Junho 2026 (respostas)",
+        "fonte": 27,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [
+          "Alisson de Freitas Silva",
+          "Amanda Moura Ferreira",
+          "Anna Luiza Rezende Tavares",
+          "Brenda de Menezes Silva",
+          "Claudio de Sousa Velasco Filho",
+          "Cristiane Ramos da Silva Rocha",
+          "Damyllis Lorraine de Oliveira Gonçalves",
+          "Daniel Gomes da Silva",
+          "Emilly Caylane Costa",
+          "Emilly Kamilly Medeiros Miranda",
+          "Gabriel Alves",
+          "Gabriel Gomes de Andrade",
+          "Isabella Alves Queiroz",
+          "Janaina Lima dos Reis Urany",
+          "Jessica Faria da Silveira",
+          "Joao Frutuoso Machado Neto",
+          "Karina Gonçalves Martins",
+          "Kerollen Cristielly de Jesus Siqueira",
+          "Leandro Oliveira de Sousa",
+          "Leandro de Souza Silva",
+          "Lizandra Gomes Duarte",
+          "Lorena Dias de Araujo",
+          "Lucas Luiz Romero",
+          "Luiz Fernando de Carvalho Junior",
+          "Maria Eduarda Sousa Costa",
+          "Matheus Farias De Souza",
+          "Michelle G Santos",
+          "Milena Sales",
+          "Patrícia Karla de Sousa Araújo",
+          "Paulo Ricardo Santos",
+          "Quirino Diogo Leite Torres"
+        ]
+      },
+      "sgd": {
+        "data": "29/06/2026",
+        "periodo": "01/06/2026 a 29/06/2026",
+        "fonte": 91,
+        "dias_processados": 1,
+        "linhas_criadas": 0,
+        "atualizados": 47,
+        "sem_alias": [],
+        "modo": "todos"
+      }
+    }
+  ],
+  "falhas": [],
+  "totais": {
+    "dias_uteis_previstos": 20,
+    "sucessos": 20,
+    "falhas": 0
+  }
+}
