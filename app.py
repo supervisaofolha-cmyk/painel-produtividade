@@ -4098,10 +4098,17 @@ def planilha_ro_do_mes(data_referencia):
 def buscar_ro_forms(data_referencia):
     arquivo = planilha_ro_do_mes(data_referencia)
     sessao = criar_sessao_http()
-    resposta = sessao.get(
-        f"https://docs.google.com/spreadsheets/d/{arquivo['id']}/export?format=csv",
-        timeout=60,
+    url_exportacao = (
+        f"https://docs.google.com/spreadsheets/d/{arquivo['id']}/export?format=csv"
     )
+    resposta = sessao.get(url_exportacao, timeout=60)
+    if resposta.status_code in {401, 403}:
+        raise ValueError(
+            "A planilha de respostas do RO deste mês não está liberada para "
+            "exportação em CSV. No Google Sheets, abra o arquivo e ajuste o "
+            "compartilhamento para permitir acesso sem login ou publique a "
+            f"aba de respostas. Link configurado: {arquivo.get('url', url_exportacao)}"
+        )
     resposta.raise_for_status()
 
     texto_csv = resposta.content.decode("utf-8-sig", errors="replace")
