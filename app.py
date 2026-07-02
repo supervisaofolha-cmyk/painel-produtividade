@@ -68,7 +68,7 @@ TECNICOS_SGD_WEB_ALIASES = [
     "joao neto",
 ]
 PERIODOS_TECNICOS_SGD_WEB = [
-    ("Gabriel Gomes de Andrade", date(2026, 6, 13), date(2026, 6, 29)),
+    ("Gabriel Gomes de Andrade", date(2026, 6, 13), date(2026, 6, 30)),
 ]
 DATAS_TECNICOS_SGD_WEB_E_FONE = [
     ("Gabriel Gomes de Andrade", date(2026, 6, 12), date(2026, 6, 12)),
