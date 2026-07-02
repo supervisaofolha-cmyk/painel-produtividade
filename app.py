@@ -150,6 +150,7 @@ SGD_FILTRO_FONE = {
 RO_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1O-1uJ6D9al9piHgOv_Ju0fpL-3Xbz3zK"
 RO_PLANILHAS_FIXAS = {
     (2026, 6): "https://docs.google.com/spreadsheets/d/1AZKhjWnIS_hys9B9oaeazcSUP0wS6ExX8U9wRdrktRs/edit?resourcekey#gid=148357412",
+    (2026, 7): "https://docs.google.com/spreadsheets/d/1CUmqEEt8AmokqEJHIwb2L9yGWZ630AYvxmZbOUuido0/edit?resourcekey#gid=1910610417",
 }
 SERVICO_PLANILHA_LOCAL_URL = "http://127.0.0.1:8765"
 
