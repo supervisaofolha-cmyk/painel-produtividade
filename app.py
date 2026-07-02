@@ -378,7 +378,23 @@ PROGRAMACAO_AUSENCIAS = [
     ("Paulo Ricardo Santos", date(2026, 6, 26), "Falta/Atraso", None),
     ("Ana Karollyne Souza Faria", date(2026, 6, 26), "Energia", 4 * 60),
     ("Milena da Silva Sales", date(2026, 6, 29), "Atestado", None),
+    ("Francilene Ferreira de Jesus", date(2026, 6, 29), "Falta/Atraso", 2 * 60),
+    ("Milena da Silva Sales", date(2026, 6, 30), "Atestado", None),
+    ("João Frutuoso Machado Neto", date(2026, 6, 30), "Falta/Atraso", None),
+    ("Milena da Silva Sales", date(2026, 7, 1), "Atestado", None),
+    ("Cristiane Ramos da Silva Rocha", date(2026, 7, 1), "Atestado", None),
+    ("Brenda de Menezes Gulinely da Silva", date(2026, 7, 1), "Folga BH", 3 * 60),
+    ("Milena da Silva Sales", date(2026, 7, 2), "Atestado", None),
+    ("Cristiane Ramos da Silva Rocha", date(2026, 7, 2), "Atestado", None),
+    ("Gabriel Gomes de Andrade", date(2026, 7, 2), "Falta/Atraso", 1 * 60),
+    ("Cristiane Ramos da Silva Rocha", date(2026, 7, 3), "Atestado", None),
+    ("Sara Maria Monteiro Lopes", date(2026, 7, 3), "Falta/Atraso", 2 * 60),
+    ("Cristiane Ramos da Silva Rocha", date(2026, 7, 6), "Atestado", None),
     ("Milena da Silva Sales", date(2026, 7, 7), "Atestado", None),
+    ("Cristiane Ramos da Silva Rocha", date(2026, 7, 8), "Atestado", None),
+    ("Cristiane Ramos da Silva Rocha", date(2026, 7, 9), "Atestado", None),
+    ("Cristiane Ramos da Silva Rocha", date(2026, 7, 10), "Atestado", None),
+    ("Cristiane Ramos da Silva Rocha", date(2026, 7, 13), "Atestado", None),
 ]
 
 
