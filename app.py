@@ -3308,6 +3308,23 @@ def modalidade_tecnico_em_data(nome, data_referencia=None):
     return "fone"
 
 
+def tecnico_no_mesmo_grupo_ranking(nome_tecnico, nivel_referencia, canal_referencia, data_referencia):
+    if normalizar_nome(nome_tecnico) == "":
+        return False
+
+    if nivel_tecnico_no_mes(df, nome_tecnico, data_referencia.year, data_referencia.month) != nivel_referencia:
+        return False
+
+    canal_tecnico = modalidade_tecnico_em_data(nome_tecnico, data_referencia)
+    if canal_referencia == "fone":
+        return canal_tecnico == "fone"
+    if canal_referencia == "web":
+        return canal_tecnico in {"web", "hibrido"}
+    if canal_referencia == "chat":
+        return canal_tecnico == "chat"
+    return canal_tecnico == canal_referencia
+
+
 def periodos_ferias_tecnico(tecnico):
     tecnico_normalizado = normalizar_nome(tecnico)
     return [
@@ -9299,11 +9316,6 @@ if tecnico_web:
         ("Votação Média", f"{votacao_ultimo_dia:.2f}%", cor_votacao),
         ("Satisfação", f"{satisfacao_ultimo_dia:.2f}%", cor_satisfacao),
     ]
-    if ssc_total_web != realizado_total:
-        cards_secundarios.insert(
-            1,
-            ("Total de SSC WEB", builtins.str(ssc_total_web), None),
-        )
 elif tecnico_chat:
     realizado_total = chat_total
     desvio_total = realizado_total - esperado_total
@@ -9399,7 +9411,6 @@ if modo_gestao:
     if tecnico_web:
         performance_cards = [
             ("SSC Realizado", builtins.str(realizado_total), None),
-            ("Total SSC WEB", builtins.str(ssc_total_web or realizado_total), None),
             ("Votação Média", f"{votacao_ultimo_dia:.2f}%", cor_votacao),
             ("Satisfação", f"{satisfacao_ultimo_dia:.2f}%", cor_satisfacao),
         ]
@@ -9878,10 +9889,6 @@ if tecnico_hibrido_web and not dados_mes_web.empty:
                 <div class="resultado-label">Canal</div>
                 <div class="resultado-valor">WEB</div>
             </div>
-            <div class="resultado-card secundario">
-                <div class="resultado-label">Total de SSC WEB</div>
-                <div class="resultado-valor">{total_ssc_web_periodo}</div>
-            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -9889,10 +9896,22 @@ if tecnico_hibrido_web and not dados_mes_web.empty:
 
 if not modo_gestao:
     if nivel_tecnico:
+        canal_ranking = modalidade_atual_tecnico
+        if tecnico_hibrido_web:
+            canal_ranking = "fone"
         base_ranking_nivel = df[
             (df["Data"].dt.month == mes_atual)
             & (df["Data"].dt.year == ano_atual)
             & (df["Nível"] == nivel_tecnico)
+            & df.apply(
+                lambda linha: tecnico_no_mesmo_grupo_ranking(
+                    linha["Técnico"],
+                    nivel_tecnico,
+                    canal_ranking,
+                    pd.Timestamp(linha["Data"]).date(),
+                ),
+                axis=1,
+            )
         ]
 
         ranking_nivel_diario = (
@@ -9920,7 +9939,7 @@ if not modo_gestao:
         meta_mensal_nivel = meta_diaria_nivel * len(datas_validas_ranking)
 
         st.divider()
-        st.subheader(f"Ranking do Seu Nível - {nivel_tecnico}")
+        st.subheader(f"Ranking do Seu Grupo - {nivel_tecnico} | {canal_ranking.upper()}")
         aba_nivel_diario, aba_nivel_mensal = st.tabs(["Diário", "Mensal"])
 
         with aba_nivel_diario:
