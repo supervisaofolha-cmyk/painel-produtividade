@@ -10013,67 +10013,32 @@ dados_produtividade = dados_produtividade[
 ]
 
 if tecnico_web:
-    base_web_periodo = df[
-        (df["Data"].dt.month == mes_atual)
-        & (df["Data"].dt.year == ano_atual)
-        & (df["Data"].dt.date >= periodo_inicial)
-        & (df["Data"].dt.date <= periodo_final)
-        & df.apply(
-            lambda linha: modalidade_tecnico_em_data(
-                linha["Técnico"],
-                linha["Data"],
-            )
-            in {"web", "hibrido"},
-            axis=1,
-        )
-    ].copy()
-    base_web_periodo = base_web_periodo[
-        (base_web_periodo["Data"].dt.weekday < 5)
-        & ~base_web_periodo["Data"].dt.date.map(eh_feriado_federal)
-    ]
     produtividade = (
         dados_produtividade.groupby(["Data", "Data Formatada"], as_index=False)["SSC"]
         .sum()
-        .rename(columns={"SSC": "Seu SSC"})
+        .rename(columns={"SSC": "SSC"})
         .sort_values(by="Data")
     )
-    produtividade_total_web = (
-        base_web_periodo.groupby("Data", as_index=False)["SSC"]
-        .sum()
-        .rename(columns={"SSC": "SSC Total WEB"})
-    )
-    produtividade = produtividade.merge(produtividade_total_web, on="Data", how="left").fillna(0)
     produtividade["Data Curta"] = produtividade["Data"].dt.strftime("%d/%m")
 
     grafico_produtividade = go.Figure()
     grafico_produtividade.add_trace(
-        go.Bar(
-            name="SSC total WEB",
-            x=produtividade["Data Curta"],
-            y=produtividade["SSC Total WEB"],
-            marker_color="#2563EB",
-            width=0.46,
-            text=produtividade["SSC Total WEB"].round().astype(int),
-            textposition="outside",
-            textfont=dict(color="#374151", size=12),
-            cliponaxis=False,
-            hovertemplate="<b>%{x}</b><br>SSC total WEB: %{y}<extra></extra>",
-        )
-    )
-    grafico_produtividade.add_trace(
         go.Scatter(
-            name="Seu realizado",
+            name="SSC realizado",
             x=produtividade["Data Curta"],
-            y=produtividade["Seu SSC"],
+            y=produtividade["SSC"],
             mode="lines+markers",
             line=dict(color="#F97316", width=3),
             marker=dict(color="#FFFFFF", line=dict(color="#F97316", width=2), size=8),
-            hovertemplate="<b>%{x}</b><br>Seu realizado: %{y}<extra></extra>",
+            text=produtividade["SSC"].round().astype(int),
+            textposition="top center",
+            textfont=dict(color="#374151", size=11),
+            cliponaxis=False,
+            hovertemplate="<b>%{x}</b><br>SSC realizado: %{y}<extra></extra>",
         )
     )
     maior_valor_produtividade = max(
-        produtividade["Seu SSC"].max() if not produtividade.empty else 0,
-        produtividade["SSC Total WEB"].max() if not produtividade.empty else 0,
+        produtividade["SSC"].max() if not produtividade.empty else 0,
         1,
     )
     grafico_produtividade.update_layout(
@@ -10086,7 +10051,7 @@ if tecnico_web:
         xaxis_title="Dia",
         yaxis_title="SSC",
         title=dict(
-            text="Seu realizado x SSC total WEB do dia",
+            text="Seu SSC realizado por dia",
             x=0,
             font=dict(size=15, color="#111827"),
         ),
@@ -10278,72 +10243,32 @@ if tecnico_hibrido_web and not dados_mes_web.empty:
         & ~dados_produtividade_web["Data"].dt.date.map(eh_feriado_federal)
     ]
 
-    base_web_periodo_hibrido = df[
-        (df["Data"].dt.month == mes_atual)
-        & (df["Data"].dt.year == ano_atual)
-        & (df["Data"].dt.date >= periodo_inicial)
-        & (df["Data"].dt.date <= periodo_final)
-        & df.apply(
-            lambda linha: modalidade_tecnico_em_data(
-                linha["Técnico"],
-                linha["Data"],
-            )
-            == "web",
-            axis=1,
-        )
-    ].copy()
-    base_web_periodo_hibrido = base_web_periodo_hibrido[
-        (base_web_periodo_hibrido["Data"].dt.weekday < 5)
-        & ~base_web_periodo_hibrido["Data"].dt.date.map(eh_feriado_federal)
-    ]
-
     produtividade_web = (
         dados_produtividade_web.groupby(["Data", "Data Formatada"], as_index=False)["SSC"]
         .sum()
-        .rename(columns={"SSC": "Seu SSC"})
+        .rename(columns={"SSC": "SSC"})
         .sort_values(by="Data")
     )
-    produtividade_total_web_hibrido = (
-        base_web_periodo_hibrido.groupby("Data", as_index=False)["SSC"]
-        .sum()
-        .rename(columns={"SSC": "SSC Total WEB"})
-    )
-    produtividade_web = produtividade_web.merge(
-        produtividade_total_web_hibrido,
-        on="Data",
-        how="left",
-    ).fillna(0)
     produtividade_web["Data Curta"] = produtividade_web["Data"].dt.strftime("%d/%m")
 
     grafico_produtividade_web = go.Figure()
     grafico_produtividade_web.add_trace(
-        go.Bar(
-            name="SSC total WEB",
-            x=produtividade_web["Data Curta"],
-            y=produtividade_web["SSC Total WEB"],
-            marker_color="#2563EB",
-            width=0.46,
-            text=produtividade_web["SSC Total WEB"].round().astype(int),
-            textposition="outside",
-            textfont=dict(color="#374151", size=12),
-            cliponaxis=False,
-            hovertemplate="<b>%{x}</b><br>SSC total WEB: %{y}<extra></extra>",
-        )
-    )
-    grafico_produtividade_web.add_trace(
         go.Scatter(
-            name="Seu realizado",
+            name="SSC realizado",
             x=produtividade_web["Data Curta"],
-            y=produtividade_web["Seu SSC"],
+            y=produtividade_web["SSC"],
             mode="lines+markers",
             line=dict(color="#F97316", width=3),
             marker=dict(color="#FFFFFF", line=dict(color="#F97316", width=2), size=8),
-            hovertemplate="<b>%{x}</b><br>Seu realizado: %{y}<extra></extra>",
+            text=produtividade_web["SSC"].round().astype(int),
+            textposition="top center",
+            textfont=dict(color="#374151", size=11),
+            cliponaxis=False,
+            hovertemplate="<b>%{x}</b><br>SSC realizado: %{y}<extra></extra>",
         )
     )
     maior_valor_produtividade_web = max(
-        produtividade_web["Seu SSC"].max() if not produtividade_web.empty else 0,
-        produtividade_web["SSC Total WEB"].max() if not produtividade_web.empty else 0,
+        produtividade_web["SSC"].max() if not produtividade_web.empty else 0,
         1,
     )
     grafico_produtividade_web.update_layout(
@@ -10356,7 +10281,7 @@ if tecnico_hibrido_web and not dados_mes_web.empty:
         xaxis_title="Dia",
         yaxis_title="SSC",
         title=dict(
-            text="Seu realizado x SSC total WEB do dia",
+            text="Seu SSC realizado por dia",
             x=0,
             font=dict(size=15, color="#111827"),
         ),
